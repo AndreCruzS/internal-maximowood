@@ -40,10 +40,10 @@ export default function Login() {
 
         <div className="text-center">
           <h2 className="text-white text-3xl font-black tracking-widest uppercase mb-2">
-            Sales Calculator
+            Business Systems
           </h2>
           <p className="text-[#C9A227] text-sm font-medium tracking-widest uppercase">
-            Concierge Team Tool
+            Maximo Internal Platform
           </p>
         </div>
 
@@ -71,7 +71,7 @@ export default function Login() {
 
           <h1 className="text-white text-2xl font-bold mb-1">Welcome back</h1>
           <p className="text-white/50 text-sm mb-8">
-            Sign in to access the sales tool.
+            Sign in to access your business systems.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -123,7 +123,7 @@ export default function Login() {
 
           <div className="mt-8 pt-6 border-t border-white/10">
             <p className="text-xs text-white/20 text-center">
-              Restricted access · Maximo Concierge Sales Team
+              Restricted access · Authorized personnel only
             </p>
           </div>
         </div>

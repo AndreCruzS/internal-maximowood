@@ -19,7 +19,7 @@ function Router() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#1A1A1A]">
-        <div className="text-white text-sm tracking-widest uppercase">Carregando…</div>
+        <div className="text-white text-sm tracking-widest uppercase">Loading…</div>
       </div>
     );
   }

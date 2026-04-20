@@ -2,7 +2,7 @@
   "name": "internal-maximowood",
   "version": "0.1.0",
   "private": true,
-  "description": "Plataforma interna Maximo — portal de sistemas corporativos",
+  "description": "Maximo internal platform — modular portal hosting multiple business systems behind one domain",
   "type": "module",
   "license": "UNLICENSED",
   "scripts": {
