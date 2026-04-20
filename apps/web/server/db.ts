@@ -7,9 +7,9 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (_db) return _db;
 
-  const url = process.env.DATABASE_URL;
+  const url = process.env.POSTGRES_URL ?? process.env.DATABASE_URL;
   if (!url) {
-    console.warn("[DB] DATABASE_URL not set — database features disabled");
+    console.warn("[DB] POSTGRES_URL/DATABASE_URL not set — database features disabled");
     return null;
   }
 
