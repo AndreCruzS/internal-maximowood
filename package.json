@@ -1,0 +1,31 @@
+{
+  "name": "internal-maximowood",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma interna Maximo — portal de sistemas corporativos",
+  "type": "module",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "check": "turbo run check",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "db:push": "pnpm --filter @internal-maximowood/web db:push"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "turbo": "^2.3.0",
+    "typescript": "5.9.3"
+  },
+  "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af",
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "overrides": {
+      "tailwindcss>nanoid": "3.3.7"
+    }
+  }
+}
