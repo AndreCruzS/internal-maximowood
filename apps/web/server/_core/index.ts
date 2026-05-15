@@ -1,27 +1,11 @@
-import "./bootstrap"; // populate process.env from .env.local before any downstream env capture
-import express from "express";
+/**
+ * Local dev entry. Wraps createApp with port-finding, an HTTP server, and
+ * Vite middleware. NOT used by Vercel — the serverless function imports
+ * createApp directly from ./createApp.js to avoid pulling in dev-only deps.
+ */
+import { createApp } from "./createApp.js";
 import { createServer } from "http";
 import net from "net";
-import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { appRouter } from "../routers";
-import { createContext } from "./context";
-import { serveStatic, setupVite } from "./vite";
-
-export function createApp() {
-  const app = express();
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
-  app.use(
-    "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext,
-    })
-  );
-
-  return app;
-}
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -47,8 +31,10 @@ async function startServer() {
   const server = createServer(app);
 
   if (process.env.NODE_ENV === "development") {
+    const { setupVite } = await import("./vite.js");
     await setupVite(app, server);
   } else {
+    const { serveStatic } = await import("./vite.js");
     serveStatic(app);
   }
 

@@ -1,7 +1,7 @@
-import { publicProcedure, router } from "./_core/trpc";
-import { fetchMaximoInventory, groupMaximoRows } from "./maximoInventoryView";
+import { publicProcedure, router } from "./_core/trpc.js";
+import { fetchMaximoInventory, groupMaximoRows } from "./maximoInventoryView.js";
 
-export type { InventoryItem, BranchStock, LengthEntry } from "./maximoInventoryView";
+export type { InventoryItem, BranchStock, LengthEntry } from "./maximoInventoryView.js";
 
 export const inventoryRouter = router({
   // Live read of the Maximo inventory view, grouped for the UI.

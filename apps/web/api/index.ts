@@ -1,5 +1,6 @@
-// On Vercel, env vars are injected by the platform — no dotenv needed.
-import { createApp } from "../server/_core/index";
+// Vercel serverless entry. Imports the production-safe createApp; on Vercel,
+// env vars come from the platform's runtime injection, so no dotenv code here.
+import { createApp } from "../server/_core/createApp.js";
 
 const app = createApp();
 

@@ -4,7 +4,7 @@
  * Handoff: f:\SKYLEV\GMX\CODEBASE 2026 GMX\ODBC\docs\operations\handoff\maximo-inventory-api.md
  */
 
-import { ENV } from "./_core/env";
+import { ENV } from "./_core/env.js";
 
 export interface MaximoRow {
   branch_name: string;

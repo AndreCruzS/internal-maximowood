@@ -1,4 +1,4 @@
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, router } from "./_core/trpc.js";
 
 const SHEET_ID = "1I7cW-6kntiUWl-V2dSYS5MqkafsoJpZHu_Sgt-wADqw";
 
