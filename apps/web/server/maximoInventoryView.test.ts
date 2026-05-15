@@ -113,3 +113,82 @@ describe("groupMaximoRows", () => {
     expect(result.items.map(i => i.specie)).toEqual(["ANGELIM", "CUMARU"]);
   });
 });
+
+import { vi, beforeEach, afterEach } from "vitest";
+
+// Set env vars BEFORE importing fetchMaximoInventory to avoid ENV caching issues
+process.env.SUPABASE_INVENTORY_URL = "https://example.supabase.co";
+process.env.SUPABASE_INVENTORY_APIKEY = "test-apikey";
+process.env.MAXIMO_READER_JWT = "test-jwt";
+
+import { fetchMaximoInventory } from "./maximoInventoryView";
+
+describe("fetchMaximoInventory", () => {
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    // Ensure fetch is reset before each test
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    vi.restoreAllMocks();
+  });
+
+  it("calls the view with both apikey and Bearer headers", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [] as MaximoRow[],
+    });
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+    await fetchMaximoInventory();
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("https://example.supabase.co/rest/v1/maximo_inventory_view");
+    expect(url).toContain("select=branch_name%2Cspecies%2Cnominal_size%2Cprofile%2Clf_per_piece%2Cpieces_available%2Clf_available%2Clast_updated");
+    expect(url).toContain("limit=2000");
+    const headers = init.headers as Record<string, string>;
+    expect(headers.apikey).toBe("test-apikey");
+    expect(headers.Authorization).toBe("Bearer test-jwt");
+    expect(headers.Accept).toBe("application/json");
+  });
+
+  it("throws with status + body when the view returns non-2xx", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      text: async () => "invalid JWT",
+      json: async () => ({}),
+    });
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+    await expect(fetchMaximoInventory()).rejects.toThrow(/401.*invalid JWT/);
+  });
+
+  it("returns rows on a 200 response", async () => {
+    const sample: MaximoRow[] = [
+      {
+        branch_name: "Global Miami",
+        species: "IPE",
+        nominal_size: "2x6",
+        profile: "S4S E4E",
+        lf_per_piece: 16,
+        pieces_available: 3,
+        lf_available: 48,
+        last_updated: "2026-05-10T00:00:00Z",
+      },
+    ];
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => sample,
+    });
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+    const rows = await fetchMaximoInventory();
+    expect(rows).toEqual(sample);
+  });
+});

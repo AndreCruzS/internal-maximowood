@@ -98,3 +98,35 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
 
   return { items, species, branches, lastUpdated };
 }
+
+export async function fetchMaximoInventory(): Promise<MaximoRow[]> {
+  const base = process.env.SUPABASE_INVENTORY_URL ?? "";
+  const apikey = process.env.SUPABASE_INVENTORY_APIKEY ?? "";
+  const jwt = process.env.MAXIMO_READER_JWT ?? "";
+
+  if (!base || !apikey || !jwt) {
+    throw new Error(
+      "Maximo inventory env vars missing: set SUPABASE_INVENTORY_URL, SUPABASE_INVENTORY_APIKEY, MAXIMO_READER_JWT"
+    );
+  }
+
+  const qs = new URLSearchParams({
+    select: "branch_name,species,nominal_size,profile,lf_per_piece,pieces_available,lf_available,last_updated",
+    limit: "2000",
+  }).toString();
+
+  const res = await fetch(`${base}/rest/v1/maximo_inventory_view?${qs}`, {
+    headers: {
+      apikey,
+      Authorization: `Bearer ${jwt}`,
+      Accept: "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Maximo inventory view ${res.status}: ${body}`);
+  }
+
+  return (await res.json()) as MaximoRow[];
+}
