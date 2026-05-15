@@ -77,14 +77,19 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
       product.branches.push(branch);
     }
 
+    // LF shown to the user is the *buyable* LF (lf_per_piece × pieces_available),
+    // not the view's lf_available which is on-hand-based and double-counts
+    // committed stock. Keeps pieces × length = LF self-consistent.
+    const buyableLf = row.lf_per_piece > 0 ? row.lf_per_piece * row.pieces_available : 0;
+
     branch.lengths.push({
       lengthFt: row.lf_per_piece > 0 ? row.lf_per_piece : null,
       pieces: row.pieces_available,
-      stockLf: row.lf_available,
+      stockLf: buyableLf,
     });
 
-    branch.totalLF += row.lf_available;
-    product.totalLF += row.lf_available;
+    branch.totalLF += buyableLf;
+    product.totalLF += buyableLf;
     branchSet.add(row.branch_name);
     if (row.category) categorySet.add(row.category);
 
