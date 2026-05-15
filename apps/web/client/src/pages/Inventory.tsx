@@ -299,9 +299,12 @@ export default function Inventory() {
                   {visibleBranches
                     .sort((a, b) => b.totalLF - a.totalLF)
                     .map((branch, bi) => {
+                      // Keep entries with EITHER a real length OR positive pieces — without
+                      // this, tile SKUs (lf_per_piece=0 → lengthFt=null) get their piece
+                      // counts hidden even when there's substantial inventory.
                       const sortedLengths = branch.lengths
                         ? [...branch.lengths]
-                            .filter(l => l.lengthFt != null)
+                            .filter(l => l.lengthFt != null || (l.pieces ?? 0) > 0)
                             .sort((a, b) => (b.lengthFt ?? 0) - (a.lengthFt ?? 0))
                         : [];
                       const branchLF = branch.lengths
@@ -333,9 +336,9 @@ export default function Inventory() {
                                   <div className="flex items-center gap-3">
                                     <span
                                       className="font-black text-sm w-8 text-right"
-                                      style={{ color: BLACK }}
+                                      style={{ color: l.lengthFt != null ? BLACK : "#bbb" }}
                                     >
-                                      {l.lengthFt}'
+                                      {l.lengthFt != null ? `${l.lengthFt}'` : "—"}
                                     </span>
                                     {l.pieces != null && (
                                       <span className="text-[#888]">
@@ -343,8 +346,8 @@ export default function Inventory() {
                                       </span>
                                     )}
                                   </div>
-                                  <span className="font-black pr-2" style={{ color: GOLD }}>
-                                    {l.stockLf.toLocaleString("en-US")} LF
+                                  <span className="font-black pr-2" style={{ color: l.stockLf > 0 ? GOLD : "#bbb" }}>
+                                    {l.stockLf > 0 ? `${l.stockLf.toLocaleString("en-US")} LF` : "—"}
                                   </span>
                                 </div>
                               ))}
