@@ -31,6 +31,22 @@ export function sizeFromDescription(description: string | null): string {
   return m ? `${m[1]}x${m[2]}` : "";
 }
 
+/**
+ * Fallback length-in-feet parser. Spruce's `LFBFLength` is empty for ~16 SKUs
+ * in the live view (mostly Cumaru/IPE beams like CM6816S "Cumaru 6x8x16'"),
+ * so the view returns lf_per_piece=0 even though the description clearly
+ * encodes the length. Pull the "Nft" pattern out of the description so LF
+ * math works for those rows.
+ *
+ * Matches `x16'` or `x12.5'` (ASCII foot mark). Deliberately does NOT match
+ * `24"` (tile width in inches), so true tile SKUs continue to return 0.
+ */
+export function lengthFromDescription(description: string | null): number {
+  if (!description) return 0;
+  const m = description.match(/x\s*(\d+(?:\.\d+)?)\s*['′]/);
+  return m ? parseFloat(m[1]) : 0;
+}
+
 export interface LengthEntry {
   lengthFt: number | null;
   pieces: number | null;
@@ -94,11 +110,17 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
 
     // LF shown to the user is the *buyable* LF (lf_per_piece × pieces_available),
     // not the view's lf_available which is on-hand-based and double-counts
-    // committed stock. Keeps pieces × length = LF self-consistent.
-    const buyableLf = row.lf_per_piece > 0 ? row.lf_per_piece * row.pieces_available : 0;
+    // committed stock. Keeps pieces × length = LF self-consistent. When the
+    // view's lf_per_piece is 0 but the description encodes a length (e.g.
+    // "Cumaru 6x8x16'"), fall back to the parsed length so the row isn't
+    // wrongly classified as untracked tile stock.
+    const lfPerPiece = row.lf_per_piece > 0
+      ? row.lf_per_piece
+      : lengthFromDescription(row.description);
+    const buyableLf = lfPerPiece > 0 ? lfPerPiece * row.pieces_available : 0;
 
     branch.lengths.push({
-      lengthFt: row.lf_per_piece > 0 ? row.lf_per_piece : null,
+      lengthFt: lfPerPiece > 0 ? lfPerPiece : null,
       pieces: row.pieces_available,
       stockLf: buyableLf,
     });

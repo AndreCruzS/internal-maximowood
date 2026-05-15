@@ -132,6 +132,64 @@ describe("groupMaximoRows", () => {
     expect(result.items.map(i => i.specie)).toEqual(["ANGELIM", "CUMARU"]);
   });
 
+  it("falls back to length parsed from description when lf_per_piece is 0", () => {
+    // Real-world case: Cumaru 6x8 beams have lf_per_piece=0 in the view
+    // because Spruce's LFBFLength field is empty for those SKUs — but the
+    // description clearly encodes the length ("Cumaru 6x8x16' (5.5\" x 7.25\")").
+    // Without the fallback parser, these show 0 LF even though they're
+    // proper 16ft lumber.
+    const rows: MaximoRow[] = [
+      {
+        branch_name: "Global Miami",
+        species: "Cumaru",
+        category: "Hardwoods",
+        nominal_size: "6x8",
+        profile: "Square",
+        description: "Cumaru 6x8x16' (5.5\" x  7.25\")",
+        lf_per_piece: 0,
+        pieces_available: 19,
+        lf_available: 0,
+        last_updated: "2026-05-10T00:00:00Z",
+      },
+    ];
+    const result = groupMaximoRows(rows);
+    expect(result.items).toHaveLength(1);
+    const item = result.items[0];
+    expect(item.totalLF).toBe(304); // 19 × 16
+    expect(item.branches[0].lengths[0]).toEqual({
+      lengthFt: 16,
+      pieces: 19,
+      stockLf: 304,
+    });
+  });
+
+  it("does NOT fall back to description length for tile SKUs (inches only)", () => {
+    // Tile descriptions like "Ipe Tiles 24\" x 24\"" use inches, not feet —
+    // the parser only matches `'` (foot mark), so true tiles continue to
+    // return lengthFt=null and stockLf=0.
+    const rows: MaximoRow[] = [
+      {
+        branch_name: "Global Miami",
+        species: "IPE",
+        category: "Hardwoods",
+        nominal_size: "",
+        profile: "IPE Decking",
+        description: "Brushed Ipe Tiles 24\" x 24\"",
+        lf_per_piece: 0,
+        pieces_available: 7455,
+        lf_available: 0,
+        last_updated: "2026-05-10T00:00:00Z",
+      },
+    ];
+    const result = groupMaximoRows(rows);
+    expect(result.items[0].totalLF).toBe(0);
+    expect(result.items[0].branches[0].lengths[0]).toEqual({
+      lengthFt: null,
+      pieces: 7455,
+      stockLf: 0,
+    });
+  });
+
   it("derives size from description when nominal_size is empty (tiles)", () => {
     // Real-world tile SKUs come back from the view with nominal_size = ''
     // and the size info only in the description. Without parsing, all tile
