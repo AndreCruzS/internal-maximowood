@@ -16,7 +16,6 @@
  */
 
 import {
-  integer,
   pgEnum,
   pgTable,
   serial,
@@ -44,29 +43,3 @@ export const users = pgTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// ── inventory ─────────────────────────────────────────────────────────────────
-export const inventory = pgTable("inventory", {
-  id:           serial("id").primaryKey(),
-  branchName:   varchar("branchName", { length: 128 }).notNull(),
-  species:      varchar("species", { length: 128 }).notNull(),
-  nominalSize:  varchar("nominalSize", { length: 32 }),
-  profile:      varchar("profile", { length: 256 }),
-  lengthFt:     integer("lengthFt"),
-  pieces:       integer("pieces"),
-  stockLf:      integer("stockLf").notNull().default(0),
-  lastSyncedAt: timestamp("lastSyncedAt", { withTimezone: true }).defaultNow().notNull(),
-});
-
-export type InventoryItem = typeof inventory.$inferSelect;
-export type InsertInventoryItem = typeof inventory.$inferInsert;
-
-// ── inventorySyncLog ──────────────────────────────────────────────────────────
-export const inventorySyncLog = pgTable("inventory_sync_log", {
-  id:           serial("id").primaryKey(),
-  syncedAt:     timestamp("syncedAt", { withTimezone: true }).defaultNow().notNull(),
-  rowsUpserted: integer("rowsUpserted").notNull().default(0),
-  status:       varchar("status", { length: 32 }).notNull().default("success"),
-  errorMessage: text("errorMessage"),
-});
-
-export type InventorySyncLog = typeof inventorySyncLog.$inferSelect;
