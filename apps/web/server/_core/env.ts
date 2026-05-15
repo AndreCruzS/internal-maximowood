@@ -5,5 +5,6 @@ export const ENV = {
   supabaseAnonKey:
     process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY ?? "",
   supabaseInventoryUrl: process.env.SUPABASE_INVENTORY_URL ?? "",
-  supabaseInventoryAnonKey: process.env.SUPABASE_INVENTORY_ANON_KEY ?? "",
+  supabaseInventoryApikey: process.env.SUPABASE_INVENTORY_APIKEY ?? "",
+  maximoReaderJwt: process.env.MAXIMO_READER_JWT ?? "",
 };
