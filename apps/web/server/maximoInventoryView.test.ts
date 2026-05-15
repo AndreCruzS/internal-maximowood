@@ -8,6 +8,7 @@ describe("groupMaximoRows", () => {
       {
         branch_name: "Global Miami",
         species: "IPE",
+        category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 16,
@@ -18,6 +19,7 @@ describe("groupMaximoRows", () => {
       {
         branch_name: "Global NY",
         species: "IPE",
+        category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 14,
@@ -28,6 +30,7 @@ describe("groupMaximoRows", () => {
       {
         branch_name: "Global Miami",
         species: "IPE",
+        category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 12,
@@ -56,6 +59,8 @@ describe("groupMaximoRows", () => {
 
     expect(result.species).toEqual(["IPE"]);
     expect(result.branches).toEqual(["Global Miami", "Global NY"]);
+    expect(result.categories).toEqual(["Hardwoods"]);
+    expect(result.items[0].category).toBe("Hardwoods");
     expect(result.lastUpdated).toEqual(new Date("2026-05-11T00:00:00Z"));
   });
 
@@ -64,6 +69,7 @@ describe("groupMaximoRows", () => {
       {
         branch_name: "Global Miami",
         species: "IPE",
+        category: "Hardwoods",
         nominal_size: null,
         profile: null,
         lf_per_piece: 0,
@@ -82,6 +88,7 @@ describe("groupMaximoRows", () => {
     const result = groupMaximoRows([]);
     expect(result.items).toEqual([]);
     expect(result.species).toEqual([]);
+    expect(result.categories).toEqual([]);
     expect(result.branches).toEqual([]);
     expect(result.lastUpdated).toBeNull();
   });
@@ -91,6 +98,7 @@ describe("groupMaximoRows", () => {
       {
         branch_name: "Global Miami",
         species: "CUMARU",
+        category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 16,
@@ -101,6 +109,7 @@ describe("groupMaximoRows", () => {
       {
         branch_name: "Global Miami",
         species: "ANGELIM",
+        category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 16,
@@ -111,6 +120,46 @@ describe("groupMaximoRows", () => {
     ];
     const result = groupMaximoRows(rows);
     expect(result.items.map(i => i.specie)).toEqual(["ANGELIM", "CUMARU"]);
+  });
+
+  it("collects distinct categories sorted alphabetically", () => {
+    const rows: MaximoRow[] = [
+      {
+        branch_name: "Global Miami",
+        species: "Thermo Pine",
+        category: "Thermowood",
+        nominal_size: "1x6",
+        profile: "V Joint",
+        lf_per_piece: 12,
+        pieces_available: 5,
+        lf_available: 60,
+        last_updated: "2026-05-10T00:00:00Z",
+      },
+      {
+        branch_name: "Global Miami",
+        species: "IPE",
+        category: "Hardwoods",
+        nominal_size: "2x6",
+        profile: "S4S E4E",
+        lf_per_piece: 16,
+        pieces_available: 1,
+        lf_available: 16,
+        last_updated: "2026-05-10T00:00:00Z",
+      },
+      {
+        branch_name: "Global Miami",
+        species: "Accoya",
+        category: "Accoya",
+        nominal_size: "1x6",
+        profile: "Coated",
+        lf_per_piece: 10,
+        pieces_available: 2,
+        lf_available: 20,
+        last_updated: "2026-05-10T00:00:00Z",
+      },
+    ];
+    const result = groupMaximoRows(rows);
+    expect(result.categories).toEqual(["Accoya", "Hardwoods", "Thermowood"]);
   });
 });
 
@@ -135,7 +184,7 @@ describe("fetchMaximoInventory", () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
     expect(url).toContain("https://example.supabase.co/rest/v1/maximo_inventory_view");
-    expect(url).toContain("select=branch_name%2Cspecies%2Cnominal_size%2Cprofile%2Clf_per_piece%2Cpieces_available%2Clf_available%2Clast_updated");
+    expect(url).toContain("select=branch_name%2Cspecies%2Ccategory%2Cnominal_size%2Cprofile%2Clf_per_piece%2Cpieces_available%2Clf_available%2Clast_updated");
     expect(url).toContain("limit=2000");
     const headers = init.headers as Record<string, string>;
     expect(headers.apikey).toBe("test-apikey");
@@ -160,6 +209,7 @@ describe("fetchMaximoInventory", () => {
       {
         branch_name: "Global Miami",
         species: "IPE",
+        category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 16,

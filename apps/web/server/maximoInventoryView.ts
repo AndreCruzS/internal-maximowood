@@ -9,6 +9,7 @@ import { ENV } from "./_core/env";
 export interface MaximoRow {
   branch_name: string;
   species: string;
+  category: string; // "Hardwoods" | "Thermowood" | "Accoya"
   nominal_size: string | null;
   profile: string | null;
   lf_per_piece: number;
@@ -31,6 +32,7 @@ export interface BranchStock {
 
 export interface InventoryItem {
   specie: string;
+  category: string;
   profile: string;
   size: string;
   branches: BranchStock[];
@@ -40,6 +42,7 @@ export interface InventoryItem {
 export interface GroupedInventory {
   items: InventoryItem[];
   species: string[];
+  categories: string[];
   branches: string[];
   lastUpdated: Date | null;
 }
@@ -47,6 +50,7 @@ export interface GroupedInventory {
 export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
   const productMap = new Map<string, InventoryItem>();
   const branchSet = new Set<string>();
+  const categorySet = new Set<string>();
   let maxUpdated: number | null = null;
 
   for (const row of rows) {
@@ -58,6 +62,7 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
     if (!product) {
       product = {
         specie: row.species,
+        category: row.category,
         profile,
         size,
         branches: [],
@@ -81,6 +86,7 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
     branch.totalLF += row.lf_available;
     product.totalLF += row.lf_available;
     branchSet.add(row.branch_name);
+    if (row.category) categorySet.add(row.category);
 
     const t = Date.parse(row.last_updated);
     if (!Number.isNaN(t) && (maxUpdated === null || t > maxUpdated)) {
@@ -95,10 +101,11 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
   );
 
   const species = Array.from(new Set(items.map(i => i.specie))).sort();
+  const categories = Array.from(categorySet).sort();
   const branches = Array.from(branchSet).sort();
   const lastUpdated = maxUpdated === null ? null : new Date(maxUpdated);
 
-  return { items, species, branches, lastUpdated };
+  return { items, species, categories, branches, lastUpdated };
 }
 
 export async function fetchMaximoInventory(): Promise<MaximoRow[]> {
@@ -113,7 +120,7 @@ export async function fetchMaximoInventory(): Promise<MaximoRow[]> {
   }
 
   const qs = new URLSearchParams({
-    select: "branch_name,species,nominal_size,profile,lf_per_piece,pieces_available,lf_available,last_updated",
+    select: "branch_name,species,category,nominal_size,profile,lf_per_piece,pieces_available,lf_available,last_updated",
     limit: "2000",
   }).toString();
 

@@ -22,6 +22,7 @@ type BranchStock = {
 
 type InventoryItem = {
   specie: string;
+  category: string;
   profile: string;
   size: string;
   branches: BranchStock[];
@@ -29,6 +30,7 @@ type InventoryItem = {
 };
 
 export default function Inventory() {
+  const [filterCategory, setFilterCategory] = useState("all");
   const [filterSpecie, setFilterSpecie] = useState("all");
   const [filterBranch, setFilterBranch] = useState("all");
   const [filterSearch, setFilterSearch] = useState("");
@@ -41,6 +43,7 @@ export default function Inventory() {
   const filtered = useMemo(() => {
     if (!data?.items) return [] as InventoryItem[];
     return (data.items as InventoryItem[]).filter(item => {
+      const matchCategory = filterCategory === "all" || item.category === filterCategory;
       const matchSpecie = filterSpecie === "all" || item.specie === filterSpecie;
       const search = filterSearch.toLowerCase();
       const matchSearch = !search ||
@@ -49,9 +52,9 @@ export default function Inventory() {
         item.size.toLowerCase().includes(search);
       const matchBranch = filterBranch === "all" ||
         item.branches.some(b => b.branch === filterBranch);
-      return matchSpecie && matchSearch && matchBranch;
+      return matchCategory && matchSpecie && matchSearch && matchBranch;
     });
-  }, [data, filterSpecie, filterBranch, filterSearch]);
+  }, [data, filterCategory, filterSpecie, filterBranch, filterSearch]);
 
   const totalLF = useMemo(() => filtered.reduce((sum, i) => sum + i.totalLF, 0), [filtered]);
 
@@ -103,15 +106,32 @@ export default function Inventory() {
             className="pl-9 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]"
           />
         </div>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {(data?.categories ?? []).map((c: string) => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={filterSpecie} onValueChange={setFilterSpecie}>
           <SelectTrigger className="w-full sm:w-48 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
             <SelectValue placeholder="Species" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All species</SelectItem>
-            {(data?.species ?? []).map((s: string) => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
-            ))}
+            {(data?.species ?? [])
+              .filter((s: string) =>
+                filterCategory === "all" ||
+                ((data?.items as InventoryItem[] | undefined) ?? [])
+                  .some(i => i.specie === s && i.category === filterCategory)
+              )
+              .map((s: string) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
           </SelectContent>
         </Select>
         <Select value={filterBranch} onValueChange={setFilterBranch}>

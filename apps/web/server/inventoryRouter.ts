@@ -7,7 +7,7 @@ export const inventoryRouter = router({
   // Live read of the Maximo inventory view, grouped for the UI.
   getAll: publicProcedure.query(async () => {
     const rows = await fetchMaximoInventory();
-    const { items, species, branches, lastUpdated } = groupMaximoRows(rows);
-    return { items, species, branches, lastUpdated, source: "live" as const };
+    const { items, species, categories, branches, lastUpdated } = groupMaximoRows(rows);
+    return { items, species, categories, branches, lastUpdated, source: "live" as const };
   }),
 });
