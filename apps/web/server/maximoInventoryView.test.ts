@@ -12,7 +12,6 @@ describe("groupMaximoRows", () => {
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 16,
-        lf_uom: "LF",
         pieces_available: 10,
         lf_available: 160,
         last_updated: "2026-05-10T00:00:00Z",
@@ -24,7 +23,6 @@ describe("groupMaximoRows", () => {
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 14,
-        lf_uom: "LF",
         pieces_available: 5,
         lf_available: 70,
         last_updated: "2026-05-11T00:00:00Z",
@@ -36,7 +34,6 @@ describe("groupMaximoRows", () => {
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 12,
-        lf_uom: "LF",
         pieces_available: 2,
         lf_available: 24,
         last_updated: "2026-05-09T00:00:00Z",
@@ -78,7 +75,6 @@ describe("groupMaximoRows", () => {
         nominal_size: null,
         profile: null,
         lf_per_piece: 0,
-        lf_uom: "EACH",
         pieces_available: 100,
         lf_available: 0,
         last_updated: "2026-05-10T00:00:00Z",
@@ -110,7 +106,6 @@ describe("groupMaximoRows", () => {
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 16,
-        lf_uom: "LF",
         pieces_available: 1,
         lf_available: 16,
         last_updated: "2026-05-10T00:00:00Z",
@@ -122,7 +117,6 @@ describe("groupMaximoRows", () => {
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 16,
-        lf_uom: "LF",
         pieces_available: 1,
         lf_available: 16,
         last_updated: "2026-05-10T00:00:00Z",
@@ -130,36 +124,6 @@ describe("groupMaximoRows", () => {
     ];
     const result = groupMaximoRows(rows);
     expect(result.items.map(i => i.specie)).toEqual(["ANGELIM", "CUMARU"]);
-  });
-
-  it("treats lf_uom != 'LF' as non-LF stock even when lf_per_piece > 0 (tile bug)", () => {
-    // Regression: IPETILE2424 in the live view has lf_per_piece=1.0 but lf_uom='EACH'
-    // because it's a 24"x24" tile sold by piece. The Crystal formula gates lf_available
-    // to 0 in that case; our buyable-LF calculation must do the same.
-    const rows: MaximoRow[] = [
-      {
-        branch_name: "Global Boston",
-        species: "IPE",
-        category: "Hardwoods",
-        nominal_size: null,
-        profile: "IPE Decking",
-        lf_per_piece: 1,
-        lf_uom: "EACH",
-        pieces_available: 30,
-        lf_available: 0,
-        last_updated: "2026-02-12T00:00:00Z",
-      },
-    ];
-    const result = groupMaximoRows(rows);
-    expect(result.items).toHaveLength(1);
-    const it = result.items[0];
-    expect(it.totalLF).toBe(0);
-    expect(it.branches[0].totalLF).toBe(0);
-    expect(it.branches[0].lengths[0]).toEqual({
-      lengthFt: null, // not LF-tracked → no length displayed
-      pieces: 30,
-      stockLf: 0,
-    });
   });
 
   it("collects distinct categories sorted alphabetically", () => {
@@ -171,7 +135,6 @@ describe("groupMaximoRows", () => {
         nominal_size: "1x6",
         profile: "V Joint",
         lf_per_piece: 12,
-        lf_uom: "LF",
         pieces_available: 5,
         lf_available: 60,
         last_updated: "2026-05-10T00:00:00Z",
@@ -183,7 +146,6 @@ describe("groupMaximoRows", () => {
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 16,
-        lf_uom: "LF",
         pieces_available: 1,
         lf_available: 16,
         last_updated: "2026-05-10T00:00:00Z",
@@ -195,7 +157,6 @@ describe("groupMaximoRows", () => {
         nominal_size: "1x6",
         profile: "Coated",
         lf_per_piece: 10,
-        lf_uom: "LF",
         pieces_available: 2,
         lf_available: 20,
         last_updated: "2026-05-10T00:00:00Z",
@@ -228,7 +189,7 @@ describe("fetchMaximoInventory", () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
     expect(url).toContain("https://example.supabase.co/rest/v1/maximo_inventory_view");
-    expect(url).toContain("select=branch_name%2Cspecies%2Ccategory%2Cnominal_size%2Cprofile%2Clf_per_piece%2Clf_uom%2Cpieces_available%2Clf_available%2Clast_updated");
+    expect(url).toContain("select=branch_name%2Cspecies%2Ccategory%2Cnominal_size%2Cprofile%2Clf_per_piece%2Cpieces_available%2Clf_available%2Clast_updated");
     expect(url).toContain("order=branch_id.asc%2Csku.asc");
     const headers = init.headers as Record<string, string>;
     expect(headers.apikey).toBe("test-apikey");
@@ -247,7 +208,6 @@ describe("fetchMaximoInventory", () => {
       nominal_size: "2x6",
       profile: "S4S E4E",
       lf_per_piece: 16,
-      lf_uom: "LF",
       pieces_available: 1,
       lf_available: 16,
       last_updated: "2026-05-10T00:00:00Z",
@@ -290,7 +250,6 @@ describe("fetchMaximoInventory", () => {
         nominal_size: "2x6",
         profile: "S4S E4E",
         lf_per_piece: 16,
-        lf_uom: "LF",
         pieces_available: 3,
         lf_available: 48,
         last_updated: "2026-05-10T00:00:00Z",
