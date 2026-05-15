@@ -4,6 +4,8 @@
  * Handoff: f:\SKYLEV\GMX\CODEBASE 2026 GMX\ODBC\docs\operations\handoff\maximo-inventory-api.md
  */
 
+import { ENV } from "./_core/env";
+
 export interface MaximoRow {
   branch_name: string;
   species: string;
@@ -100,9 +102,9 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
 }
 
 export async function fetchMaximoInventory(): Promise<MaximoRow[]> {
-  const base = process.env.SUPABASE_INVENTORY_URL ?? "";
-  const apikey = process.env.SUPABASE_INVENTORY_APIKEY ?? "";
-  const jwt = process.env.MAXIMO_READER_JWT ?? "";
+  const base = ENV.supabaseInventoryUrl;
+  const apikey = ENV.supabaseInventoryApikey;
+  const jwt = ENV.maximoReaderJwt;
 
   if (!base || !apikey || !jwt) {
     throw new Error(

@@ -1,6 +1,6 @@
 // apps/web/server/maximoInventoryView.test.ts
-import { describe, it, expect } from "vitest";
-import { groupMaximoRows, type MaximoRow } from "./maximoInventoryView";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { groupMaximoRows, fetchMaximoInventory, type MaximoRow } from "./maximoInventoryView";
 
 describe("groupMaximoRows", () => {
   it("groups rows by (species, profile, nominal_size) across branches", () => {
@@ -114,21 +114,8 @@ describe("groupMaximoRows", () => {
   });
 });
 
-import { vi, beforeEach, afterEach } from "vitest";
-
-// Set env vars BEFORE importing fetchMaximoInventory to avoid ENV caching issues
-process.env.SUPABASE_INVENTORY_URL = "https://example.supabase.co";
-process.env.SUPABASE_INVENTORY_APIKEY = "test-apikey";
-process.env.MAXIMO_READER_JWT = "test-jwt";
-
-import { fetchMaximoInventory } from "./maximoInventoryView";
-
 describe("fetchMaximoInventory", () => {
   const originalFetch = globalThis.fetch;
-
-  beforeEach(() => {
-    // Ensure fetch is reset before each test
-  });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
