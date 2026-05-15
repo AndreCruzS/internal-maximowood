@@ -1,4 +1,4 @@
-// apps/web/server/maximoInventoryView.test.ts
+﻿// apps/web/server/maximoInventoryView.test.ts
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { groupMaximoRows, fetchMaximoInventory, type MaximoRow } from "./maximoInventoryView";
 
@@ -11,6 +11,7 @@ describe("groupMaximoRows", () => {
         category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
+        description: null,
         lf_per_piece: 16,
         pieces_available: 10,
         lf_available: 160,
@@ -22,6 +23,7 @@ describe("groupMaximoRows", () => {
         category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
+        description: null,
         lf_per_piece: 14,
         pieces_available: 5,
         lf_available: 70,
@@ -33,6 +35,7 @@ describe("groupMaximoRows", () => {
         category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
+        description: null,
         lf_per_piece: 12,
         pieces_available: 2,
         lf_available: 24,
@@ -74,6 +77,7 @@ describe("groupMaximoRows", () => {
         category: "Hardwoods",
         nominal_size: null,
         profile: null,
+        description: null,
         lf_per_piece: 0,
         pieces_available: 100,
         lf_available: 0,
@@ -105,6 +109,7 @@ describe("groupMaximoRows", () => {
         category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
+        description: null,
         lf_per_piece: 16,
         pieces_available: 1,
         lf_available: 16,
@@ -116,6 +121,7 @@ describe("groupMaximoRows", () => {
         category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
+        description: null,
         lf_per_piece: 16,
         pieces_available: 1,
         lf_available: 16,
@@ -126,6 +132,40 @@ describe("groupMaximoRows", () => {
     expect(result.items.map(i => i.specie)).toEqual(["ANGELIM", "CUMARU"]);
   });
 
+  it("derives size from description when nominal_size is empty (tiles)", () => {
+    // Real-world tile SKUs come back from the view with nominal_size = ''
+    // and the size info only in the description. Without parsing, all tile
+    // SKUs of the same species + profile collapse into one un-named group.
+    const rows: MaximoRow[] = [
+      {
+        branch_name: "Global Miami",
+        species: "IPE",
+        category: "Hardwoods",
+        nominal_size: "",
+        profile: "IPE Decking",
+        description: "Ipe Tiles 24\" x 24\"",
+        lf_per_piece: 1,
+        pieces_available: 30,
+        lf_available: 30,
+        last_updated: "2026-05-10T00:00:00Z",
+      },
+      {
+        branch_name: "Global Miami",
+        species: "IPE",
+        category: "Hardwoods",
+        nominal_size: null,
+        profile: "IPE Decking",
+        description: "Ipe Tiles 24\" x 96\"",
+        lf_per_piece: 0,
+        pieces_available: 5,
+        lf_available: 0,
+        last_updated: "2026-05-10T00:00:00Z",
+      },
+    ];
+    const result = groupMaximoRows(rows);
+    expect(result.items.map(i => i.size).sort()).toEqual(["24x24", "24x96"]);
+  });
+
   it("collects distinct categories sorted alphabetically", () => {
     const rows: MaximoRow[] = [
       {
@@ -134,6 +174,7 @@ describe("groupMaximoRows", () => {
         category: "Thermowood",
         nominal_size: "1x6",
         profile: "V Joint",
+        description: null,
         lf_per_piece: 12,
         pieces_available: 5,
         lf_available: 60,
@@ -145,6 +186,7 @@ describe("groupMaximoRows", () => {
         category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
+        description: null,
         lf_per_piece: 16,
         pieces_available: 1,
         lf_available: 16,
@@ -156,6 +198,7 @@ describe("groupMaximoRows", () => {
         category: "Accoya",
         nominal_size: "1x6",
         profile: "Coated",
+        description: null,
         lf_per_piece: 10,
         pieces_available: 2,
         lf_available: 20,
@@ -185,11 +228,12 @@ describe("fetchMaximoInventory", () => {
 
     await fetchMaximoInventory();
 
-    // Empty response → loop exits after the first page.
+    // Empty response â†’ loop exits after the first page.
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
     expect(url).toContain("https://example.supabase.co/rest/v1/maximo_inventory_view");
-    expect(url).toContain("select=branch_name%2Cspecies%2Ccategory%2Cnominal_size%2Cprofile%2Clf_per_piece%2Cpieces_available%2Clf_available%2Clast_updated");
+    expect(url).toContain("select=branch_name%2Cspecies%2Ccategory%2Cnominal_size%2Cprofile%2Cdescription%2Clf_per_piece%2Cpieces_available%2Clf_available%2Clast_updated");
+    expect(url).toContain("pieces_available=gt.0");
     expect(url).toContain("order=branch_id.asc%2Csku.asc");
     const headers = init.headers as Record<string, string>;
     expect(headers.apikey).toBe("test-apikey");
@@ -207,6 +251,7 @@ describe("fetchMaximoInventory", () => {
       category: "Hardwoods",
       nominal_size: "2x6",
       profile: "S4S E4E",
+      description: null,
       lf_per_piece: 16,
       pieces_available: 1,
       lf_available: 16,
@@ -249,6 +294,7 @@ describe("fetchMaximoInventory", () => {
         category: "Hardwoods",
         nominal_size: "2x6",
         profile: "S4S E4E",
+        description: null,
         lf_per_piece: 16,
         pieces_available: 3,
         lf_available: 48,

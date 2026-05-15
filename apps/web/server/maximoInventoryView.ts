@@ -12,10 +12,23 @@ export interface MaximoRow {
   category: string; // "Hardwoods" | "Thermowood" | "Accoya"
   nominal_size: string | null;
   profile: string | null;
+  description: string | null;
   lf_per_piece: number;
   pieces_available: number;
   lf_available: number;
   last_updated: string; // ISO timestamptz
+}
+
+/**
+ * Tile SKUs (CMTILE2424, IPETILE2424, IPEBTILE2424, etc.) come back from the
+ * view with an empty `nominal_size` — the size is only in the description
+ * field. Pull e.g. "24x24" out of "Ipe Tiles 24\" x 24\"" so tile variants
+ * don't all collapse into one un-named group.
+ */
+export function sizeFromDescription(description: string | null): string {
+  if (!description) return "";
+  const m = description.match(/(\d+(?:[\/.]\d+)?)\s*["']?\s*[xX×]\s*(\d+(?:[\/.]\d+)?)\s*["']?/);
+  return m ? `${m[1]}x${m[2]}` : "";
 }
 
 export interface LengthEntry {
@@ -57,7 +70,7 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
 
   for (const row of rows) {
     const profile = row.profile ?? "";
-    const size = row.nominal_size ?? "";
+    const size = (row.nominal_size ?? "").trim() || sizeFromDescription(row.description);
     const productKey = `${row.species}||${profile}||${size}`;
 
     let product = productMap.get(productKey);
@@ -118,7 +131,7 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
 }
 
 const SELECT_COLS =
-  "branch_name,species,category,nominal_size,profile,lf_per_piece,pieces_available,lf_available,last_updated";
+  "branch_name,species,category,nominal_size,profile,description,lf_per_piece,pieces_available,lf_available,last_updated";
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 20; // hard ceiling: 20k rows; view is ~1.4k today, plenty of headroom
 
@@ -144,6 +157,11 @@ export async function fetchMaximoInventory(): Promise<MaximoRow[]> {
 
     const qs = new URLSearchParams({
       select: SELECT_COLS,
+      // Drop fully-committed SKUs at the source — anything with 0 buyable
+      // pieces is noise for an inventory page (you can't sell it). The view
+      // already filters out non-positive on-hand, this further narrows to
+      // what's actually sellable today.
+      pieces_available: "gt.0",
       order: "branch_id.asc,sku.asc",
     }).toString();
 
