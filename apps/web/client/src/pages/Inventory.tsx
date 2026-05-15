@@ -32,6 +32,8 @@ type InventoryItem = {
 export default function Inventory() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterSpecie, setFilterSpecie] = useState("all");
+  const [filterProfile, setFilterProfile] = useState("all");
+  const [filterSize, setFilterSize] = useState("all");
   const [filterBranch, setFilterBranch] = useState("all");
   const [filterSearch, setFilterSearch] = useState("");
 
@@ -45,6 +47,8 @@ export default function Inventory() {
     return (data.items as InventoryItem[]).filter(item => {
       const matchCategory = filterCategory === "all" || item.category === filterCategory;
       const matchSpecie = filterSpecie === "all" || item.specie === filterSpecie;
+      const matchProfile = filterProfile === "all" || item.profile === filterProfile;
+      const matchSize = filterSize === "all" || item.size === filterSize;
       const search = filterSearch.toLowerCase();
       const matchSearch = !search ||
         item.specie.toLowerCase().includes(search) ||
@@ -52,9 +56,9 @@ export default function Inventory() {
         item.size.toLowerCase().includes(search);
       const matchBranch = filterBranch === "all" ||
         item.branches.some(b => b.branch === filterBranch);
-      return matchCategory && matchSpecie && matchSearch && matchBranch;
+      return matchCategory && matchSpecie && matchProfile && matchSize && matchSearch && matchBranch;
     });
-  }, [data, filterCategory, filterSpecie, filterBranch, filterSearch]);
+  }, [data, filterCategory, filterSpecie, filterProfile, filterSize, filterBranch, filterSearch]);
 
   const totalLF = useMemo(() => filtered.reduce((sum, i) => sum + i.totalLF, 0), [filtered]);
 
@@ -118,7 +122,7 @@ export default function Inventory() {
           </SelectContent>
         </Select>
         <Select value={filterSpecie} onValueChange={setFilterSpecie}>
-          <SelectTrigger className="w-full sm:w-48 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
             <SelectValue placeholder="Species" />
           </SelectTrigger>
           <SelectContent>
@@ -134,8 +138,48 @@ export default function Inventory() {
               ))}
           </SelectContent>
         </Select>
+        <Select value={filterProfile} onValueChange={setFilterProfile}>
+          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+            <SelectValue placeholder="Profile" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All profiles</SelectItem>
+            {(data?.profiles ?? [])
+              .filter((p: string) =>
+                ((data?.items as InventoryItem[] | undefined) ?? []).some(i =>
+                  i.profile === p &&
+                  (filterCategory === "all" || i.category === filterCategory) &&
+                  (filterSpecie === "all" || i.specie === filterSpecie) &&
+                  (filterSize === "all" || i.size === filterSize)
+                )
+              )
+              .map((p: string) => (
+                <SelectItem key={p} value={p}>{p}</SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterSize} onValueChange={setFilterSize}>
+          <SelectTrigger className="w-full sm:w-32 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+            <SelectValue placeholder="Size" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All sizes</SelectItem>
+            {(data?.sizes ?? [])
+              .filter((sz: string) =>
+                ((data?.items as InventoryItem[] | undefined) ?? []).some(i =>
+                  i.size === sz &&
+                  (filterCategory === "all" || i.category === filterCategory) &&
+                  (filterSpecie === "all" || i.specie === filterSpecie) &&
+                  (filterProfile === "all" || i.profile === filterProfile)
+                )
+              )
+              .map((sz: string) => (
+                <SelectItem key={sz} value={sz}>{sz}</SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
         <Select value={filterBranch} onValueChange={setFilterBranch}>
-          <SelectTrigger className="w-full sm:w-48 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
             <SelectValue placeholder="Location" />
           </SelectTrigger>
           <SelectContent>

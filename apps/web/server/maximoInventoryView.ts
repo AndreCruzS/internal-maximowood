@@ -43,6 +43,8 @@ export interface GroupedInventory {
   items: InventoryItem[];
   species: string[];
   categories: string[];
+  profiles: string[];
+  sizes: string[];
   branches: string[];
   lastUpdated: Date | null;
 }
@@ -107,10 +109,12 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
 
   const species = Array.from(new Set(items.map(i => i.specie))).sort();
   const categories = Array.from(categorySet).sort();
+  const profiles = Array.from(new Set(items.map(i => i.profile).filter(Boolean))).sort();
+  const sizes = Array.from(new Set(items.map(i => i.size).filter(Boolean))).sort();
   const branches = Array.from(branchSet).sort();
   const lastUpdated = maxUpdated === null ? null : new Date(maxUpdated);
 
-  return { items, species, categories, branches, lastUpdated };
+  return { items, species, categories, profiles, sizes, branches, lastUpdated };
 }
 
 const SELECT_COLS =

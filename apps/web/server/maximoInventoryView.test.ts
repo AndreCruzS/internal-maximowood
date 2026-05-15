@@ -60,6 +60,8 @@ describe("groupMaximoRows", () => {
     expect(result.species).toEqual(["IPE"]);
     expect(result.branches).toEqual(["Global Miami", "Global NY"]);
     expect(result.categories).toEqual(["Hardwoods"]);
+    expect(result.profiles).toEqual(["S4S E4E"]);
+    expect(result.sizes).toEqual(["2x6"]);
     expect(result.items[0].category).toBe("Hardwoods");
     expect(result.lastUpdated).toEqual(new Date("2026-05-11T00:00:00Z"));
   });
@@ -89,6 +91,8 @@ describe("groupMaximoRows", () => {
     expect(result.items).toEqual([]);
     expect(result.species).toEqual([]);
     expect(result.categories).toEqual([]);
+    expect(result.profiles).toEqual([]);
+    expect(result.sizes).toEqual([]);
     expect(result.branches).toEqual([]);
     expect(result.lastUpdated).toBeNull();
   });
