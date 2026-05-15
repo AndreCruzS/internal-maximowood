@@ -102,7 +102,7 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
 }
 
 export async function fetchMaximoInventory(): Promise<MaximoRow[]> {
-  const base = ENV.supabaseInventoryUrl;
+  const base = ENV.supabaseInventoryUrl.replace(/\/$/, "");
   const apikey = ENV.supabaseInventoryApikey;
   const jwt = ENV.maximoReaderJwt;
 
