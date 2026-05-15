@@ -171,7 +171,7 @@ describe("fetchMaximoInventory", () => {
     vi.restoreAllMocks();
   });
 
-  it("calls the view with both apikey and Bearer headers", async () => {
+  it("calls the view with apikey, Bearer, and Range headers + stable ordering", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -181,15 +181,48 @@ describe("fetchMaximoInventory", () => {
 
     await fetchMaximoInventory();
 
+    // Empty response → loop exits after the first page.
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
     expect(url).toContain("https://example.supabase.co/rest/v1/maximo_inventory_view");
     expect(url).toContain("select=branch_name%2Cspecies%2Ccategory%2Cnominal_size%2Cprofile%2Clf_per_piece%2Cpieces_available%2Clf_available%2Clast_updated");
-    expect(url).toContain("limit=2000");
+    expect(url).toContain("order=branch_id.asc%2Csku.asc");
     const headers = init.headers as Record<string, string>;
     expect(headers.apikey).toBe("test-apikey");
     expect(headers.Authorization).toBe("Bearer test-jwt");
     expect(headers.Accept).toBe("application/json");
+    expect(headers["Range-Unit"]).toBe("items");
+    expect(headers.Range).toBe("0-999");
+  });
+
+  it("pages through Range when a full page comes back", async () => {
+    // Build a full-page (1000) result for the first call, then a short page to terminate.
+    const fullPage: MaximoRow[] = Array.from({ length: 1000 }, (_, i) => ({
+      branch_name: "Global Miami",
+      species: "IPE",
+      category: "Hardwoods",
+      nominal_size: "2x6",
+      profile: "S4S E4E",
+      lf_per_piece: 16,
+      pieces_available: 1,
+      lf_available: 16,
+      last_updated: "2026-05-10T00:00:00Z",
+    }));
+    const shortPage: MaximoRow[] = fullPage.slice(0, 5);
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, status: 206, json: async () => fullPage })
+      .mockResolvedValueOnce({ ok: true, status: 206, json: async () => shortPage });
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+    const rows = await fetchMaximoInventory();
+
+    expect(rows).toHaveLength(1005);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const range0 = (mockFetch.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    const range1 = (mockFetch.mock.calls[1][1] as RequestInit).headers as Record<string, string>;
+    expect(range0.Range).toBe("0-999");
+    expect(range1.Range).toBe("1000-1999");
   });
 
   it("throws with status + body when the view returns non-2xx", async () => {

@@ -113,6 +113,11 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
   return { items, species, categories, branches, lastUpdated };
 }
 
+const SELECT_COLS =
+  "branch_name,species,category,nominal_size,profile,lf_per_piece,pieces_available,lf_available,last_updated";
+const PAGE_SIZE = 1000;
+const MAX_PAGES = 20; // hard ceiling: 20k rows; view is ~1.4k today, plenty of headroom
+
 export async function fetchMaximoInventory(): Promise<MaximoRow[]> {
   const base = ENV.supabaseInventoryUrl.replace(/\/$/, "");
   const apikey = ENV.supabaseInventoryApikey;
@@ -124,23 +129,41 @@ export async function fetchMaximoInventory(): Promise<MaximoRow[]> {
     );
   }
 
-  const qs = new URLSearchParams({
-    select: "branch_name,species,category,nominal_size,profile,lf_per_piece,pieces_available,lf_available,last_updated",
-    limit: "2000",
-  }).toString();
+  // PostgREST caps responses at its db-max-rows (1000 by default on this project)
+  // and ignores `limit` above the cap. Page with Range until exhausted, sorted by
+  // a stable key so each page is a deterministic slice (no row drops or dupes
+  // between pages even when the underlying view refreshes mid-pagination).
+  const all: MaximoRow[] = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
 
-  const res = await fetch(`${base}/rest/v1/maximo_inventory_view?${qs}`, {
-    headers: {
-      apikey,
-      Authorization: `Bearer ${jwt}`,
-      Accept: "application/json",
-    },
-  });
+    const qs = new URLSearchParams({
+      select: SELECT_COLS,
+      order: "branch_id.asc,sku.asc",
+    }).toString();
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Maximo inventory view ${res.status}: ${body}`);
+    const res = await fetch(`${base}/rest/v1/maximo_inventory_view?${qs}`, {
+      headers: {
+        apikey,
+        Authorization: `Bearer ${jwt}`,
+        Accept: "application/json",
+        "Range-Unit": "items",
+        Range: `${from}-${to}`,
+      },
+    });
+
+    if (!res.ok && res.status !== 206) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Maximo inventory view ${res.status}: ${body}`);
+    }
+
+    const chunk = (await res.json()) as MaximoRow[];
+    all.push(...chunk);
+
+    // Done when the server returned fewer rows than the page size.
+    if (chunk.length < PAGE_SIZE) break;
   }
 
-  return (await res.json()) as MaximoRow[];
+  return all;
 }
