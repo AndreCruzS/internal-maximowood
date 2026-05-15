@@ -13,6 +13,7 @@ export interface MaximoRow {
   nominal_size: string | null;
   profile: string | null;
   lf_per_piece: number;
+  lf_uom: string; // "LF" → length-tracked lumber; anything else (EACH/PC/…) → tiles or piece stock
   pieces_available: number;
   lf_available: number;
   last_updated: string; // ISO timestamptz
@@ -81,11 +82,14 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
 
     // LF shown to the user is the *buyable* LF (lf_per_piece × pieces_available),
     // not the view's lf_available which is on-hand-based and double-counts
-    // committed stock. Keeps pieces × length = LF self-consistent.
-    const buyableLf = row.lf_per_piece > 0 ? row.lf_per_piece * row.pieces_available : 0;
+    // committed stock. We gate on lf_uom='LF' to match the Crystal Reports
+    // formula — without that gate, tile SKUs like IPETILE2424 (24"×24" tile
+    // with lf_per_piece=1 but lf_uom=EACH) would falsely contribute LF.
+    const isLfTracked = row.lf_uom === "LF" && row.lf_per_piece > 0;
+    const buyableLf = isLfTracked ? row.lf_per_piece * row.pieces_available : 0;
 
     branch.lengths.push({
-      lengthFt: row.lf_per_piece > 0 ? row.lf_per_piece : null,
+      lengthFt: isLfTracked ? row.lf_per_piece : null,
       pieces: row.pieces_available,
       stockLf: buyableLf,
     });
@@ -118,7 +122,7 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
 }
 
 const SELECT_COLS =
-  "branch_name,species,category,nominal_size,profile,lf_per_piece,pieces_available,lf_available,last_updated";
+  "branch_name,species,category,nominal_size,profile,lf_per_piece,lf_uom,pieces_available,lf_available,last_updated";
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 20; // hard ceiling: 20k rows; view is ~1.4k today, plenty of headroom
 
