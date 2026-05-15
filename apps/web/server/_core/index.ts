@@ -1,4 +1,4 @@
-import "./loadEnv";
+import "./bootstrap"; // populate process.env from .env.local before any downstream env capture
 import express from "express";
 import { createServer } from "http";
 import net from "net";
