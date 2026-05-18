@@ -60,7 +60,15 @@ export default function Inventory() {
     });
   }, [data, filterCategory, filterSpecie, filterProfile, filterSize, filterBranch, filterSearch]);
 
-  const totalLF = useMemo(() => filtered.reduce((sum, i) => sum + i.totalLF, 0), [filtered]);
+  const totalLF = useMemo(
+    () =>
+      filtered.reduce((sum, i) => {
+        if (filterBranch === "all") return sum + i.totalLF;
+        const b = i.branches.find(br => br.branch === filterBranch);
+        return sum + (b?.totalLF ?? 0);
+      }, 0),
+    [filtered, filterBranch],
+  );
 
   const isSyncing = isFetching;
   const source = data?.source;
