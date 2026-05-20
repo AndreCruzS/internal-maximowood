@@ -189,7 +189,7 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
 }
 
 const SELECT_COLS =
-  "branch_name,species,category,nominal_size,profile,description,lf_per_piece,pieces_available,lf_available,last_updated";
+  "branch_name,species,category,nominal_size,profile,description,lf_per_piece,pieces_available,lf_available,last_updated,specie,model,profile_finish,size,length_ft,lf,is_unmapped";
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 20; // hard ceiling: 20k rows; view is ~1.4k today, plenty of headroom
 

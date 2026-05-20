@@ -466,7 +466,7 @@ describe("fetchMaximoInventory", () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
     expect(url).toContain("https://example.supabase.co/rest/v1/maximo_inventory_view");
-    expect(url).toContain("select=branch_name%2Cspecies%2Ccategory%2Cnominal_size%2Cprofile%2Cdescription%2Clf_per_piece%2Cpieces_available%2Clf_available%2Clast_updated");
+    expect(url).toContain("select=branch_name%2Cspecies%2Ccategory%2Cnominal_size%2Cprofile%2Cdescription%2Clf_per_piece%2Cpieces_available%2Clf_available%2Clast_updated%2Cspecie%2Cmodel%2Cprofile_finish%2Csize%2Clength_ft%2Clf%2Cis_unmapped");
     expect(url).toContain("pieces_available=gt.0");
     expect(url).toContain("order=branch_id.asc%2Csku.asc");
     const headers = init.headers as Record<string, string>;
