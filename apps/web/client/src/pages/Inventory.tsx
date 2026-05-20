@@ -23,15 +23,18 @@ type BranchStock = {
 type InventoryItem = {
   specie: string;
   category: string;
+  model: string;
   profile: string;
   size: string;
   branches: BranchStock[];
   totalLF: number;
+  isUnmapped: boolean;
 };
 
 export default function Inventory() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterSpecie, setFilterSpecie] = useState("all");
+  const [filterModel, setFilterModel] = useState("all");
   const [filterProfile, setFilterProfile] = useState("all");
   const [filterSize, setFilterSize] = useState("all");
   const [filterBranch, setFilterBranch] = useState("all");
@@ -47,18 +50,20 @@ export default function Inventory() {
     return (data.items as InventoryItem[]).filter(item => {
       const matchCategory = filterCategory === "all" || item.category === filterCategory;
       const matchSpecie = filterSpecie === "all" || item.specie === filterSpecie;
+      const matchModel = filterModel === "all" || item.model === filterModel;
       const matchProfile = filterProfile === "all" || item.profile === filterProfile;
       const matchSize = filterSize === "all" || item.size === filterSize;
       const search = filterSearch.toLowerCase();
       const matchSearch = !search ||
         item.specie.toLowerCase().includes(search) ||
+        item.model.toLowerCase().includes(search) ||
         item.profile.toLowerCase().includes(search) ||
         item.size.toLowerCase().includes(search);
       const matchBranch = filterBranch === "all" ||
         item.branches.some(b => b.branch === filterBranch);
-      return matchCategory && matchSpecie && matchProfile && matchSize && matchSearch && matchBranch;
+      return matchCategory && matchSpecie && matchModel && matchProfile && matchSize && matchSearch && matchBranch;
     });
-  }, [data, filterCategory, filterSpecie, filterProfile, filterSize, filterBranch, filterSearch]);
+  }, [data, filterCategory, filterSpecie, filterModel, filterProfile, filterSize, filterBranch, filterSearch]);
 
   const totalLF = useMemo(
     () =>
@@ -146,6 +151,25 @@ export default function Inventory() {
               ))}
           </SelectContent>
         </Select>
+        <Select value={filterModel} onValueChange={setFilterModel}>
+          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+            <SelectValue placeholder="Model" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All models</SelectItem>
+            {(data?.models ?? [])
+              .filter((m: string) =>
+                ((data?.items as InventoryItem[] | undefined) ?? []).some(i =>
+                  i.model === m &&
+                  (filterCategory === "all" || i.category === filterCategory) &&
+                  (filterSpecie === "all" || i.specie === filterSpecie)
+                )
+              )
+              .map((m: string) => (
+                <SelectItem key={m} value={m}>{m}</SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
         <Select value={filterProfile} onValueChange={setFilterProfile}>
           <SelectTrigger className="w-full sm:w-44 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
             <SelectValue placeholder="Profile" />
@@ -158,6 +182,7 @@ export default function Inventory() {
                   i.profile === p &&
                   (filterCategory === "all" || i.category === filterCategory) &&
                   (filterSpecie === "all" || i.specie === filterSpecie) &&
+                  (filterModel === "all" || i.model === filterModel) &&
                   (filterSize === "all" || i.size === filterSize)
                 )
               )
@@ -178,6 +203,7 @@ export default function Inventory() {
                   i.size === sz &&
                   (filterCategory === "all" || i.category === filterCategory) &&
                   (filterSpecie === "all" || i.specie === filterSpecie) &&
+                  (filterModel === "all" || i.model === filterModel) &&
                   (filterProfile === "all" || i.profile === filterProfile)
                 )
               )
@@ -276,6 +302,20 @@ export default function Inventory() {
                 <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-[#E8E5DC] bg-[#FAFAF7]">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-black text-sm text-[#1A1A1A]">{item.specie}</span>
+                    {item.isUnmapped && (
+                      <span
+                        title="Not in dictionary — showing raw Spruce fields"
+                        className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-100 text-amber-700"
+                      >
+                        ⚠ unmapped
+                      </span>
+                    )}
+                    {item.model && (
+                      <>
+                        <span className="text-[#ccc]">·</span>
+                        <span className="text-sm text-[#555]">{item.model}</span>
+                      </>
+                    )}
                     {item.profile && (
                       <>
                         <span className="text-[#ccc]">·</span>
