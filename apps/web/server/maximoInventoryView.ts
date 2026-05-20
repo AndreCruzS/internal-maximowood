@@ -17,6 +17,14 @@ export interface MaximoRow {
   pieces_available: number;
   lf_available: number;
   last_updated: string; // ISO timestamptz
+  // Curated-dictionary columns (GMX `Base SKUs`). Null/absent for unmapped SKUs.
+  specie?: string | null;
+  model?: string | null;
+  profile_finish?: string | null;
+  size?: string | null;
+  length_ft?: number | null;
+  lf?: number | null;
+  is_unmapped?: boolean | null;
 }
 
 /**
@@ -62,16 +70,19 @@ export interface BranchStock {
 export interface InventoryItem {
   specie: string;
   category: string;
+  model: string;
   profile: string;
   size: string;
   branches: BranchStock[];
   totalLF: number;
+  isUnmapped: boolean;
 }
 
 export interface GroupedInventory {
   items: InventoryItem[];
   species: string[];
   categories: string[];
+  models: string[];
   profiles: string[];
   sizes: string[];
   branches: string[];
@@ -85,21 +96,54 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
   let maxUpdated: number | null = null;
 
   for (const row of rows) {
-    const profile = row.profile ?? "";
-    const size = (row.nominal_size ?? "").trim() || sizeFromDescription(row.description);
-    const productKey = `${row.species}||${profile}||${size}`;
+    const isUnmapped = row.is_unmapped === true;
+
+    // Resolve each grouping/display field: prefer the curated dictionary
+    // column, fall back to the raw view column (and the legacy description
+    // parsers) for SKUs not yet in the dictionary so nothing disappears.
+    const specie = (row.specie ?? "").trim() || row.species;
+    const model = (row.model ?? "").trim();
+    const profile = (row.profile_finish ?? "").trim() || (row.profile ?? "");
+    const size =
+      (row.size ?? "").trim() ||
+      (row.nominal_size ?? "").trim() ||
+      sizeFromDescription(row.description);
+
+    // Per-piece length: dictionary `length_ft`, else Spruce's `lf_per_piece`,
+    // else parsed from the description (beams whose LFBFLength is empty).
+    const lengthFt =
+      row.length_ft != null && row.length_ft > 0
+        ? row.length_ft
+        : row.lf_per_piece > 0
+        ? row.lf_per_piece
+        : lengthFromDescription(row.description) || null;
+
+    // Buyable LF: the view's pre-computed `lf` (available net of committed;
+    // tiles = pieces) when present, else compute it from the resolved length.
+    const buyableLf =
+      row.lf != null
+        ? row.lf
+        : lengthFt != null
+        ? lengthFt * row.pieces_available
+        : 0;
+
+    const productKey = `${specie}||${model}||${profile}||${size}`;
 
     let product = productMap.get(productKey);
     if (!product) {
       product = {
-        specie: row.species,
+        specie,
         category: row.category,
+        model,
         profile,
         size,
         branches: [],
         totalLF: 0,
+        isUnmapped,
       };
       productMap.set(productKey, product);
+    } else if (isUnmapped) {
+      product.isUnmapped = true; // any unmapped contributor flags the product
     }
 
     let branch = product.branches.find(b => b.branch === row.branch_name);
@@ -108,19 +152,8 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
       product.branches.push(branch);
     }
 
-    // LF shown to the user is the *buyable* LF (lf_per_piece × pieces_available),
-    // not the view's lf_available which is on-hand-based and double-counts
-    // committed stock. Keeps pieces × length = LF self-consistent. When the
-    // view's lf_per_piece is 0 but the description encodes a length (e.g.
-    // "Cumaru 6x8x16'"), fall back to the parsed length so the row isn't
-    // wrongly classified as untracked tile stock.
-    const lfPerPiece = row.lf_per_piece > 0
-      ? row.lf_per_piece
-      : lengthFromDescription(row.description);
-    const buyableLf = lfPerPiece > 0 ? lfPerPiece * row.pieces_available : 0;
-
     branch.lengths.push({
-      lengthFt: lfPerPiece > 0 ? lfPerPiece : null,
+      lengthFt,
       pieces: row.pieces_available,
       stockLf: buyableLf,
     });
@@ -138,18 +171,20 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
 
   const items = Array.from(productMap.values()).sort((a, b) =>
     a.specie.localeCompare(b.specie) ||
+    a.model.localeCompare(b.model) ||
     a.profile.localeCompare(b.profile) ||
     a.size.localeCompare(b.size)
   );
 
   const species = Array.from(new Set(items.map(i => i.specie))).sort();
   const categories = Array.from(categorySet).sort();
+  const models = Array.from(new Set(items.map(i => i.model).filter(Boolean))).sort();
   const profiles = Array.from(new Set(items.map(i => i.profile).filter(Boolean))).sort();
   const sizes = Array.from(new Set(items.map(i => i.size).filter(Boolean))).sort();
   const branches = Array.from(branchSet).sort();
   const lastUpdated = maxUpdated === null ? null : new Date(maxUpdated);
 
-  return { items, species, categories, profiles, sizes, branches, lastUpdated };
+  return { items, species, categories, models, profiles, sizes, branches, lastUpdated };
 }
 
 const SELECT_COLS =

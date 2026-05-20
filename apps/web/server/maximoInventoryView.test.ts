@@ -266,6 +266,133 @@ describe("groupMaximoRows", () => {
     const result = groupMaximoRows(rows);
     expect(result.categories).toEqual(["Accoya", "Hardwoods", "Thermowood"]);
   });
+
+  it("groups by dictionary fields and sources LF from the view's lf column", () => {
+    const rows: MaximoRow[] = [
+      {
+        branch_name: "Global Texas",
+        species: "Thermo Ayous",
+        category: "Thermowood",
+        nominal_size: "1x6",
+        profile: "S4S",
+        description: null,
+        lf_per_piece: 14,
+        pieces_available: 160,
+        lf_available: 2240,
+        last_updated: "2026-05-10T00:00:00Z",
+        specie: "Maximo Thermo Ayous",
+        model: "Alfa Profile",
+        profile_finish: "Groco Matte",
+        size: "1x6",
+        length_ft: 14,
+        lf: 2240,
+        is_unmapped: false,
+      },
+      {
+        branch_name: "Global Texas",
+        species: "Thermo Ayous",
+        category: "Thermowood",
+        nominal_size: "1x6",
+        profile: "S4S",
+        description: null,
+        lf_per_piece: 16,
+        pieces_available: 228,
+        lf_available: 3648,
+        last_updated: "2026-05-11T00:00:00Z",
+        specie: "Maximo Thermo Ayous",
+        model: "Alfa Profile",
+        profile_finish: "Groco Matte",
+        size: "1x6",
+        length_ft: 16,
+        lf: 3648,
+        is_unmapped: false,
+      },
+    ];
+
+    const result = groupMaximoRows(rows);
+
+    expect(result.items).toHaveLength(1);
+    const item = result.items[0];
+    expect(item.specie).toBe("Maximo Thermo Ayous");
+    expect(item.model).toBe("Alfa Profile");
+    expect(item.profile).toBe("Groco Matte");
+    expect(item.size).toBe("1x6");
+    expect(item.isUnmapped).toBe(false);
+    expect(item.totalLF).toBe(5888); // 2240 + 3648, taken straight from `lf`
+    expect(item.branches[0].lengths).toEqual([
+      { lengthFt: 14, pieces: 160, stockLf: 2240 },
+      { lengthFt: 16, pieces: 228, stockLf: 3648 },
+    ]);
+    expect(result.models).toEqual(["Alfa Profile"]);
+  });
+
+  it("falls back to raw fields and flags isUnmapped when dictionary columns are null", () => {
+    const rows: MaximoRow[] = [
+      {
+        branch_name: "Global Miami",
+        species: "IPE",
+        category: "Hardwoods",
+        nominal_size: "2x6",
+        profile: "S4S E4E",
+        description: null,
+        lf_per_piece: 16,
+        pieces_available: 10,
+        lf_available: 160,
+        last_updated: "2026-05-10T00:00:00Z",
+        specie: null,
+        model: null,
+        profile_finish: null,
+        size: null,
+        length_ft: null,
+        lf: null,
+        is_unmapped: true,
+      },
+    ];
+
+    const result = groupMaximoRows(rows);
+    const item = result.items[0];
+    expect(item.specie).toBe("IPE");      // fell back to species
+    expect(item.model).toBe("");
+    expect(item.profile).toBe("S4S E4E"); // fell back to profile
+    expect(item.size).toBe("2x6");        // fell back to nominal_size
+    expect(item.isUnmapped).toBe(true);
+    expect(item.totalLF).toBe(160);       // computed 16 × 10 because `lf` was null
+    expect(item.branches[0].lengths).toEqual([
+      { lengthFt: 16, pieces: 10, stockLf: 160 },
+    ]);
+    expect(result.models).toEqual([]);    // empty model filtered out
+  });
+
+  it("uses the view's lf for mapped tiles (lf = pieces, length null)", () => {
+    const rows: MaximoRow[] = [
+      {
+        branch_name: "Global Miami",
+        species: "IPE",
+        category: "Hardwoods",
+        nominal_size: "",
+        profile: "IPE Decking",
+        description: 'Ipe Tiles 24" x 24"',
+        lf_per_piece: 0,
+        pieces_available: 30,
+        lf_available: 30,
+        last_updated: "2026-05-10T00:00:00Z",
+        specie: "IpeB",
+        model: "Tile",
+        profile_finish: "Brushed",
+        size: "24x24",
+        length_ft: null,
+        lf: 30,
+        is_unmapped: false,
+      },
+    ];
+    const result = groupMaximoRows(rows);
+    const item = result.items[0];
+    expect(item.size).toBe("24x24");
+    expect(item.totalLF).toBe(30); // straight from `lf` (tiles convention)
+    expect(item.branches[0].lengths).toEqual([
+      { lengthFt: null, pieces: 30, stockLf: 30 },
+    ]);
+  });
 });
 
 describe("fetchMaximoInventory", () => {
