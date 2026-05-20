@@ -117,7 +117,7 @@ export default function Inventory() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#aaa]" />
           <Input
-            placeholder="Search by species, profile or size..."
+            placeholder="Search by species, model, profile or size..."
             value={filterSearch}
             onChange={e => setFilterSearch(e.target.value)}
             className="pl-9 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]"
