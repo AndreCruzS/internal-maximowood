@@ -18,7 +18,7 @@ export interface MaximoRow {
   lf_available: number;
   last_updated: string; // ISO timestamptz
   // Curated-dictionary columns (GMX `Base SKUs`). Null/absent for unmapped SKUs.
-  specie?: string | null;
+  specie?: string | null; // GMX dictionary column (singular is the actual column name; distinct from raw `species`)
   model?: string | null;
   profile_finish?: string | null;
   size?: string | null;
@@ -111,6 +111,7 @@ export function groupMaximoRows(rows: MaximoRow[]): GroupedInventory {
 
     // Per-piece length: dictionary `length_ft`, else Spruce's `lf_per_piece`,
     // else parsed from the description (beams whose LFBFLength is empty).
+    // length_ft <= 0 is treated as absent (nonsensical for real lumber; tiles use 0/null).
     const lengthFt =
       row.length_ft != null && row.length_ft > 0
         ? row.length_ft

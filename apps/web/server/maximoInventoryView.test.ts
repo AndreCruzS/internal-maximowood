@@ -95,13 +95,14 @@ describe("groupMaximoRows", () => {
     expect(result.items).toEqual([]);
     expect(result.species).toEqual([]);
     expect(result.categories).toEqual([]);
+    expect(result.models).toEqual([]);
     expect(result.profiles).toEqual([]);
     expect(result.sizes).toEqual([]);
     expect(result.branches).toEqual([]);
     expect(result.lastUpdated).toBeNull();
   });
 
-  it("sorts items by species, then profile, then size", () => {
+  it("sorts items by specie, then model, then profile, then size", () => {
     const rows: MaximoRow[] = [
       {
         branch_name: "Global Miami",
@@ -392,6 +393,54 @@ describe("groupMaximoRows", () => {
     expect(item.branches[0].lengths).toEqual([
       { lengthFt: null, pieces: 30, stockLf: 30 },
     ]);
+  });
+
+  it("flags the product as unmapped when any contributing row is unmapped", () => {
+    // Two rows that resolve to the SAME product key (IPE || (no model) || S4S || 2x6):
+    // one mapped, one unmapped. The product must end up flagged unmapped.
+    const rows: MaximoRow[] = [
+      {
+        branch_name: "Global Miami",
+        species: "IPE",
+        category: "Hardwoods",
+        nominal_size: "2x6",
+        profile: "S4S",
+        description: null,
+        lf_per_piece: 16,
+        pieces_available: 10,
+        lf_available: 160,
+        last_updated: "2026-05-10T00:00:00Z",
+        specie: "IPE",
+        model: "",
+        profile_finish: "S4S",
+        size: "2x6",
+        length_ft: 16,
+        lf: 160,
+        is_unmapped: false,
+      },
+      {
+        branch_name: "Global NY",
+        species: "IPE",
+        category: "Hardwoods",
+        nominal_size: "2x6",
+        profile: "S4S",
+        description: null,
+        lf_per_piece: 16,
+        pieces_available: 5,
+        lf_available: 80,
+        last_updated: "2026-05-10T00:00:00Z",
+        specie: null,
+        model: null,
+        profile_finish: null,
+        size: null,
+        length_ft: null,
+        lf: null,
+        is_unmapped: true,
+      },
+    ];
+    const result = groupMaximoRows(rows);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].isUnmapped).toBe(true);
   });
 });
 
