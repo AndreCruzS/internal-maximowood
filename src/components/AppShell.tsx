@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Calculator, Package, Tag, Building2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LogOut, Calculator, Package, Tag, Building2, Users } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 
 const LOGO_THERMO = "/logos/logo-thermo-black.webp";
@@ -14,9 +15,27 @@ const TABS = [
   { href: "/b2b", label: "B2B", icon: <Building2 className="w-4 h-4" /> },
 ];
 
+const ADMIN_TAB = { href: "/admin", label: "Logins", icon: <Users className="w-4 h-4" /> };
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/admin/session", { credentials: "include" })
+      .then(r => (r.ok ? r.json() : { isAdmin: false }))
+      .then(d => {
+        if (active) setIsAdmin(Boolean(d.isAdmin));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [pathname]);
+
+  const tabs = isAdmin ? [...TABS, ADMIN_TAB] : TABS;
 
   const logout = async () => {
     const supabase = getSupabase();
@@ -42,7 +61,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Navigation tabs */}
           <nav className="flex items-center gap-1 rounded-lg p-1" style={{ background: "rgba(255,255,255,0.08)" }}>
-            {TABS.map(tab => {
+            {tabs.map(tab => {
               const active = pathname === tab.href;
               return (
                 <Link

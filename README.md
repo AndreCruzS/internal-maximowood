@@ -23,13 +23,26 @@ Originally built on the Manus platform (Vite + Express + tRPC); migrated to **Ne
 | `/inventory` | Live inventory by product/branch with per-SKU lengths |
 | `/pricing` | Full price list, all 6 tiers + promo scenarios |
 | `/login` | Supabase Auth sign-in (email + password) |
+| `/admin` | Admin-only — create & manage team logins (see Auth below) |
 | `/api/inventory` | GET — live grouped inventory (legacy `inventory.getAll`) |
 | `/api/pricing` | GET — parsed price sheet, all 3 tabs (legacy `pricing.getAll`) |
 | `/api/cron/inventory-sync` | Vercel Cron, daily 11:00 UTC (legacy nightly sync) |
+| `/api/admin/users` `·/[id]` | Admin-only — list / create / reset-password / delete auth users |
 
 ## Auth
 
-**Supabase Auth (email + password)** via `@supabase/ssr`; `src/middleware.ts` gates every page and API route on the Supabase session. Users are managed in Supabase Dashboard → Authentication → Users: currently a single shared team account (same everyone-knows-it password as on Manus); individual accounts can be added later with no code change. With Supabase unconfigured the app fails closed (only `/login` is reachable).
+**Supabase Auth (email + password)** via `@supabase/ssr`; `src/middleware.ts` gates every page and API route on the Supabase session. With Supabase unconfigured the app fails closed (only `/login` is reachable).
+
+### Admin panel — `/admin`
+
+Admins can create and manage team logins in-app instead of touching Supabase directly:
+
+- **Who is an admin:** email listed in `CALCULATOR_ADMIN_EMAILS` (comma-separated), or a Supabase user with `app_metadata.role = "admin"`. The nav shows a **Logins** tab for admins; `/admin` redirects everyone else home.
+- **Create login:** enter an email (+ optional name) → a temp password is generated and shown **once**. The user signs in immediately (email pre-confirmed); share/reset the password as needed.
+- **Also:** list all logins (with last sign-in), reset a password, delete a login.
+- **Requires:** `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (already set for the inventory sync). All `/api/admin/*` routes re-check the session and the admin allowlist server-side.
+
+You can still manage users by hand in Supabase Dashboard → Authentication → Users.
 
 ## Development
 
