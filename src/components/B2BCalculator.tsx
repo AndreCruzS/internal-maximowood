@@ -40,6 +40,8 @@ import {
   Ruler,
 } from "lucide-react";
 import QuoteModal, { type QuoteCartItem } from "@/components/QuoteModal";
+import SavedQuoteBanner from "@/components/SavedQuoteBanner";
+import { useSavedQuote } from "@/hooks/useSavedQuote";
 import type { QuoteLineItem } from "@/lib/generateQuotePDF";
 import { usePricing } from "@/lib/api";
 // PricingRow type inline (matches server/pricingRouter.ts)
@@ -274,7 +276,7 @@ function MetricCard({
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function B2BCalculator() {
+export default function B2BCalculator({ quoteId = null }: { quoteId?: string | null }) {
   // Tier toggle
   const [tier, setTier] = useState<B2BTier>("distributor");
 
@@ -330,6 +332,9 @@ export default function B2BCalculator() {
   const [error, setError] = useState("");
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  // Saved quote being edited (opened from Profile via ?quote=<id>)
+  const quote = useSavedQuote(quoteId, q => setCartItems(q.items));
 
   // Fetch pricing data from Google Sheet
   const { data: pricingRows, isLoading: pricingLoading } = usePricing();
@@ -538,6 +543,7 @@ export default function B2BCalculator() {
   const handleReset = () => {
     handleResetForm();
     setCartItems([]);
+    quote.detach();
   };
 
   const primaryLineItem: QuoteLineItem | null =
@@ -1035,6 +1041,13 @@ export default function B2BCalculator() {
         {/* ── Right: Results + Cart ── */}
         <div className="lg:col-span-1 space-y-4">
 
+          <SavedQuoteBanner
+            savedQuote={quote.savedQuote}
+            loading={quote.loading}
+            loadError={quote.loadError}
+            onStartNew={handleReset}
+          />
+
           {/* ── Quote Cart ── */}
           {cartItems.length > 0 && (
             <div className="bg-white rounded-xl border-2 overflow-hidden" style={{ borderColor: tierColor }}>
@@ -1051,7 +1064,7 @@ export default function B2BCalculator() {
                   style={{ background: GOLD }}
                 >
                   <FileText className="w-3.5 h-3.5" />
-                  Generate PDF
+                  {quote.savedQuote ? "Update Quote" : "Generate PDF"}
                 </button>
               </div>
               <div className="divide-y divide-[#F0EDE4]">
@@ -1273,9 +1286,14 @@ export default function B2BCalculator() {
       {/* Quote Modal */}
       {canOpenQuote && (
         <QuoteModal
+          key={quote.savedQuote?.id ?? "new"}
           open={quoteOpen}
           onClose={() => setQuoteOpen(false)}
           items={quoteItems}
+          calculator="b2b"
+          savedQuote={quote.savedQuote}
+          onSaved={quote.markSaved}
+          onItemsChange={setCartItems}
         />
       )}
     </div>

@@ -194,8 +194,9 @@ const MAX_PAGES = 20; // hard ceiling: 20k rows; view is ~1.4k today, plenty of 
 
 export async function fetchMaximoInventory(): Promise<MaximoRow[]> {
   const base = (process.env.SUPABASE_INVENTORY_URL ?? "").replace(/\/$/, "");
-  const apikey = process.env.SUPABASE_INVENTORY_ANON_KEY ?? "";
-  const jwt = process.env.SUPABASE_INVENTORY_JWT ?? "";
+  // Older environments use SUPABASE_INVENTORY_APIKEY / MAXIMO_READER_JWT.
+  const apikey = process.env.SUPABASE_INVENTORY_ANON_KEY || process.env.SUPABASE_INVENTORY_APIKEY || "";
+  const jwt = process.env.SUPABASE_INVENTORY_JWT || process.env.MAXIMO_READER_JWT || "";
 
   if (!base || !apikey || !jwt) {
     throw new Error(

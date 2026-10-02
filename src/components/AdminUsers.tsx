@@ -164,9 +164,9 @@ export default function AdminUsers() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black" style={{ color: DARK, fontFamily: "'Anybody', sans-serif" }}>
+          <h2 className="text-xl font-black" style={{ color: DARK, fontFamily: "'Anybody', sans-serif" }}>
             Team Logins
-          </h1>
+          </h2>
           <p className="text-sm text-gray-500 mt-1">
             Create and manage sign-ins for the sales calculator · {users.length} {users.length === 1 ? "login" : "logins"}
           </p>

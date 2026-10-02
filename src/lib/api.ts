@@ -6,6 +6,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
+import type { QuoteInput, SavedQuote } from "@/lib/quotes";
 
 // ── Types mirrored from the API responses ─────────────────────────────────────
 
@@ -72,6 +73,32 @@ async function getJson<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** Error from a JSON write; carries the response body (e.g. a 409's existingId). */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly body: Record<string, unknown>,
+  ) {
+    super(message);
+  }
+}
+
+export async function sendJson<T>(url: string, method: "POST" | "PATCH" | "DELETE", body?: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method,
+    credentials: "include",
+    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (res.status === 401 && typeof window !== "undefined") {
+    window.location.href = "/login";
+  }
+  if (!res.ok) throw new ApiError(json.error || `Request failed (${res.status})`, res.status, json);
+  return json as T;
+}
+
 // ── Hooks ──────────────────────────────────────────────────────────────────────
 
 export function useInventory(options?: { enabled?: boolean }) {
@@ -92,3 +119,31 @@ export function usePricing() {
     refetchOnWindowFocus: false,
   });
 }
+
+export function useQuotes() {
+  return useQuery<SavedQuote[]>({
+    queryKey: ["quotes"],
+    queryFn: () => getJson<{ quotes: SavedQuote[] }>("/api/quotes").then(r => r.quotes),
+    refetchOnWindowFocus: false,
+  });
+}
+
+/** One saved quote. gcTime 0 so reopening always loads the latest save. */
+export function useQuote(id: string | null) {
+  return useQuery<SavedQuote>({
+    queryKey: ["quote", id],
+    queryFn: () => getJson<{ quote: SavedQuote }>(`/api/quotes/${id}`).then(r => r.quote),
+    enabled: !!id,
+    gcTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export const createQuote = (input: QuoteInput) =>
+  sendJson<{ quote: SavedQuote }>("/api/quotes", "POST", input).then(r => r.quote);
+
+export const updateQuote = (id: string, input: QuoteInput) =>
+  sendJson<{ quote: SavedQuote }>(`/api/quotes/${id}`, "PATCH", input).then(r => r.quote);
+
+export const deleteQuote = (id: string) => sendJson<{ ok: true }>(`/api/quotes/${id}`, "DELETE");

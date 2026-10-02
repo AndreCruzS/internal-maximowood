@@ -26,7 +26,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={anybody.variable}>
+    // suppressHydrationWarning: browser extensions (e.g. Scribe) add attributes to <html>.
+    <html lang="en" className={anybody.variable} suppressHydrationWarning>
       <body className="antialiased">
         <Providers>
           <TooltipProvider>
