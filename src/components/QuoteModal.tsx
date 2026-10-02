@@ -6,12 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { generateQuotePDF, type QuoteData } from "@/lib/generateQuotePDF";
+import { generateQuotePDF } from "@/lib/generateQuotePDF";
 import type { QuoteLineItem } from "@/lib/generateQuotePDF";
-import { useInventory } from "@/lib/api";
+import { ApiError, createQuote, updateQuote, useInventory } from "@/lib/api";
+import {
+  DEFAULT_PREPARED_BY,
+  toQuoteData,
+  type QuoteCalculator,
+  type QuoteInput,
+  type SavedQuote,
+} from "@/lib/quotes";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Download, Loader2, MapPin, CheckCircle2, AlertTriangle, Package, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Download, Loader2, MapPin, CheckCircle2, AlertTriangle, Package, ChevronDown, ChevronUp, Save } from "lucide-react";
 import { toast } from "sonner";
+import QuoteItemRow from "@/components/QuoteItemRow";
+import { findInventoryMatch, type InventoryItem, type LengthEntry } from "@/lib/inventoryMatch";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Extended item type that includes inventory-matching keys
 export type QuoteCartItem = QuoteLineItem & {
@@ -25,154 +35,20 @@ type Props = {
   open: boolean;
   onClose: () => void;
   items: QuoteCartItem[];
+  calculator: QuoteCalculator;
+  /** The saved quote being edited, if any — saving then updates it in place. */
+  savedQuote?: SavedQuote | null;
+  onSaved?: (quote: SavedQuote) => void;
+  /** Lets the quote lines be edited (quantity, price, add-ons) or removed. */
+  onItemsChange?: (items: QuoteCartItem[]) => void;
 };
-
-type LengthEntry = {
-  lengthFt: number | null;
-  pieces: number | null;
-  stockLf: number;
-};
-
-type InventoryItem = {
-  specie: string;
-  category: string;
-  model: string;
-  profile: string;
-  size: string;
-  branches: { branch: string; totalLF: number; lengths: LengthEntry[] }[];
-  totalLF: number;
-  isUnmapped: boolean;
-};
-
-// ── Normalize helpers ─────────────────────────────────────────────────────────
-/**
- * Canonical species map — same as server-side SPECIES_CANONICAL.
- * Maps any variant to a single canonical token for matching.
- */
-const SPECIES_CANONICAL_CLIENT: Record<string, string> = {
-  // Ayous
-  "thermo ayous": "ayous", "maximo thermo ayous": "ayous", "maximo thermo ayous dark": "ayous",
-  "maximo thermo ayous jpl": "ayous", "ayous": "ayous", "thermowood ayous": "ayous",
-  // Ash
-  "thermowood ash": "ash", "maximo thermo ash": "ash", "thermo ash": "ash",
-  // Radiata
-  "thermo radiata": "radiata", "maximo thermo clear radiata": "radiata",
-  "thermo clear radiata": "radiata", "radiata": "radiata",
-  // Pine
-  "thermo pine": "pine", "maximo thermo scandinavian pine": "pine",
-  "thermo scandinavian pine": "pine", "scandinavian pine": "pine", "scandinavian": "pine",
-  // IPE
-  "ipe": "ipe", "ipeb": "ipe", "ipe b": "ipe",
-  // Accoya
-  "accoya": "accoya", "maximo accoya": "accoya", "accoya radiata pine": "accoya",
-  // Angelim
-  "angelim": "angelim", "angelim pedra": "angelim",
-  // Massaranduba
-  "massaranduba": "massaranduba", "massaranduba bullet wood": "massaranduba",
-  // Others
-  "cumaru": "cumaru", "garapa": "garapa", "tigerwood": "tigerwood",
-  "wawa": "wawa", "ironthermo": "ironthermo",
-  // Bulletwood / Balata
-  "bulletwood/balata": "bulletwood", "bulletwood": "bulletwood", "balata": "bulletwood",
-  "bulletwood balata": "bulletwood",
-};
-
-const normalizeSpecies = (s: string): string[] => {
-  const lower = s.toLowerCase().trim();
-  const canonical = SPECIES_CANONICAL_CLIENT[lower];
-  if (canonical) return [canonical];
-  // Fallback: substring matching
-  if (lower.includes("ayous")) return ["ayous"];
-  if (lower.includes("ash")) return ["ash"];
-  if (lower.includes("scandinavian") || lower.includes("pine")) return ["pine"];
-  if (lower.includes("radiata") || lower.includes("clear")) return ["radiata"];
-  if (lower.includes("ipe")) return ["ipe"];
-  if (lower.includes("accoya")) return ["accoya"];
-  if (lower.includes("angelim")) return ["angelim"];
-  if (lower.includes("massaranduba")) return ["massaranduba"];
-  if (lower.includes("cumaru")) return ["cumaru"];
-  if (lower.includes("garapa")) return ["garapa"];
-  if (lower.includes("tigerwood")) return ["tigerwood"];
-  if (lower.includes("wawa")) return ["wawa"];
-  if (lower.includes("bullet") || lower.includes("balata")) return ["bulletwood"];
-  return [lower];
-};
-
-const normalizeProfile = (p: string): string[] => {
-  const lower = p.toLowerCase().replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim();
-  const tokens: string[] = [];
-  if (lower.includes("nickel") || lower.includes("ng")) tokens.push("nickel");
-  // "s4s e4e" and "square" (without nickel or back) → s4s
-  if (lower.includes("s4s") || (lower.includes("square") && !lower.includes("nickel") && !lower.includes("back"))) tokens.push("s4s");
-  // "square back" or "v joint / square back" → squareback + vjoint
-  if (lower.includes("square back") || lower.includes("sq back") || lower.includes("sq/back")) tokens.push("squareback");
-  if (lower.includes("vjoint") || lower.includes("v joint") || lower.includes("v-joint")) tokens.push("vjoint");
-  if (lower.includes("fluted")) tokens.push("fluted");
-  if (lower.includes("jpl")) tokens.push("jpl");
-  if (lower.includes("end match")) tokens.push("end match");
-  if (lower.includes("rough")) tokens.push("rough");
-  if (lower.includes("decking") || lower.includes("deck")) tokens.push("deck");
-  if (lower.includes("solid")) tokens.push("solid");
-  if (lower.includes("grooved")) tokens.push("grooved");
-  if (lower.includes("opx")) tokens.push("opx");
-  // Prefinished / wire brushed — match against inventory profile_finish strings
-  if (lower.includes("prefinish") || lower.includes("pre finish") || lower.includes("pre-finish") || lower.includes("pf ") || lower.includes(" pf") || lower.endsWith(" pf")) tokens.push("prefinish");
-  if (lower.includes("wire brush") || lower.includes("wirebrushed")) tokens.push("wirebrushed");
-  if (lower.includes("hemel")) tokens.push("hemel");
-  if (lower.includes("white")) tokens.push("white");
-  if (lower.includes("black")) tokens.push("black");
-  if (tokens.length === 0) tokens.push(lower);
-  return tokens;
-};
-
-const normalizeSize = (s: string): string =>
-  s.toLowerCase().replace(/\s*x\s*/g, "x").replace(/\s+/g, "");
-
-function findInventoryMatch(inventoryItems: InventoryItem[], speciesKey: string, profileKey: string, sizeKey: string): InventoryItem | null {
-  const specTokens = normalizeSpecies(speciesKey);
-  const profTokens = normalizeProfile(profileKey);
-  const normSize = normalizeSize(sizeKey);
-
-  let bestItem: InventoryItem | null = null;
-  let bestScore = 0;
-
-  for (const item of inventoryItems) {
-    const invSpecieRaw = (item.specie ?? "").toLowerCase().trim();
-    // Resolve inventory species to canonical token too
-    const invSpecieCanonical = SPECIES_CANONICAL_CLIENT[invSpecieRaw] ?? invSpecieRaw;
-    // Also normalize the inventory profile for token matching
-    const invProfileRaw = (item.profile ?? "").toLowerCase().replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim();
-    const invProfileTokens = normalizeProfile(item.profile ?? "");
-    const invSize = normalizeSize(item.size ?? "");
-
-    // Size must match exactly (after normalization)
-    if (invSize !== normSize) continue;
-
-    // Species: calculator token must appear in inventory canonical OR raw species string
-    const specScore = specTokens.filter((t: string) => invSpecieCanonical.includes(t) || invSpecieRaw.includes(t)).length;
-    if (specScore === 0) continue;
-
-    // Profile: score based on how many calculator profile tokens appear in inventory profile
-    // Use both raw substring match AND token-to-token overlap for better coverage
-    const profScore = profTokens.filter((t: string) =>
-      invProfileRaw.includes(t) || invProfileTokens.includes(t)
-    ).length;
-    if (profScore === 0) continue;
-
-    const totalScore = specScore * 10 + profScore;
-    if (totalScore > bestScore) {
-      bestScore = totalScore;
-      bestItem = item;
-    }
-  }
-  return bestItem;
-}
 
 // ── Per-item inventory row ────────────────────────────────────────────────────
-function InventoryRow({ item, inventoryItems, inventoryLoading }: {
+function InventoryRow({ item, inventoryItems, inventoryLoading, inventoryError }: {
   item: QuoteCartItem;
   inventoryItems: InventoryItem[];
   inventoryLoading: boolean;
+  inventoryError: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -197,6 +73,10 @@ function InventoryRow({ item, inventoryItems, inventoryLoading }: {
         <div className="flex items-center gap-2 shrink-0 ml-2">
           {inventoryLoading ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
+          ) : inventoryError ? (
+            <Badge variant="outline" className="text-xs text-slate-500 border-slate-300 bg-white">
+              Couldn&apos;t check
+            </Badge>
           ) : matchedItem ? (
             <Badge
               variant="outline"
@@ -258,21 +138,31 @@ function InventoryRow({ item, inventoryItems, inventoryLoading }: {
 }
 
 // ── Main Modal ────────────────────────────────────────────────────────────────
-export default function QuoteModal({ open, onClose, items }: Props) {
-  const today = new Date().toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
+// Parents remount this with `key` when a different saved quote is opened, so
+// the fields initialise from `savedQuote` once.
+export default function QuoteModal({ open, onClose, items, calculator, savedQuote, onSaved, onItemsChange }: Props) {
+  const queryClient = useQueryClient();
 
-  const [companyName, setCompanyName] = useState("");
-  const [contact, setContact] = useState("");
-  const [project, setProject] = useState("");
-  const [address, setAddress] = useState("");
-  const [preparedBy, setPreparedBy] = useState("Maximo Concierge Team");
-  const [tax, setTax] = useState("");
-  const [shipping, setShipping] = useState("");
-  const [generating, setGenerating] = useState(false);
-  const [notes, setNotes] = useState("");
+  const [companyName, setCompanyName] = useState(savedQuote?.company ?? "");
+  const [contact, setContact] = useState(savedQuote?.contact ?? "");
+  const [project, setProject] = useState(savedQuote?.projectName ?? "");
+  const [address, setAddress] = useState(savedQuote?.address ?? "");
+  const [preparedBy, setPreparedBy] = useState(savedQuote?.preparedBy || DEFAULT_PREPARED_BY);
+  const [tax, setTax] = useState(savedQuote?.tax != null ? String(savedQuote.tax) : "");
+  const [shipping, setShipping] = useState(savedQuote?.shipping != null ? String(savedQuote.shipping) : "");
+  const [notes, setNotes] = useState(savedQuote?.notes ?? "");
+  const [busy, setBusy] = useState<"save" | "download" | null>(null);
+  const [projectError, setProjectError] = useState("");
+  // Saving a new quote under a project name that's already taken.
+  const [conflict, setConflict] = useState<{ existingId: string; message: string; download: boolean } | null>(null);
 
   // Fetch inventory
-  const { data: inventoryData, isLoading: inventoryLoading } = useInventory({ enabled: open });
+  const {
+    data: inventoryData,
+    isLoading: inventoryLoading,
+    isError: inventoryError,
+    refetch: refetchInventory,
+  } = useInventory({ enabled: open });
 
   const inventoryItems: InventoryItem[] = (inventoryData?.items as InventoryItem[]) ?? [];
 
@@ -282,40 +172,63 @@ export default function QuoteModal({ open, onClose, items }: Props) {
     return sum + item.total + addOnTotal;
   }, 0);
 
-  const handleGenerate = async () => {
-    setGenerating(true);
-    try {
-      const quoteData: QuoteData = {
-        company: companyName,
-        contact,
-        project,
-        address,
-        preparedBy: preparedBy || "Maximo Concierge Team",
-        date: today,
-        tax: tax ? parseFloat(tax) : undefined,
-        shipping: shipping ? parseFloat(shipping) : undefined,
-        notes: notes.trim(),
-        items: items.map(item => ({
-          species: item.species,
-          profile: item.profile,
-          nominalSize: item.nominalSize,
-          sqft: item.sqft,
-          lf: item.lf,
-          pricePerLF: item.pricePerLF,
-          total: item.total,
-          addOns: item.addOns,
-          lengthType: item.lengthType,
-        })),
-      };
-      await generateQuotePDF(quoteData);
-      toast.success("Quote generated successfully!");
-      onClose();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to generate quote. Please try again.");
-    } finally {
-      setGenerating(false);
+  const buildInput = (): QuoteInput => ({
+    projectName: project.trim(),
+    calculator,
+    company: companyName.trim(),
+    contact: contact.trim(),
+    address: address.trim(),
+    preparedBy: preparedBy.trim() || DEFAULT_PREPARED_BY,
+    notes: notes.trim(),
+    tax: tax ? parseFloat(tax) : null,
+    shipping: shipping ? parseFloat(shipping) : null,
+    items,
+  });
+
+  /**
+   * Save (create, or update `targetId`), then optionally download the PDF.
+   * Saving is keyed by project name: a new quote whose project already exists
+   * stops at a "replace it?" prompt instead of creating a duplicate.
+   */
+  const save = async (download: boolean, targetId = savedQuote?.id) => {
+    if (!project.trim()) {
+      setProjectError("Give the quote a project name — it's how the quote is saved.");
+      return;
     }
+    setProjectError("");
+    setConflict(null);
+    setBusy(download ? "download" : "save");
+    const input = buildInput();
+    let saved: SavedQuote;
+    try {
+      saved = targetId ? await updateQuote(targetId, input) : await createQuote(input);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409 && typeof err.body.existingId === "string") {
+        setConflict({ existingId: err.body.existingId, message: err.message, download });
+      } else {
+        toast.error(err instanceof Error ? err.message : "Couldn't save the quote. Please try again.");
+      }
+      setBusy(null);
+      return;
+    }
+
+    void queryClient.invalidateQueries({ queryKey: ["quotes"] });
+    toast.success(targetId ? `Quote "${saved.projectName}" updated` : `Quote "${saved.projectName}" saved`);
+
+    let pdfFailed = false;
+    if (download) {
+      try {
+        await generateQuotePDF(toQuoteData(input));
+      } catch (err) {
+        console.error(err);
+        pdfFailed = true;
+        toast.error("The quote was saved, but the PDF failed to generate. Please try again.");
+      }
+    }
+    setBusy(null);
+    // Last: the parent may re-key (remount) this modal for the saved quote.
+    onSaved?.(saved);
+    if (!pdfFailed) onClose();
   };
 
   return (
@@ -325,9 +238,15 @@ export default function QuoteModal({ open, onClose, items }: Props) {
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-yellow-600" />
             <DialogTitle>
-              Generate Quote — {items.length} {items.length === 1 ? "product" : "products"}
+              {savedQuote ? "Update Quote" : "Generate Quote"} — {items.length} {items.length === 1 ? "product" : "products"}
             </DialogTitle>
           </div>
+          {savedQuote && (
+            <p className="text-xs text-[#888]">
+              Saved quote · last updated{" "}
+              {new Date(savedQuote.updatedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+            </p>
+          )}
         </DialogHeader>
 
         {/* Items summary */}
@@ -336,33 +255,19 @@ export default function QuoteModal({ open, onClose, items }: Props) {
             <span className="text-xs font-black uppercase tracking-widest" style={{ color: "#C9A227" }}>
               Quote Items
             </span>
+            {onItemsChange && (
+              <span className="ml-2 text-[10px] font-semibold text-white/50">Use ✎ to change quantity, price or add-ons</span>
+            )}
           </div>
           <div className="divide-y divide-[#F0EDE4]">
-            {items.map((item, idx) => {
-              const addOnTotal = item.addOns ? item.addOns.reduce((a, ao) => a + ao.amount, 0) : 0;
-              const itemTotal = item.total + addOnTotal;
-              return (
-                <div key={idx} className="px-3 py-2.5 flex items-start justify-between gap-2" style={{ background: "#C9A22708" }}>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black text-[#1A1A1A]">{item.species}</p>
-                    <p className="text-xs text-[#666]">{item.profile} · {item.nominalSize}</p>
-                    <p className="text-xs text-[#888]">
-                      {item.lf.toLocaleString("en-US", { maximumFractionDigits: 1 })} LF · {item.sqft.toLocaleString("en-US", { maximumFractionDigits: 1 })} sqft · ${item.pricePerLF.toFixed(2)}/LF
-                    </p>
-                    {item.addOns && item.addOns.length > 0 && (
-                      <div className="mt-1 space-y-0.5">
-                        {item.addOns.map((ao, ai) => (
-                          <p key={ai} className="text-xs text-[#888]">+ {ao.label}: ${ao.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-sm font-black shrink-0" style={{ color: "#C9A227" }}>
-                    ${itemTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-              );
-            })}
+            {items.map((item, idx) => (
+              <QuoteItemRow
+                key={idx}
+                item={item}
+                onChange={onItemsChange ? next => onItemsChange(items.map((it, i) => (i === idx ? next : it))) : undefined}
+                onRemove={onItemsChange && items.length > 1 ? () => onItemsChange(items.filter((_, i) => i !== idx)) : undefined}
+              />
+            ))}
           </div>
           {/* Grand total */}
           <div className="px-3 py-2.5 flex justify-between items-center" style={{ background: "#C9A227" }}>
@@ -380,12 +285,21 @@ export default function QuoteModal({ open, onClose, items }: Props) {
             <span className="text-xs font-black uppercase tracking-widest" style={{ color: "#C9A227" }}>Stock Availability</span>
           </div>
           <div className="p-3 space-y-2">
+            {inventoryError && (
+              <div className="flex items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <span>Live stock couldn&apos;t be loaded, so availability is unknown.</span>
+                <button type="button" onClick={() => void refetchInventory()} className="font-bold underline shrink-0">
+                  Try again
+                </button>
+              </div>
+            )}
             {items.map((item, idx) => (
               <InventoryRow
                 key={idx}
                 item={item}
                 inventoryItems={inventoryItems}
                 inventoryLoading={inventoryLoading}
+                inventoryError={inventoryError}
               />
             ))}
           </div>
@@ -405,8 +319,25 @@ export default function QuoteModal({ open, onClose, items }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <Label>Project Name</Label>
-            <Input placeholder="Residential Deck — Main St" value={project} onChange={e => setProject(e.target.value)} />
+            <Label htmlFor="quote-project">
+              Project Name <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="quote-project"
+              placeholder="Residential Deck — Main St"
+              value={project}
+              onChange={e => {
+                setProject(e.target.value);
+                setProjectError("");
+                setConflict(null);
+              }}
+              aria-invalid={!!projectError}
+            />
+            {projectError ? (
+              <p className="text-xs text-red-600">{projectError}</p>
+            ) : (
+              <p className="text-xs text-[#888]">The quote is saved under this name — reopen it from your Profile to make changes.</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -442,20 +373,66 @@ export default function QuoteModal({ open, onClose, items }: Props) {
           </div>
         </div>
 
-        <div className="flex gap-3 pt-2">
-          <Button variant="outline" onClick={onClose} className="flex-1">
+        {conflict && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold">{conflict.message}.</p>
+                <p className="text-xs mt-0.5">Replace it with this version, or change the project name to save a separate quote.</p>
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => void save(conflict.download, conflict.existingId)}
+                    disabled={busy !== null}
+                    className="font-bold text-black"
+                    style={{ background: "#C9A227" }}
+                  >
+                    Replace existing quote
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setConflict(null);
+                      document.getElementById("quote-project")?.focus();
+                    }}
+                    disabled={busy !== null}
+                  >
+                    Change project name
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-3 pt-2">
+          <Button variant="outline" onClick={onClose} className="flex-1" disabled={busy !== null}>
             Cancel
           </Button>
           <Button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="flex-1 font-bold gap-2 text-black"
+            variant="outline"
+            onClick={() => void save(false)}
+            disabled={busy !== null}
+            className="flex-1 font-bold gap-2"
+          >
+            {busy === "save" ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+            ) : (
+              <><Save className="w-4 h-4" /> {savedQuote ? "Update Quote" : "Save Quote"}</>
+            )}
+          </Button>
+          <Button
+            onClick={() => void save(true)}
+            disabled={busy !== null}
+            className="flex-[1.4] font-bold gap-2 text-black"
             style={{ background: "#C9A227" }}
           >
-            {generating ? (
+            {busy === "download" ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
             ) : (
-              <><Download className="w-4 h-4" /> Download Quote PDF</>
+              <><Download className="w-4 h-4" /> {savedQuote ? "Update & Download PDF" : "Save & Download PDF"}</>
             )}
           </Button>
         </div>

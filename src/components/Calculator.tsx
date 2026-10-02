@@ -35,6 +35,8 @@ import {
 } from "@/lib/products";
 import { Calculator as CalculatorIcon, Droplet, RotateCcw, Wrench, FileText, ChevronRight, Plus, Trash2, ShoppingCart, Ruler } from "lucide-react";
 import QuoteModal, { type QuoteCartItem } from "@/components/QuoteModal";
+import SavedQuoteBanner from "@/components/SavedQuoteBanner";
+import { useSavedQuote } from "@/hooks/useSavedQuote";
 import type { QuoteLineItem } from "@/lib/generateQuotePDF";
 
 type InputMode = "lf" | "sqft" | "boards";
@@ -157,7 +159,7 @@ function MetricCard({
 
 type ProductCategory = "thermo" | "hardwood" | "accoya";
 
-export default function Calculator() {
+export default function Calculator({ quoteId = null }: { quoteId?: string | null }) {
   // Category toggle
   const [category, setCategory] = useState<ProductCategory>("thermo");
 
@@ -215,6 +217,9 @@ export default function Calculator() {
 
   // ── Quote cart ───────────────────────────────────────────────────────────────
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  // Saved quote being edited (opened from Profile via ?quote=<id>)
+  const quote = useSavedQuote(quoteId, q => setCartItems(q.items));
 
   // ── Step 8: Promo Discount state (shown when selected product has a promo entry) ──
   const [promoScenario, setPromoScenario] = useState<PromoScenario>("conservador");
@@ -422,6 +427,7 @@ export default function Calculator() {
   const handleReset = () => {
     handleResetForm();
     setCartItems([]);
+    quote.detach();
   };
 
   // Primary quote item for single-item flow (used when cart is empty)
@@ -957,6 +963,13 @@ export default function Calculator() {
       {/* ── Right: Results + Cart ── */}
       <div className="lg:col-span-1 space-y-4">
 
+        <SavedQuoteBanner
+          savedQuote={quote.savedQuote}
+          loading={quote.loading}
+          loadError={quote.loadError}
+          onStartNew={handleReset}
+        />
+
         {/* ── Quote Cart ── */}
         {cartItems.length > 0 && (
           <div className="bg-white rounded-xl border-2 overflow-hidden" style={{ borderColor: GOLD }}>
@@ -974,7 +987,7 @@ export default function Calculator() {
                 style={{ background: GOLD }}
               >
                 <FileText className="w-3.5 h-3.5" />
-                Generate PDF
+                {quote.savedQuote ? "Update Quote" : "Generate PDF"}
               </button>
             </div>
 
@@ -1194,9 +1207,14 @@ export default function Calculator() {
       {/* Quote Modal */}
       {canOpenQuote && (
         <QuoteModal
+          key={quote.savedQuote?.id ?? "new"}
           open={quoteOpen}
           onClose={() => setQuoteOpen(false)}
           items={quoteItems}
+          calculator="retail"
+          savedQuote={quote.savedQuote}
+          onSaved={quote.markSaved}
+          onItemsChange={setCartItems}
         />
       )}
     </div>

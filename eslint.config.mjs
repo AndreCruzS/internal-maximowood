@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // .next is a symlink to this iCloud-excluded folder on synced machines.
+    ".next.nosync/**",
   ]),
 ]);
 
