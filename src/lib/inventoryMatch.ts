@@ -119,8 +119,11 @@ export function findInventoryMatch(inventoryItems: InventoryItem[], speciesKey: 
     // Resolve inventory species to canonical token too
     const invSpecieCanonical = SPECIES_CANONICAL_CLIENT[invSpecieRaw] ?? invSpecieRaw;
     // Also normalize the inventory profile for token matching
-    const invProfileRaw = (item.profile ?? "").toLowerCase().replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim();
-    const invProfileTokens = normalizeProfile(item.profile ?? "");
+    // The dictionary often puts the profile in `model` ("VJoint - Nickel Gap")
+    // and leaves `profile_finish` as "-", so match against both.
+    const invProfileText = `${item.model ?? ""} ${item.profile ?? ""}`;
+    const invProfileRaw = invProfileText.toLowerCase().replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim();
+    const invProfileTokens = normalizeProfile(invProfileText);
     const invSize = normalizeSize(item.size ?? "");
 
     // Size must match exactly (after normalization)
