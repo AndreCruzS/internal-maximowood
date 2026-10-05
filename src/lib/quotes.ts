@@ -49,7 +49,7 @@ export function quoteItemsTotal(items: { total: number; addOns?: { amount: numbe
 
 /** Where to reopen a saved quote for editing. */
 export function quoteEditHref(quote: Pick<SavedQuote, "id" | "calculator">): string {
-  return `${quote.calculator === "b2b" ? "/b2b" : "/"}?quote=${quote.id}`;
+  return `${quote.calculator === "b2b" ? "/b2b" : "/calculator"}?quote=${quote.id}`;
 }
 
 export const DEFAULT_PREPARED_BY = "Maximo Concierge Team";

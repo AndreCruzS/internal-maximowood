@@ -18,8 +18,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Maximo Sales Calculator",
-  description: "Maximo Concierge sales team tool — calculator, inventory, pricing and B2B quotes.",
+  title: "Maximo Internal Portal",
+  description: "Maximo internal tools — calculators, inventory, pricing and more.",
 };
 
 export default function RootLayout({
