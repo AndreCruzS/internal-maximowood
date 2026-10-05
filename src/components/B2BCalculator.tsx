@@ -13,6 +13,8 @@ import {
   COATING_OPTIONS,
   calculateCoatingNeeded,
   PRE_FINISH_COLOR_OPTIONS,
+  PRE_FINISH_COLORS,
+  PRE_FINISH_TEXTURES,
   PRE_FINISH_TEXTURE_PRICE_PER_LF,
   MILLING_PRICE_PER_LF,
   calculateAddOnCost,
@@ -303,6 +305,8 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
   const [includePreFinishColor, setIncludePreFinishColor] = useState(false);
   const [preFinishColorType, setPreFinishColorType] = useState<PreFinishColorType>("regular");
   const [includePreFinishTexture, setIncludePreFinishTexture] = useState(false);
+  const [preFinishColorName, setPreFinishColorName] = useState("");
+  const [preFinishTextureName, setPreFinishTextureName] = useState("");
 
   // Step 6 – coating
   const [includeCoating, setIncludeCoating] = useState(false);
@@ -388,6 +392,8 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
       setError("Please enter a valid quantity.");
       return;
     }
+    if (includePreFinishColor && !preFinishColorName) { setError("Please choose the pre-finished color."); return; }
+    if (includePreFinishTexture && !preFinishTextureName) { setError("Please choose the pre-finished texture."); return; }
     if (currentPrice === null) {
       setError("Price not available for this product/tier. Please check the spreadsheet.");
       return;
@@ -441,13 +447,13 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
       const opt = PRE_FINISH_COLOR_OPTIONS.find((o) => o.id === preFinishColorType);
       if (opt)
         addOnBreakdown.push({
-          label: `Pre-Finish Color: ${opt.label} ($${opt.pricePerLF.toFixed(2)}/LF)`,
+          label: `Pre-Finish Color: ${preFinishColorName} · ${opt.label} ($${opt.pricePerLF.toFixed(2)}/LF)`,
           amount: wastedLF * opt.pricePerLF,
         });
     }
     if (includePreFinishTexture) {
       addOnBreakdown.push({
-        label: `Pre-Finish Texture ($${PRE_FINISH_TEXTURE_PRICE_PER_LF.toFixed(2)}/LF)`,
+        label: `Pre-Finish Texture: ${preFinishTextureName} ($${PRE_FINISH_TEXTURE_PRICE_PER_LF.toFixed(2)}/LF)`,
         amount: wastedLF * PRE_FINISH_TEXTURE_PRICE_PER_LF,
       });
     }
@@ -533,6 +539,8 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
     setIncludePreFinishColor(false);
     setPreFinishColorType("regular");
     setIncludePreFinishTexture(false);
+    setPreFinishColorName("");
+    setPreFinishTextureName("");
     setIncludeCoating(false);
     setSelectedLengths([]);
     setCustomLengthInput("");
@@ -936,7 +944,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
               {/* Pre-Finish: Color */}
               <div className="flex items-center justify-between p-3 rounded-lg border border-[#E0DDD4] bg-[#FAFAF7]">
                 <div>
-                  <p className="font-semibold text-sm text-[#1A1A1A]">Pre-Finish — Color</p>
+                  <p className="font-semibold text-sm text-[#1A1A1A]">Pre-Finished — Color</p>
                   <p className="text-xs text-[#888]">Price varies by type</p>
                 </div>
                 <Switch
@@ -948,7 +956,15 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
               </div>
               {includePreFinishColor && (
                 <div className="pl-3 space-y-1.5">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-[#888]">Color Type</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-[#888]">Color</Label>
+                  <div className="flex gap-2 flex-wrap">
+                    {PRE_FINISH_COLORS.map((name) => (
+                      <ToggleBtn key={name} active={preFinishColorName === name} onClick={() => setPreFinishColorName(name)}>
+                        {name}
+                      </ToggleBtn>
+                    ))}
+                  </div>
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-[#888] block pt-1">Color Type</Label>
                   <div className="flex gap-2">
                     {PRE_FINISH_COLOR_OPTIONS.map((opt) => (
                       <ToggleBtn
@@ -966,7 +982,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
               {/* Pre-Finish: Texture */}
               <div className="flex items-center justify-between p-3 rounded-lg border border-[#E0DDD4] bg-[#FAFAF7]">
                 <div>
-                  <p className="font-semibold text-sm text-[#1A1A1A]">Pre-Finish — Texture</p>
+                  <p className="font-semibold text-sm text-[#1A1A1A]">Pre-Finished — Texture</p>
                   <p className="text-xs text-[#888]">+${PRE_FINISH_TEXTURE_PRICE_PER_LF.toFixed(2)}/LF</p>
                 </div>
                 <Switch
@@ -976,6 +992,18 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                   className="data-[state=checked]:bg-[#C9A227]"
                 />
               </div>
+              {includePreFinishTexture && (
+                <div className="pl-3 space-y-1.5">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-[#888]">Texture</Label>
+                  <div className="flex gap-2 flex-wrap">
+                    {PRE_FINISH_TEXTURES.map((name) => (
+                      <ToggleBtn key={name} active={preFinishTextureName === name} onClick={() => setPreFinishTextureName(name)}>
+                        {name}
+                      </ToggleBtn>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </StepCard>
 

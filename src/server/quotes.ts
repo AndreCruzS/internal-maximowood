@@ -15,6 +15,7 @@ export type QuoteRow = {
   notes: string | null;
   tax: number | string | null;
   shipping: number | string | null;
+  lead_time_weeks: number | null;
   items: unknown;
   total: number | string;
   created_at: string;
@@ -22,7 +23,7 @@ export type QuoteRow = {
 };
 
 export const QUOTE_COLUMNS =
-  "id, user_id, project_name, calculator, company, contact, address, prepared_by, notes, tax, shipping, items, total, created_at, updated_at";
+  "id, user_id, project_name, calculator, company, contact, address, prepared_by, notes, tax, shipping, lead_time_weeks, items, total, created_at, updated_at";
 
 // PostgREST returns numeric columns as strings.
 const num = (v: number | string | null): number | null => (v == null ? null : Number(v));
@@ -40,6 +41,7 @@ export function rowToQuote(row: QuoteRow): SavedQuote {
     notes: row.notes ?? "",
     tax: num(row.tax),
     shipping: num(row.shipping),
+    leadTimeWeeks: num(row.lead_time_weeks),
     items: Array.isArray(row.items) ? (row.items as QuoteCartItem[]) : [],
     total: num(row.total) ?? 0,
     createdAt: row.created_at,
@@ -58,6 +60,7 @@ export function quoteToRow(q: QuoteInput) {
     notes: q.notes || null,
     tax: q.tax,
     shipping: q.shipping,
+    lead_time_weeks: q.leadTimeWeeks,
     items: q.items,
     total: Math.round(quoteItemsTotal(q.items) * 100) / 100,
   };
@@ -67,6 +70,15 @@ const str = (v: unknown, max = 2000): string =>
   typeof v === "string" ? v.trim().slice(0, max) : "";
 
 const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+
+export const MAX_LEAD_TIME_WEEKS = 52;
+
+function optionalWeeks(v: unknown): number | null | undefined {
+  if (v == null || v === "") return null;
+  const n = typeof v === "string" ? Number(v) : v;
+  if (!finite(n) || !Number.isInteger(n) || n < 1 || n > MAX_LEAD_TIME_WEEKS) return undefined;
+  return n;
+}
 
 function optionalMoney(v: unknown): number | null | undefined {
   if (v == null || v === "") return null;
@@ -133,6 +145,8 @@ export function parseQuoteInput(body: unknown): { ok: true; quote: QuoteInput } 
   const shipping = optionalMoney(b.shipping);
   if (tax === undefined) return { ok: false, error: "Tax must be a positive number" };
   if (shipping === undefined) return { ok: false, error: "Shipping must be a positive number" };
+  const leadTimeWeeks = optionalWeeks(b.leadTimeWeeks);
+  if (leadTimeWeeks === undefined) return { ok: false, error: `Lead time must be 1 to ${MAX_LEAD_TIME_WEEKS} weeks` };
 
   return {
     ok: true,
@@ -146,6 +160,7 @@ export function parseQuoteInput(body: unknown): { ok: true; quote: QuoteInput } 
       notes: str(b.notes, 10000),
       tax,
       shipping,
+      leadTimeWeeks,
       items,
     },
   };

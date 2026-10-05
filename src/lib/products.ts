@@ -154,6 +154,26 @@ export const PRE_FINISH_COLOR_OPTIONS: { id: PreFinishColorType; label: string; 
   { id: "special",    label: "Special Sizes (2x4, 2x6, 1x8, 1x10)", pricePerLF: 2.70 },
 ];
 
+/** Pre-Finished color finishes (Maximo Pre-Finished 2026 catalog). Price comes from the color type above. */
+export const PRE_FINISH_COLORS = [
+  "Teak Transparent",
+  "Oak Transparent",
+  "Ebony Transparent",
+  "Walnut Transparent",
+  "Deep Black Opaque",
+  "White Oak Transparent",
+  "Bangkirai Transparent",
+  "Conditioner",
+] as const;
+
+/** Pre-Finished texture finishes (2026 catalog). "No Texture / Smooth" = leave the texture add-on off. */
+export const PRE_FINISH_TEXTURES = [
+  "Rough Sawn",
+  "Charred",
+  "Wire Brush – Subtle",
+  "Wire Brush – Pronounced",
+] as const;
+
 /** Pre-Finish: Texture is an independent add-on (+$0.50/LF) */
 export const PRE_FINISH_TEXTURE_PRICE_PER_LF = 0.50;
 

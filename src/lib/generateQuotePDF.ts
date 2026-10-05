@@ -33,6 +33,8 @@ export type QuoteData = {
   notes?: string;
   tax?: number;
   shipping?: number;
+  /** Printed in the terms as "Lead Time: Up to N weeks". */
+  leadTimeWeeks?: number;
   items: QuoteLineItem[];
   subtotal?: number;
   grandTotal?: number;
@@ -329,6 +331,7 @@ export async function generateQuotePDF(data: QuoteData) {
   // ── Terms + warranty QR ─────────────────────────────────────────────────────
   const terms = [
     `Valid for ${QUOTE_VALID_DAYS} days from the date of issue. Prices may change after expiration.`,
+    ...(data.leadTimeWeeks ? [`Lead Time: Up to ${data.leadTimeWeeks} ${data.leadTimeWeeks === 1 ? "week" : "weeks"}.`] : []),
     "Shipping not included unless requested.",
     "Priced per linear foot (LF). Square footage shown for reference.",
     "Waste is chosen by the customer and billed on every line. We recommend 10% to 20%.",
