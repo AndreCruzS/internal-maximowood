@@ -351,9 +351,9 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
           </div>
 
           <div className="space-y-1.5">
-            <Label>Notes (optional)</Label>
+            <Label>Internal notes (optional)</Label>
             <Textarea
-              placeholder="Write additional notes for the quote (will appear on page 2 of the PDF)..."
+              placeholder="Notes for your team — saved with the quote, not printed on the PDF..."
               value={notes}
               onChange={e => setNotes(e.target.value)}
               rows={3}
