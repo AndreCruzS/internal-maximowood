@@ -63,6 +63,16 @@ describe("quote row mapping", () => {
     expect(quoteItemsTotal(r.quote.items)).toBe(1800);
   });
 
+  it("accepts a whole-number lead time and rejects anything else", () => {
+    const ok = parseQuoteInput({ ...body, leadTimeWeeks: 6 });
+    if (!ok.ok) throw new Error(ok.error);
+    expect(ok.quote.leadTimeWeeks).toBe(6);
+    expect(quoteToRow(ok.quote).lead_time_weeks).toBe(6);
+    const none = parseQuoteInput(body);
+    expect(none.ok && none.quote.leadTimeWeeks).toBeNull();
+    for (const bad of [0, 2.5, 53, "x"]) expect(parseQuoteInput({ ...body, leadTimeWeeks: bad }).ok).toBe(false);
+  });
+
   it("converts PostgREST numeric strings back to numbers", () => {
     const row: QuoteRow = {
       id: "6f1c1f9e-0000-4000-8000-000000000000",
@@ -76,13 +86,14 @@ describe("quote row mapping", () => {
       notes: null,
       tax: "10.50",
       shipping: null,
+      lead_time_weeks: 6,
       items: [item],
       total: "900.00",
       created_at: "2026-10-01T00:00:00Z",
       updated_at: "2026-10-02T00:00:00Z",
     };
     const q = rowToQuote(row);
-    expect(q).toMatchObject({ ownerId: "11111111-0000-4000-8000-000000000000", calculator: "b2b", tax: 10.5, shipping: null, total: 900, company: "" });
+    expect(q).toMatchObject({ ownerId: "11111111-0000-4000-8000-000000000000", calculator: "b2b", tax: 10.5, shipping: null, leadTimeWeeks: 6, total: 900, company: "" });
     expect(quoteEditHref(q)).toBe("/b2b?quote=6f1c1f9e-0000-4000-8000-000000000000");
     expect(quoteEditHref({ ...q, calculator: "retail" })).toBe("/calculator?quote=6f1c1f9e-0000-4000-8000-000000000000");
   });

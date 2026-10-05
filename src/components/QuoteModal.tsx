@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { generateQuotePDF } from "@/lib/generateQuotePDF";
 import type { QuoteLineItem } from "@/lib/generateQuotePDF";
@@ -42,6 +43,9 @@ type Props = {
   /** Lets the quote lines be edited (quantity, price, add-ons) or removed. */
   onItemsChange?: (items: QuoteCartItem[]) => void;
 };
+
+/** Lead time choices in the quote dialog. */
+const LEAD_TIME_WEEKS = Array.from({ length: 16 }, (_, i) => i + 1);
 
 // ── Per-item inventory row ────────────────────────────────────────────────────
 function InventoryRow({ item, inventoryItems, inventoryLoading, inventoryError }: {
@@ -150,6 +154,8 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
   const [preparedBy, setPreparedBy] = useState(savedQuote?.preparedBy || DEFAULT_PREPARED_BY);
   const [tax, setTax] = useState(savedQuote?.tax != null ? String(savedQuote.tax) : "");
   const [shipping, setShipping] = useState(savedQuote?.shipping != null ? String(savedQuote.shipping) : "");
+  const [leadTime, setLeadTime] = useState(savedQuote?.leadTimeWeeks != null ? String(savedQuote.leadTimeWeeks) : "");
+  const [leadTimeError, setLeadTimeError] = useState("");
   const [notes, setNotes] = useState(savedQuote?.notes ?? "");
   const [busy, setBusy] = useState<"save" | "download" | null>(null);
   const [projectError, setProjectError] = useState("");
@@ -182,6 +188,7 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
     notes: notes.trim(),
     tax: tax ? parseFloat(tax) : null,
     shipping: shipping ? parseFloat(shipping) : null,
+    leadTimeWeeks: leadTime ? parseInt(leadTime, 10) : null,
     items,
   });
 
@@ -195,6 +202,11 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
       setProjectError("Give the quote a project name — it's how the quote is saved.");
       return;
     }
+    if (!leadTime) {
+      setLeadTimeError("Select the lead time — it's printed in the quote terms.");
+      return;
+    }
+    setLeadTimeError("");
     setProjectError("");
     setConflict(null);
     setBusy(download ? "download" : "save");
@@ -359,6 +371,25 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
               rows={3}
               className="resize-none text-sm"
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="quote-lead-time">
+              Lead Time <span className="text-red-500">*</span>
+            </Label>
+            <Select value={leadTime} onValueChange={v => { setLeadTime(v); setLeadTimeError(""); }}>
+              <SelectTrigger id="quote-lead-time" className="w-full" aria-invalid={!!leadTimeError}>
+                <SelectValue placeholder="Select weeks…" />
+              </SelectTrigger>
+              <SelectContent>
+                {LEAD_TIME_WEEKS.map(w => (
+                  <SelectItem key={w} value={String(w)}>
+                    Up to {w} {w === 1 ? "week" : "weeks"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {leadTimeError && <p className="text-xs text-red-600">{leadTimeError}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

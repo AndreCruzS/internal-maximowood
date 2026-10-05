@@ -19,6 +19,8 @@ export type SavedQuote = {
   notes: string;
   tax: number | null;
   shipping: number | null;
+  /** Weeks until the order ships, printed in the PDF terms. */
+  leadTimeWeeks: number | null;
   items: QuoteCartItem[];
   total: number;
   createdAt: string;
@@ -36,6 +38,7 @@ export type QuoteInput = {
   notes: string;
   tax: number | null;
   shipping: number | null;
+  leadTimeWeeks: number | null;
   items: QuoteCartItem[];
 };
 
@@ -65,6 +68,7 @@ export function toQuoteData(q: QuoteInput, date = new Date()): QuoteData {
     date: date.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }),
     tax: q.tax ?? undefined,
     shipping: q.shipping ?? undefined,
+    leadTimeWeeks: q.leadTimeWeeks ?? undefined,
     notes: q.notes.trim(),
     items: q.items.map(item => ({
       species: item.species,

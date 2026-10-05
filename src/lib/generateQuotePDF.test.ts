@@ -7,7 +7,7 @@ describe("buildQuoteRows", () => {
     sqft: 438.33, lf: 1000, pricePerLF: 5.82, total: 5820, lengthType: "RL" as const,
     addOns: [
       { label: "🏷️ Promo: Dealer scenario (was $6.10/LF)", amount: 0 },
-      { label: "Pre-Finish Color: Regular ($2.20/LF)", amount: 2200 },
+      { label: "Pre-Finish Color: Teak Transparent · Regular ($2.20/LF)", amount: 2200 },
       { label: "Milling ($1.00/LF)", amount: 1000 },
     ],
   };
@@ -21,7 +21,7 @@ describe("buildQuoteRows", () => {
     expect(rows[0].rate).toBeCloseTo(9.02);
     expect(rows[0].breakdown).toEqual([
       { label: "Material", rate: 5.82, amount: 5820 },
-      { label: "Pre-Finished Color: Regular", rate: 2.2, amount: 2200 },
+      { label: "Pre-Finished Color: Teak Transparent · Regular", rate: 2.2, amount: 2200 },
       { label: "Milling", rate: 1, amount: 1000 },
     ]);
     expect(rows[1].breakdown).toEqual([]);
