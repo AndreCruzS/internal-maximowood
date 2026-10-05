@@ -38,10 +38,14 @@ export type QuoteData = {
   grandTotal?: number;
 };
 
-/** How long a quote stays valid (unchanged from the previous PDF's terms). */
-export const QUOTE_VALID_DAYS = 10;
+/** How long a quote stays valid. */
+export const QUOTE_VALID_DAYS = 30;
 
 // ── Rows of the line table ────────────────────────────────────────────────────
+/** One unnumbered breakdown row under a product line (material, then each add-on). */
+export type QuoteBreakdown = { label: string; rate: number; amount: number };
+
+/** One numbered line per product; its add-ons are folded in and listed in `breakdown`. */
 export type QuoteRow = {
   line: number;
   item: string;
@@ -49,6 +53,7 @@ export type QuoteRow = {
   qty: number;
   rate: number;
   amount: number;
+  breakdown: QuoteBreakdown[];
 };
 
 const num = (x: number) => x.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -58,26 +63,21 @@ const productName = (species: string) =>
   /thermo/i.test(species) ? "Maximo Thermo" : /accoya/i.test(species) ? "Maximo Accoya" : "Maximo Hardwood";
 
 /**
- * Split a calculator add-on label like "Pre-Finish Color: Regular ($2.20/LF)"
- * into the template's item / description / rate.
+ * Turn a calculator add-on label like "Pre-Finish Color: Regular ($2.20/LF)"
+ * into a breakdown label ("Pre-Finished Color: Regular") and its rate.
  */
-function parseAddOn(label: string, amount: number, lf: number) {
+function parseAddOn(label: string, amount: number, lf: number): QuoteBreakdown {
   const m = label.match(/^(.*?)\s*\(\$([\d.,]+)\/LF\)\s*$/);
-  const name = (m ? m[1] : label).trim();
+  const name = (m ? m[1] : label).trim().replace(/^Pre-Finish\b/, "Pre-Finished");
   const rate = m ? parseFloat(m[2].replace(/,/g, "")) : lf > 0 ? amount / lf : 0;
-  const [head, value] = name.split(/:\s*/, 2);
-  if (head.startsWith("Pre-Finish ")) {
-    const kind = head.slice("Pre-Finish ".length);
-    return { item: "Pre-Finish", detail: (value ? [kind, value] : [kind, "Included"]) as [string, string], rate };
-  }
-  return { item: head, detail: [head, value || "Included"] as [string, string], rate };
+  return { label: name, rate, amount };
 }
 
-/** One material line per product, then one line per add-on (zero-amount notes such as promos are left off). */
+/** One line per product; add-ons are added into it (zero-amount notes such as promos are left off). */
 export function buildQuoteRows(items: QuoteLineItem[]): QuoteRow[] {
-  const rows: QuoteRow[] = [];
-  for (const it of items) {
-    const materialLine = rows.length + 1;
+  return items.map((it, i) => {
+    const addOns = (it.addOns ?? []).filter(ao => ao.amount > 0).map(ao => parseAddOn(ao.label, ao.amount, it.lf));
+    const amount = it.total + addOns.reduce((s, a) => s + a.amount, 0);
     const desc: [string, string][] = [
       ["Species", it.species],
       ["Mill Profile", it.profile],
@@ -85,18 +85,17 @@ export function buildQuoteRows(items: QuoteLineItem[]): QuoteRow[] {
     ];
     if (it.lengthType) desc.push(["Lengths", it.lengthType === "Fixed" ? "Fixed Lengths" : "Random Lengths"]);
     desc.push(["Order Quantity", `${num(it.lf)} LF (${num(it.sqft)} sqft)`]);
-    if (it.sqft > 0) desc.push(["Price per sqft", money(it.total / it.sqft)]);
-    rows.push({ line: materialLine, item: productName(it.species), desc, qty: it.lf, rate: it.pricePerLF, amount: it.total });
-
-    for (const ao of it.addOns ?? []) {
-      if (!(ao.amount > 0)) continue;
-      const a = parseAddOn(ao.label, ao.amount, it.lf);
-      const aDesc: [string, string][] = [a.detail, ["Applied To", `Line ${materialLine}, ${num(it.lf)} LF`]];
-      if (it.sqft > 0) aDesc.push(["Price per sqft", money(ao.amount / it.sqft)]);
-      rows.push({ line: rows.length + 1, item: a.item, desc: aDesc, qty: it.lf, rate: a.rate, amount: ao.amount });
-    }
-  }
-  return rows;
+    if (it.sqft > 0) desc.push(["Price per sqft", money(amount / it.sqft)]);
+    return {
+      line: i + 1,
+      item: productName(it.species),
+      desc,
+      qty: it.lf,
+      rate: it.lf > 0 ? amount / it.lf : it.pricePerLF,
+      amount,
+      breakdown: addOns.length ? [{ label: "Material", rate: it.pricePerLF, amount: it.total }, ...addOns] : [],
+    };
+  });
 }
 
 /** "MM/DD/YYYY" + days, same format back. */
@@ -259,7 +258,10 @@ export async function generateQuotePDF(data: QuoteData) {
     const descLines = row.desc.flatMap(([k, v]) => doc.splitTextToSize(`${k}: ${v}`, cols.desc.w - 12) as string[]);
     const itemLines = doc.splitTextToSize(row.item, cols.item.w - 12) as string[];
     const unitLines = ["Linear", "Feet"];
-    const rowH = PAD * 2 + Math.max(descLines.length, itemLines.length, unitLines.length) * DL;
+    const mainH = PAD * 2 + Math.max(descLines.length, itemLines.length, unitLines.length) * DL;
+    const BL = lineH(7.6);
+    const breakdownH = row.breakdown.length ? 4 + row.breakdown.length * BL + PAD : 0;
+    const rowH = mainH + breakdownH;
 
     if (y + rowH > bottomLimit) y = drawTableHead(newPage());
 
@@ -273,6 +275,21 @@ export async function generateQuotePDF(data: QuoteData) {
     doc.text(money(row.amount), cols.amount.x + cols.amount.w - 6, ty, { align: "right" });
     font("bold", 8);
     doc.text(itemLines, cols.item.x + 6, ty, { lineHeightFactor: 1.3 });
+
+    // Breakdown: material + each add-on, unnumbered, under the description.
+    if (row.breakdown.length) {
+      const by = y + mainH - PAD + 2;
+      doc.setDrawColor(...RULE);
+      doc.setLineWidth(0.5);
+      doc.line(cols.desc.x + 6, by, pageW - MARGIN_X - 6, by);
+      font("normal", 7.6, MUTED);
+      row.breakdown.forEach((b, i) => {
+        const ly = by + 4 + 7 + i * BL;
+        doc.text(b.label, cols.desc.x + 6, ly);
+        doc.text(`${money(b.rate)}/LF`, cols.rate.x + cols.rate.w - 6, ly, { align: "right" });
+        doc.text(money(b.amount), cols.amount.x + cols.amount.w - 6, ly, { align: "right" });
+      });
+    }
 
     y += rowH;
     doc.setDrawColor(...RULE);
@@ -315,7 +332,7 @@ export async function generateQuotePDF(data: QuoteData) {
     "Shipping not included unless requested.",
     "Priced per linear foot (LF). Square footage shown for reference.",
     "Waste is chosen by the customer and billed on every line. We recommend 10% to 20%.",
-    "Pre-finish is charged per LF on top of the material rate.",
+    "Pre-finished options are charged per LF on top of the material rate.",
     "Wood is natural. Expect variation in color and grain. A finish sample is recommended before ordering.",
   ];
   const qrCol = 1.15 * IN;

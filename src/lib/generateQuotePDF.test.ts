@@ -12,16 +12,20 @@ describe("buildQuoteRows", () => {
     ],
   };
 
-  it("puts each add-on on its own line with the calculator's own amounts, and drops promo notes", () => {
-    const rows = buildQuoteRows([item]);
-    expect(rows.map(r => [r.line, r.item, r.qty, r.rate, r.amount])).toEqual([
-      [1, "Maximo Thermo", 1000, 5.82, 5820],
-      [2, "Pre-Finish", 1000, 2.2, 2200],
-      [3, "Milling", 1000, 1, 1000],
+  it("folds add-ons into one product line with an unnumbered breakdown, and drops promo notes", () => {
+    const rows = buildQuoteRows([item, { ...item, addOns: [] }]);
+    expect(rows.map(r => [r.line, r.item, r.qty, r.amount])).toEqual([
+      [1, "Maximo Thermo", 1000, 9020],
+      [2, "Maximo Thermo", 1000, 5820],
     ]);
+    expect(rows[0].rate).toBeCloseTo(9.02);
+    expect(rows[0].breakdown).toEqual([
+      { label: "Material", rate: 5.82, amount: 5820 },
+      { label: "Pre-Finished Color: Regular", rate: 2.2, amount: 2200 },
+      { label: "Milling", rate: 1, amount: 1000 },
+    ]);
+    expect(rows[1].breakdown).toEqual([]);
     expect(rows[0].desc).toContainEqual(["Lengths", "Random Lengths"]);
-    expect(rows[1].desc[0]).toEqual(["Color", "Regular"]);
-    expect(rows[1].desc[1]).toEqual(["Applied To", "Line 1, 1,000.00 LF"]);
   });
 
   it("names non-thermo products", () => {
