@@ -2,16 +2,10 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
-import { ArrowRight, ArrowUpRight, FileText } from "lucide-react";
-import { useQuotes } from "@/lib/api";
-import { quoteEditHref } from "@/lib/quotes";
+import { ArrowUpRight } from "lucide-react";
 import { GROUPS, TOOLS, type Tool } from "@/lib/tools";
 
 const GOLD = "#C9A227";
-const DARK = "#1A1A1A";
-const RECENT_QUOTES = 5;
-
-const money = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 // Greeting depends on the viewer's clock; the server (UTC) renders a neutral one.
 const noSubscribe = () => () => {};
@@ -61,42 +55,7 @@ function ToolTile({ tool }: { tool: Tool }) {
   );
 }
 
-function RecentQuotes({ userId }: { userId: string }) {
-  const { data, isLoading, error } = useQuotes();
-  // Admins get everyone's quotes from the API; the portal shows your own.
-  const mine = (data ?? []).filter(q => q.ownerId === userId).slice(0, RECENT_QUOTES);
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      {isLoading ? (
-        <p className="px-5 py-4 text-sm text-gray-400">Loading your quotes…</p>
-      ) : error ? (
-        <p className="px-5 py-4 text-sm text-red-700">Couldn&apos;t load your quotes</p>
-      ) : mine.length === 0 ? (
-        <p className="px-5 py-4 text-sm text-gray-500">No saved quotes yet.</p>
-      ) : (
-        <ul className="divide-y divide-gray-100">
-          {mine.map(q => (
-            <li key={q.id}>
-              <Link href={quoteEditHref(q)} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50">
-                <FileText className="w-4 h-4 text-gray-400 shrink-0" />
-                <span className="flex-1 min-w-0 truncate font-semibold text-gray-900">{q.projectName}</span>
-                <span className="text-xs text-gray-400 uppercase hidden sm:inline">{q.calculator === "b2b" ? "B2B" : "Retail"}</span>
-                <span className="text-sm font-bold text-gray-700">{money(q.total)}</span>
-                <ArrowRight className="w-4 h-4 text-gray-400" />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-      <Link href="/profile" className="block px-5 py-2.5 text-sm font-semibold text-right border-t border-gray-100 hover:bg-gray-50" style={{ color: DARK }}>
-        See all in Profile →
-      </Link>
-    </div>
-  );
-}
-
-export default function Portal({ userId, name, isAdmin }: { userId: string; name: string; isAdmin: boolean }) {
+export default function Portal({ name, isAdmin }: { name: string; isAdmin: boolean }) {
   const greeting = useGreeting();
   const firstName = name.split("@")[0].split(" ")[0];
   const tools = TOOLS.filter(t => !t.adminOnly || isAdmin);
@@ -108,17 +67,9 @@ export default function Portal({ userId, name, isAdmin }: { userId: string; name
         {firstName ? `, ${firstName}` : ""}
       </h1>
 
-      {GROUPS.filter(g => g.id !== "admin").map(g => (
+      {GROUPS.map(g => (
         <ToolSection key={g.id} label={g.label} tools={tools.filter(t => t.group === g.id)} />
       ))}
-
-      <section>
-        <SectionLabel>My work</SectionLabel>
-        <RecentQuotes userId={userId} />
-      </section>
-
-      {/* Admin sits last, below your own work. */}
-      <ToolSection label="Admin" tools={tools.filter(t => t.group === "admin")} />
     </div>
   );
 }

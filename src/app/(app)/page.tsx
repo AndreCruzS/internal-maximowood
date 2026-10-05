@@ -20,7 +20,6 @@ export default async function PortalPage({
 
   return (
     <Portal
-      userId={user.id}
       name={(user.user_metadata?.name as string | undefined) || user.email || ""}
       isAdmin={isAdminUser(user)}
     />
