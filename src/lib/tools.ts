@@ -20,8 +20,8 @@ export type Tool = {
 
 export type ToolGroup = "sales" | "stock" | "admin";
 
-export const GROUPS: { id: ToolGroup; label: string }[] = [
-  { id: "sales", label: "Sales" },
+export const GROUPS: { id: ToolGroup; label: string; note?: string }[] = [
+  { id: "sales", label: "Sales", note: "Your quotes will be saved to your profile." },
   { id: "stock", label: "Stock" },
   { id: "admin", label: "Admin" },
 ];

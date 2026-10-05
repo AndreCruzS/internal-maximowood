@@ -68,13 +68,13 @@ export default function Portal({ name, isAdmin }: { name: string; isAdmin: boole
       </h1>
 
       {GROUPS.map(g => (
-        <ToolSection key={g.id} label={g.label} tools={tools.filter(t => t.group === g.id)} />
+        <ToolSection key={g.id} label={g.label} note={g.note} tools={tools.filter(t => t.group === g.id)} />
       ))}
     </div>
   );
 }
 
-function ToolSection({ label, tools }: { label: string; tools: Tool[] }) {
+function ToolSection({ label, note, tools }: { label: string; note?: string; tools: Tool[] }) {
   if (tools.length === 0) return null;
   return (
     <section>
@@ -84,6 +84,7 @@ function ToolSection({ label, tools }: { label: string; tools: Tool[] }) {
           <ToolTile key={tool.href} tool={tool} />
         ))}
       </div>
+      {note && <p className="mt-3 text-sm text-gray-500">{note}</p>}
     </section>
   );
 }
