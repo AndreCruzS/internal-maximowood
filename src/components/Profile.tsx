@@ -313,7 +313,7 @@ function QuotesCard({ account }: { account: ProfileAccount }) {
             />
           </div>
           <Link
-            href="/"
+            href="/calculator"
             className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-sm font-bold text-black whitespace-nowrap hover:opacity-90"
             style={{ background: GOLD }}
           >

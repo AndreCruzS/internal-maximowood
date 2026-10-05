@@ -84,5 +84,6 @@ describe("quote row mapping", () => {
     const q = rowToQuote(row);
     expect(q).toMatchObject({ ownerId: "11111111-0000-4000-8000-000000000000", calculator: "b2b", tax: 10.5, shipping: null, total: 900, company: "" });
     expect(quoteEditHref(q)).toBe("/b2b?quote=6f1c1f9e-0000-4000-8000-000000000000");
+    expect(quoteEditHref({ ...q, calculator: "retail" })).toBe("/calculator?quote=6f1c1f9e-0000-4000-8000-000000000000");
   });
 });

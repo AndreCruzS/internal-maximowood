@@ -59,10 +59,10 @@ export default function Login() {
 
         <div className="text-center">
           <h2 className="text-white text-3xl font-black tracking-widest uppercase mb-2">
-            Sales Calculator
+            Internal Portal
           </h2>
           <p className="text-[#C9A227] text-sm font-medium tracking-widest uppercase">
-            Concierge Team Tool
+            Maximo Team Tools
           </p>
         </div>
 
@@ -94,7 +94,7 @@ export default function Login() {
 
           <h1 className="text-white text-2xl font-bold mb-1">Welcome back</h1>
           <p className="text-white/50 text-sm mb-8">
-            Sign in to access the sales tool.
+            Sign in to access the Maximo Internal Portal.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -140,13 +140,13 @@ export default function Login() {
               disabled={isLoading || !email || !password}
               className="w-full h-12 bg-[#C9A227] hover:bg-[#b8911f] text-black font-bold text-base uppercase tracking-wider transition-all"
             >
-              {isLoading ? "Authenticating..." : "Access Tool"}
+              {isLoading ? "Authenticating..." : "Sign In"}
             </Button>
           </form>
 
           <div className="mt-8 pt-6 border-t border-white/10">
             <p className="text-xs text-white/20 text-center">
-              Restricted access · Maximo Concierge Sales Team
+              Restricted access · Maximo team only
             </p>
           </div>
         </div>
