@@ -42,6 +42,7 @@ import {
   Ruler,
 } from "lucide-react";
 import QuoteModal, { type QuoteCartItem } from "@/components/QuoteModal";
+import { distributePieces, type PieceLengthResult } from "@/lib/pieceLengths";
 import SavedQuoteBanner from "@/components/SavedQuoteBanner";
 import { useSavedQuote } from "@/hooks/useSavedQuote";
 import type { QuoteLineItem } from "@/lib/generateQuotePDF";
@@ -81,13 +82,7 @@ type Results = {
   coatingLabel: string;
   addOnBreakdown: { label: string; amount: number }[];
   // Piece length calculation
-  pieceLengthResult: {
-    selectedLengths: number[];
-    piecesEach: number;
-    totalPieces: number;
-    actualLF: number;
-    breakdown: { length: number; pieces: number; lf: number }[];
-  } | null;
+  pieceLengthResult: PieceLengthResult | null;
 };
 
 type CartItem = QuoteCartItem;
@@ -468,16 +463,8 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
       coatingLabel = opt ? opt.label : "";
     }
 
-    // Piece length calculation (multi-length equal distribution)
-    let pieceLengthResult: Results["pieceLengthResult"] = null;
-    if (selectedLengths.length > 0) {
-      const sumLengths = selectedLengths.reduce((a, b) => a + b, 0);
-      const piecesEach = Math.ceil(wastedLF / sumLengths);
-      const totalPieces = piecesEach * selectedLengths.length;
-      const actualLF = piecesEach * sumLengths;
-      const breakdown = selectedLengths.map(l => ({ length: l, pieces: piecesEach, lf: piecesEach * l }));
-      pieceLengthResult = { selectedLengths, piecesEach, totalPieces, actualLF, breakdown };
-    }
+    // Piece lengths: even mix with the least extra LF (src/lib/pieceLengths.ts)
+    const pieceLengthResult: Results["pieceLengthResult"] = distributePieces(wastedLF, selectedLengths);
 
     setResults({
       rawLF: Math.round(rawLF * 100) / 100,
@@ -1212,7 +1199,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                     <p className="text-xs font-black uppercase tracking-widest" style={{ color: tierColor }}>
                       {results.pieceLengthResult.selectedLengths.length === 1
                         ? `Pieces — ${results.pieceLengthResult.selectedLengths[0]}' each`
-                        : `Pieces — ${results.pieceLengthResult.selectedLengths.join("', ")}' (equal distribution)`}
+                        : `Pieces — ${results.pieceLengthResult.selectedLengths.join("', ")}' (even mix)`}
                     </p>
                   </div>
                   <div className="flex items-end gap-4 mb-3">
@@ -1225,7 +1212,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                         = {results.pieceLengthResult.actualLF.toLocaleString()} LF actual
                       </p>
                       <p className="text-xs text-white/40">
-                        base: {results.wastedLF.toLocaleString()} LF ÷ {results.pieceLengthResult.selectedLengths.reduce((a,b)=>a+b,0)}' = {(results.wastedLF / results.pieceLengthResult.selectedLengths.reduce((a,b)=>a+b,0)).toFixed(2)} → rounded up
+                        needed: {results.wastedLF.toLocaleString()} LF → closest fit with these lengths
                       </p>
                     </div>
                   </div>
@@ -1242,7 +1229,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                   )}
                   {results.pieceLengthResult.actualLF !== results.wastedLF && (
                     <p className="text-xs mt-2 font-medium" style={{ color: "#aaa" }}>
-                      +{(results.pieceLengthResult.actualLF - results.wastedLF).toFixed(1)} LF extra vs. base (rounding)
+                      +{(results.pieceLengthResult.actualLF - results.wastedLF).toFixed(1)} LF extra vs. needed (whole pieces)
                     </p>
                   )}
                 </div>
