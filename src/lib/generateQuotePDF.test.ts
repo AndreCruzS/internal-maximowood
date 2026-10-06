@@ -37,11 +37,11 @@ describe("buildQuoteRows", () => {
 describe("waste detail", () => {
   const base = { species: "THERMO® AYOUS", profile: "V JOINT / NICKEL GAP", nominalSize: "1 x 6", pricePerLF: 7.76 };
   it("shows project quantity and the waste allowance (LF and its cost) when waste was applied", () => {
-    // 1,500 LF at 10% waste → 1,500 / 0.9 = 1,666.67 LF (the calculator's formula)
-    const [row] = buildQuoteRows([{ ...base, lf: 1666.67, sqft: 730.56, total: 12933.36, projectLF: 1500, projectSqft: 657.5, wastePercent: "10% waste" }]);
+    // 1,500 LF + 10% waste = 1,650 LF
+    const [row] = buildQuoteRows([{ ...base, lf: 1650, sqft: 723.25, total: 12804, projectLF: 1500, projectSqft: 657.5, wastePercent: "10% waste" }]);
     expect(row.desc).toContainEqual(["Project Quantity", "1,500.00 LF (657.50 sqft)"]);
-    expect(row.desc).toContainEqual(["Waste Allowance", "10% (166.67 LF, $1,293.36 of this line)"]);
-    expect(row.desc).toContainEqual(["Order Quantity", "1,666.67 LF (730.56 sqft)"]);
+    expect(row.desc).toContainEqual(["Waste Allowance", "10% (150.00 LF, $1,164.00 of this line)"]);
+    expect(row.desc).toContainEqual(["Order Quantity", "1,650.00 LF (723.25 sqft)"]);
   });
   it("hides the waste rows with no waste or on older quotes", () => {
     const none = buildQuoteRows([{ ...base, lf: 1500, sqft: 657.5, total: 11640, projectLF: 1500, projectSqft: 657.5, wastePercent: "No waste" }])[0];
