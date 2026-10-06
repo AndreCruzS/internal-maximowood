@@ -513,6 +513,9 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
       profileKey: selectedProfile,
       sizeKey: selectedSize,
       neededLF: results.wastedLF,
+      projectLF: results.rawLF,
+      projectSqft: results.rawSqft,
+      wastePercent: results.wastePercent,
     };
     setCartItems((prev) => [...prev, newItem]);
     handleResetForm();
@@ -580,6 +583,9 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
             profileKey: selectedProfile,
             sizeKey: selectedSize,
             neededLF: results!.wastedLF,
+            projectLF: results!.rawLF,
+            projectSqft: results!.rawSqft,
+            wastePercent: results!.wastePercent,
           },
         ]
       : [];
@@ -919,7 +925,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
             </div>
             {wasteId !== "none" && (
               <p className="text-xs mt-2 font-medium" style={{ color: GOLD }}>
-                Quantity divided by {WASTE_OPTIONS.find((w) => w.id === wasteId)?.divisor} to cover {wasteId}% waste.
+                Quantity +{wasteId}% to cover waste.
               </p>
             )}
           </StepCard>
@@ -1176,7 +1182,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                 unit={`LF${results.wastePercent !== "No waste" ? " (with waste)" : ""}`}
                 sub={
                   results.wastePercent !== "No waste"
-                    ? `Base: ${results.rawLF.toLocaleString()} LF ÷ ${WASTE_OPTIONS.find((w) => w.id === wasteId)?.divisor ?? 1} (${results.wastePercent})`
+                    ? `Base: ${results.rawLF.toLocaleString()} LF + ${results.wastePercent}`
                     : undefined
                 }
                 accent={GOLD}
@@ -1189,7 +1195,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                 unit={`sqft${results.wastePercent !== "No waste" ? " (with waste)" : ""}`}
                 sub={
                   results.wastePercent !== "No waste"
-                    ? `Base: ${results.rawSqft.toLocaleString()} sqft ÷ ${WASTE_OPTIONS.find((w) => w.id === wasteId)?.divisor ?? 1} (${results.wastePercent})`
+                    ? `Base: ${results.rawSqft.toLocaleString()} sqft + ${results.wastePercent}`
                     : undefined
                 }
                 accent="#555"

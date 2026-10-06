@@ -34,6 +34,22 @@ describe("buildQuoteRows", () => {
   });
 });
 
+describe("waste detail", () => {
+  const base = { species: "THERMO® AYOUS", profile: "V JOINT / NICKEL GAP", nominalSize: "1 x 6", pricePerLF: 7.76 };
+  it("shows project quantity and the waste allowance (LF and its cost) when waste was applied", () => {
+    // 1,500 LF + 10% waste = 1,650 LF
+    const [row] = buildQuoteRows([{ ...base, lf: 1650, sqft: 723.25, total: 12804, projectLF: 1500, projectSqft: 657.5, wastePercent: "10% waste" }]);
+    expect(row.desc).toContainEqual(["Project Quantity", "1,500.00 LF (657.50 sqft)"]);
+    expect(row.desc).toContainEqual(["Waste Allowance", "10% (150.00 LF, $1,164.00 of this line)"]);
+    expect(row.desc).toContainEqual(["Order Quantity", "1,650.00 LF (723.25 sqft)"]);
+  });
+  it("hides the waste rows with no waste or on older quotes", () => {
+    const none = buildQuoteRows([{ ...base, lf: 1500, sqft: 657.5, total: 11640, projectLF: 1500, projectSqft: 657.5, wastePercent: "No waste" }])[0];
+    const old = buildQuoteRows([{ ...base, lf: 1500, sqft: 657.5, total: 11640 }])[0];
+    for (const r of [none, old]) expect(r.desc.map(d => d[0])).not.toContain("Waste Allowance");
+  });
+});
+
 describe("addDays", () => {
   it("rolls over month ends", () => {
     expect(addDays("10/25/2026", 10)).toBe("11/04/2026");

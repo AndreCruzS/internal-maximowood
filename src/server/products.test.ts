@@ -187,27 +187,21 @@ describe("add-ons calculation", () => {
 });
 
 describe("material waste", () => {
-  // Waste uses division: 10% → ÷0.90, 15% → ÷0.85, 20% → ÷0.80
-  it("WASTE_OPTIONS has correct divisors", () => {
-    expect(WASTE_OPTIONS.find(w => w.id === "none")?.divisor).toBe(1.00);
-    expect(WASTE_OPTIONS.find(w => w.id === "10")?.divisor).toBe(0.90);
-    expect(WASTE_OPTIONS.find(w => w.id === "15")?.divisor).toBe(0.85);
-    expect(WASTE_OPTIONS.find(w => w.id === "20")?.divisor).toBe(0.80);
+  // Waste is added on top: 10% → ×1.10, 15% → ×1.15, 20% → ×1.20
+  it("WASTE_OPTIONS has correct multipliers", () => {
+    expect(WASTE_OPTIONS.find(w => w.id === "none")?.multiplier).toBe(1.00);
+    expect(WASTE_OPTIONS.find(w => w.id === "10")?.multiplier).toBe(1.10);
+    expect(WASTE_OPTIONS.find(w => w.id === "15")?.multiplier).toBe(1.15);
+    expect(WASTE_OPTIONS.find(w => w.id === "20")?.multiplier).toBe(1.20);
   });
 
   it("applyWaste with none returns same quantity", () => {
     expect(applyWaste(100, "none")).toBe(100);
   });
 
-  it("applyWaste with 10% divides by 0.90 (~111.11 LF needed for 100 LF net)", () => {
-    expect(applyWaste(100, "10")).toBeCloseTo(100 / 0.90, 2);
-  });
-
-  it("applyWaste with 15% divides by 0.85 (~117.65 LF needed for 100 LF net)", () => {
-    expect(applyWaste(100, "15")).toBeCloseTo(100 / 0.85, 2);
-  });
-
-  it("applyWaste with 20% divides by 0.80 (125 LF needed for 100 LF net)", () => {
-    expect(applyWaste(100, "20")).toBeCloseTo(100 / 0.80, 2);
+  it("applyWaste adds 10% / 15% / 20% on top (100 LF → 110 / 115 / 120 LF)", () => {
+    expect(applyWaste(100, "10")).toBeCloseTo(110, 6);
+    expect(applyWaste(100, "15")).toBeCloseTo(115, 6);
+    expect(applyWaste(100, "20")).toBeCloseTo(120, 6);
   });
 });

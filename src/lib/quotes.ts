@@ -80,6 +80,9 @@ export function toQuoteData(q: QuoteInput, date = new Date()): QuoteData {
       total: item.total,
       addOns: item.addOns,
       lengthType: item.lengthType,
+      projectLF: item.projectLF,
+      projectSqft: item.projectSqft,
+      wastePercent: item.wastePercent,
     })),
   };
 }

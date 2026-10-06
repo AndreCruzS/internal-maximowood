@@ -199,18 +199,19 @@ export const calculateAddOnCost = (lf: number, addOns: AddOnConfig): number => {
 
 // ── Material Waste ───────────────────────────────────────────────────────────
 
+// Waste is added on top of the project quantity: 10% → ×1.10, 15% → ×1.15, 20% → ×1.20.
 export const WASTE_OPTIONS = [
-  { id: "none", label: "No waste",   divisor: 1.00 },
-  { id: "10",   label: "10% waste",  divisor: 0.90 },
-  { id: "15",   label: "15% waste",  divisor: 0.85 },
-  { id: "20",   label: "20% waste",  divisor: 0.80 },
+  { id: "none", label: "No waste",   multiplier: 1.00 },
+  { id: "10",   label: "10% waste",  multiplier: 1.10 },
+  { id: "15",   label: "15% waste",  multiplier: 1.15 },
+  { id: "20",   label: "20% waste",  multiplier: 1.20 },
 ] as const;
 
 export type WasteId = (typeof WASTE_OPTIONS)[number]["id"];
 
 export const applyWaste = (quantity: number, wasteId: WasteId): number => {
   const opt = WASTE_OPTIONS.find((w) => w.id === wasteId);
-  return quantity / (opt ? opt.divisor : 1);
+  return quantity * (opt ? opt.multiplier : 1);
 };
 
 // ── HARDWOOD PRODUCTS ──────────────────────────────────────────────────────────

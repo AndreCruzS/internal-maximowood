@@ -21,6 +21,11 @@ export type QuoteLineItem = {
   total: number;
   lengthType?: "RL" | "Fixed";
   addOns?: { label: string; amount: number }[];
+  /** Quantity before waste (the calculator's raw LF / sqft). Absent on quotes saved before it was recorded. */
+  projectLF?: number;
+  projectSqft?: number;
+  /** The calculator's waste option label, e.g. "10% waste" or "No waste". */
+  wastePercent?: string;
 };
 
 export type QuoteData = {
@@ -86,6 +91,13 @@ export function buildQuoteRows(items: QuoteLineItem[]): QuoteRow[] {
       ["Nominal Size", it.nominalSize],
     ];
     if (it.lengthType) desc.push(["Lengths", it.lengthType === "Fixed" ? "Fixed Lengths" : "Random Lengths"]);
+    // Waste: project quantity + allowance = order quantity (the calculator's own numbers).
+    const wasteLF = it.projectLF != null ? Math.round((it.lf - it.projectLF) * 100) / 100 : 0;
+    if (it.projectLF != null && wasteLF > 0) {
+      const wasteCost = it.lf > 0 ? (amount / it.lf) * wasteLF : 0;
+      desc.push(["Project Quantity", `${num(it.projectLF)} LF${it.projectSqft != null ? ` (${num(it.projectSqft)} sqft)` : ""}`]);
+      desc.push(["Waste Allowance", `${(it.wastePercent ?? "").replace(/\s*waste$/i, "") || "Waste"} (${num(wasteLF)} LF, ${money(wasteCost)} of this line)`]);
+    }
     desc.push(["Order Quantity", `${num(it.lf)} LF (${num(it.sqft)} sqft)`]);
     if (it.sqft > 0) desc.push(["Price per sqft", money(amount / it.sqft)]);
     return {

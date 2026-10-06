@@ -395,6 +395,9 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
       profileKey: selectedProfile,
       sizeKey: selectedSize,
       neededLF: results.wastedLF,
+      projectLF: results.rawLF,
+      projectSqft: results.rawSqft,
+      wastePercent: results.wastePercent,
     };
     setCartItems(prev => [...prev, newItem]);
     // Reset form for next item
@@ -461,6 +464,9 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
         profileKey: selectedProfile,
         sizeKey: selectedSize,
         neededLF: results!.wastedLF,
+        projectLF: results!.rawLF,
+        projectSqft: results!.rawSqft,
+        wastePercent: results!.wastePercent,
       }] : []);
 
   const canOpenQuote = quoteItems.length > 0;
@@ -755,7 +761,7 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
           </div>
           {wasteId !== "none" && (
             <p className="text-xs mt-2 font-medium" style={{ color: GOLD }}>
-              Quantity divided by {WASTE_OPTIONS.find(w => w.id === wasteId)?.divisor} to cover {wasteId}% waste.
+              Quantity +{wasteId}% to cover waste.
             </p>
           )}
         </StepCard>
@@ -1099,7 +1105,7 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
               label="Linear Feet"
               value={results.wastedLF.toLocaleString()}
               unit={`LF${results.wastePercent !== "No waste" ? " (with waste)" : ""}`}
-              sub={results.wastePercent !== "No waste" ? `Base: ${results.rawLF.toLocaleString()} LF ÷ ${WASTE_OPTIONS.find(w => w.id === wasteId)?.divisor ?? 1} (${results.wastePercent})` : undefined}
+              sub={results.wastePercent !== "No waste" ? `Base: ${results.rawLF.toLocaleString()} LF + ${results.wastePercent}` : undefined}
               accent={GOLD}
             />
 
@@ -1108,7 +1114,7 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
               label="Square Feet"
               value={results.wastedSqft.toLocaleString()}
               unit={`sqft${results.wastePercent !== "No waste" ? " (with waste)" : ""}`}
-              sub={results.wastePercent !== "No waste" ? `Base: ${results.rawSqft.toLocaleString()} sqft ÷ ${WASTE_OPTIONS.find(w => w.id === wasteId)?.divisor ?? 1} (${results.wastePercent})` : undefined}
+              sub={results.wastePercent !== "No waste" ? `Base: ${results.rawSqft.toLocaleString()} sqft + ${results.wastePercent}` : undefined}
               accent="#555"
             />
 

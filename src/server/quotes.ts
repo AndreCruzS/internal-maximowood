@@ -117,6 +117,10 @@ function parseItem(v: unknown): QuoteCartItem | null {
     profileKey: str(o.profileKey, 200),
     sizeKey: str(o.sizeKey, 100),
     neededLF: o.neededLF,
+    // Waste detail for the PDF; optional so older quotes still parse.
+    projectLF: finite(o.projectLF) ? o.projectLF : undefined,
+    projectSqft: finite(o.projectSqft) ? o.projectSqft : undefined,
+    wastePercent: typeof o.wastePercent === "string" ? str(o.wastePercent, 50) : undefined,
   };
 }
 
