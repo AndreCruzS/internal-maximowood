@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/client";
 
 const LOGO_MW = "/logos/logo-mw-yellow.png";
-const LOGO_THERMO = "/logos/logo-thermo-black.webp";
+const LOGO_MAXIMO = "/logos/logo-maximo-tagline-black.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -86,9 +86,9 @@ export default function Login() {
           <div className="mb-8">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={LOGO_THERMO}
-              alt="Maximo Thermo"
-              className="h-10 w-auto brightness-0 invert"
+              src={LOGO_MAXIMO}
+              alt="Maximo — Hardwood Tradition, Thermo Innovation"
+              className="h-14 w-auto brightness-0 invert"
             />
           </div>
 
