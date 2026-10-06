@@ -513,6 +513,9 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
       profileKey: selectedProfile,
       sizeKey: selectedSize,
       neededLF: results.wastedLF,
+      projectLF: results.rawLF,
+      projectSqft: results.rawSqft,
+      wastePercent: results.wastePercent,
     };
     setCartItems((prev) => [...prev, newItem]);
     handleResetForm();
@@ -580,6 +583,9 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
             profileKey: selectedProfile,
             sizeKey: selectedSize,
             neededLF: results!.wastedLF,
+            projectLF: results!.rawLF,
+            projectSqft: results!.rawSqft,
+            wastePercent: results!.wastePercent,
           },
         ]
       : [];

@@ -395,6 +395,9 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
       profileKey: selectedProfile,
       sizeKey: selectedSize,
       neededLF: results.wastedLF,
+      projectLF: results.rawLF,
+      projectSqft: results.rawSqft,
+      wastePercent: results.wastePercent,
     };
     setCartItems(prev => [...prev, newItem]);
     // Reset form for next item
@@ -461,6 +464,9 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
         profileKey: selectedProfile,
         sizeKey: selectedSize,
         neededLF: results!.wastedLF,
+        projectLF: results!.rawLF,
+        projectSqft: results!.rawSqft,
+        wastePercent: results!.wastePercent,
       }] : []);
 
   const canOpenQuote = quoteItems.length > 0;
