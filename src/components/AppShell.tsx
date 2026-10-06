@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, LogOut, UserCircle } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 
-const LOGO_THERMO = "/logos/logo-thermo-black.webp";
+const LOGO_MAXIMO = "/logos/logo-maximo-tagline-black.png";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -44,9 +44,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Link href="/" aria-label="Maximo Internal Portal">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={LOGO_THERMO}
-                alt="Maximo Thermo"
-                className="h-8 w-auto brightness-0 invert"
+                src={LOGO_MAXIMO}
+                alt="Maximo — Hardwood Tradition, Thermo Innovation"
+                className="h-10 w-auto brightness-0 invert"
               />
             </Link>
             {pathname !== "/" && (

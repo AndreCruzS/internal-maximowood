@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import { LOGO_THERMO_DARK_URL, QR_WARRANTY_URL, fetchAsBase64 } from "./pdfAssets";
+import { LOGO_MAXIMO_DARK_URL, QR_WARRANTY_URL, fetchAsBase64 } from "./pdfAssets";
 
 /**
  * Quote PDF, laid out like the Maximo quote template (maximo-thermo-quote.html):
@@ -126,7 +126,7 @@ const FOOTER_H = 18;
 export async function generateQuotePDF(data: QuoteData) {
   const doc = new jsPDF({ unit: "pt", format: "letter", orientation: "portrait" });
   const [logo, qr] = await Promise.all([
-    fetchAsBase64(LOGO_THERMO_DARK_URL).catch(() => null),
+    fetchAsBase64(LOGO_MAXIMO_DARK_URL).catch(() => null),
     fetchAsBase64(QR_WARRANTY_URL).catch(() => null),
   ]);
 
@@ -173,7 +173,7 @@ export async function generateQuotePDF(data: QuoteData) {
   if (logo) {
     const h = 0.5 * IN;
     try {
-      doc.addImage(logo, "PNG", MARGIN_X, y + 3, h * (534 / 115), h, undefined, "FAST");
+      doc.addImage(logo, "PNG", MARGIN_X, y + 3, h * (1400 / 320), h, undefined, "FAST");
     } catch {
       // logo is decoration; the quote still renders without it
     }

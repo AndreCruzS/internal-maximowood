@@ -6,8 +6,8 @@ export const FONT_BOLD_URL = "/pdf/font-bold.ttf";
 
 export const LOGO_THERMO_URL = "/pdf/logo-thermo.png";
 
-/** Black wordmark for the white quote page (from the quote template). */
-export const LOGO_THERMO_DARK_URL = "/pdf/logo-thermo-dark.png";
+/** Main Maximo logo with tagline, black, for the white quote page. */
+export const LOGO_MAXIMO_DARK_URL = "/pdf/logo-maximo-dark.png";
 
 export const LOGO_MW_URL = "/pdf/logo-mw.png";
 
