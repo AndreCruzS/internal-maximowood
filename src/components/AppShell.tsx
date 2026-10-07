@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, ChevronDown, FolderOpen, Home, LogOut, Menu, Newspaper, ShieldCheck, UserCircle, Users, X } from "lucide-react";
+import { BadgeCheck, CalendarDays, ChevronDown, FolderOpen, Home, LogOut, Menu, Newspaper, ShieldCheck, UserCircle, Users, X } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
-import { BRAND, DEPARTMENTS, TOOLS } from "@/lib/intranet";
+import { BRAND, COMPANIES, DEPARTMENTS, TOOLS } from "@/lib/intranet";
 import SearchBox from "@/components/SearchBox";
 
 const LOGO = "/brand/gmx-logo-color.png";
@@ -67,7 +67,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname === `/departments/${id}` || (id === "commercial" && COMMERCIAL_PATHS.includes(pathname));
 
   const sidebar = (
-    <nav className="flex h-full flex-col gap-1 p-4" aria-label="Main">
+    <nav className="flex min-h-full flex-col gap-1 p-4" aria-label="Main">
       <Link href="/" onClick={close} className="mb-6 block px-2 pt-1" aria-label={BRAND.name}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={LOGO} alt="GMX Group" className="h-9 w-auto" />
@@ -102,6 +102,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           );
         })}
 
+      <p className="mt-3 px-3 py-2 text-xs font-black uppercase tracking-widest text-gray-400">Brands</p>
+      {COMPANIES.map(c => (
+        <NavItem
+          key={c.id}
+          href={`/brands/${c.id}`}
+          icon={<BadgeCheck className="h-4 w-4" />}
+          label={c.name}
+          active={pathname === `/brands/${c.id}`}
+          onNavigate={close}
+        />
+      ))}
+
       <div className="mt-3" />
       <NavItem href="/resources" icon={<FolderOpen className="h-4 w-4" />} label="Resources" active={pathname === "/resources"} onNavigate={close} />
       {session.isAdmin && (
@@ -115,7 +127,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[#F7F8F7]">
       {/* Sidebar — fixed on desktop, a drawer on small screens */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-gray-200 bg-white lg:block">{sidebar}</aside>
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 overflow-y-auto border-r border-gray-200 bg-white lg:block">{sidebar}</aside>
       {menuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button type="button" className="absolute inset-0 bg-black/30" aria-label="Close menu" onClick={close} />

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { ArrowUpRight, Search } from "lucide-react";
-import { DEPARTMENTS, TOOLS, companyName, departmentById } from "@/lib/intranet";
+import { COMPANIES, DEPARTMENTS, TOOLS, companyName, departmentById } from "@/lib/intranet";
 
 type Result = { label: string; hint: string; href: string; external?: boolean };
 
@@ -17,6 +17,7 @@ const INDEX: Result[] = [
     external: t.external,
   })),
   ...DEPARTMENTS.map(d => ({ label: d.name, hint: "Department", href: `/departments/${d.id}` })),
+  ...COMPANIES.map(c => ({ label: c.name, hint: "Brand · websites, social media, contact", href: `/brands/${c.id}` })),
   { label: "Home", hint: "Page", href: "/" },
   { label: "News", hint: "Page", href: "/news" },
   { label: "Calendar", hint: "Page · holidays & events", href: "/calendar" },

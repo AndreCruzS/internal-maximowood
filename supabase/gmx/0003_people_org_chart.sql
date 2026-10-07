@@ -57,6 +57,53 @@ create policy "read positions" on public.positions for select to authenticated u
 create policy "admins manage people"    on public.people    for all to authenticated using (public.is_admin()) with check (public.is_admin());
 create policy "admins manage positions" on public.positions for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
+-- Self-service: people keep their own entry and positions up to date.
+create function public.my_person_id() returns uuid
+language sql stable security definer set search_path = public as $$
+  select id from public.people where user_id = auth.uid()
+$$;
+
+create policy "edit own person" on public.people for update to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "manage own positions" on public.positions for all to authenticated
+  using (person_id = public.my_person_id()) with check (person_id = public.my_person_id());
+
+-- First sign-in: claim an existing (seeded) entry, or create a new one.
+create function public.claim_person(target uuid) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then raise exception 'Not signed in'; end if;
+  if public.my_person_id() is not null then raise exception 'You already have a people entry'; end if;
+  update public.people
+     set user_id = me,
+         email = coalesce(email, (select email from auth.users where id = me))
+   where id = target and user_id is null;
+  if not found then raise exception 'That entry is already linked to someone'; end if;
+  return target;
+end;
+$$;
+
+create function public.create_my_person(name text) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  new_id uuid;
+begin
+  if me is null then raise exception 'Not signed in'; end if;
+  if public.my_person_id() is not null then return public.my_person_id(); end if;
+  insert into public.people (full_name, email, user_id, company_id)
+  select coalesce(nullif(btrim(name), ''), split_part(u.email, '@', 1)), u.email, me,
+         (select d.company_id from public.allowed_email_domains d where d.domain = lower(split_part(u.email, '@', 2)))
+    from auth.users u where u.id = me
+  returning id into new_id;
+  return new_id;
+end;
+$$;
+
+revoke execute on function public.claim_person(uuid), public.create_my_person(text) from anon;
+
 -- Seed: GMX org chart slides (Liderança, Operações, Financeiro, Marketing, Vendas), 2026-10.
 -- Emails, phones, companies and the directors' managers still to be filled in.
 insert into public.people (id, full_name) values
