@@ -175,3 +175,60 @@
     }
   }
 }
+
+/* ── Org chart (src/components/OrgChart.tsx): top-down tree connectors ────── */
+.orgchart ul {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 28px;
+}
+.orgchart li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 10px 0;
+}
+.orgchart li::before,
+.orgchart li::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 50%;
+  height: 28px;
+  border-top: 1.5px solid #cbd5d1;
+}
+.orgchart li::after {
+  right: auto;
+  left: 50%;
+  border-left: 1.5px solid #cbd5d1;
+}
+.orgchart li:only-child::before { display: none; }
+.orgchart li:only-child::after { border-top: 0; }
+.orgchart li:first-child::before,
+.orgchart li:last-child::after { border: 0 none; }
+.orgchart li:last-child::before {
+  border-right: 1.5px solid #cbd5d1;
+  border-radius: 0 8px 0 0;
+}
+.orgchart li:first-child::after { border-radius: 8px 0 0 0; }
+.orgchart ul ul::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 28px;
+  border-left: 1.5px solid #cbd5d1;
+}
+.orgchart > ul { padding-top: 0; }
+.orgchart > ul > li { padding-top: 0; }
+.orgchart > ul > li::before,
+.orgchart > ul > li::after { display: none; }
+/* Leadership row inside the GMX box: cards side by side, no connectors. */
+.orgchart ul.board { padding-top: 4px; gap: 4px; }
+.orgchart ul.board::before,
+.orgchart ul.board > li::before,
+.orgchart ul.board > li::after { display: none; }
+.orgchart ul.board > li { padding-top: 0; }

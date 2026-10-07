@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { AtSign, MapPin, Network, Phone, Search, Users } from "lucide-react";
 import { COMPANIES, DEPARTMENTS, companyName, departmentById, type CompanyId } from "@/lib/intranet";
 import MyEntry from "@/components/MyEntry";
+import OrgChart from "@/components/OrgChart";
 
 export type Person = {
   id: string;
@@ -46,38 +47,6 @@ export function Avatar({ person, size = 40 }: { person: Person; size?: number })
 
 const deptName = (id: string | null) => (id ? departmentById(id)?.name ?? id : "Leadership");
 
-function OrgNode({ position, byId, reports, people }: {
-  position: Position;
-  byId: Map<string, Position[]>;
-  reports: Position[];
-  people: Map<string, Person>;
-}) {
-  const person = people.get(position.person_id);
-  if (!person) return null;
-  return (
-    <li className="relative pl-6 before:absolute before:left-2 before:top-0 before:h-full before:border-l before:border-gray-200 last:before:h-7 after:absolute after:left-2 after:top-7 after:w-4 after:border-t after:border-gray-200">
-      <div className="mb-2 inline-flex min-w-64 items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
-        <Avatar person={person} size={36} />
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-bold text-gray-900">{person.full_name}</span>
-          <span className="block truncate text-xs text-gray-500">{position.title}</span>
-          <span className="mt-0.5 flex flex-wrap gap-1">
-            {position.team && <span className="rounded bg-[#e6f6f0] px-1.5 text-[10px] font-bold text-[#00704a]">{position.team}</span>}
-            {!person.user_id && <span className="rounded bg-gray-100 px-1.5 text-[10px] font-bold text-gray-500">Not signed in yet</span>}
-          </span>
-        </span>
-      </div>
-      {reports.length > 0 && (
-        <ul>
-          {reports.map(c => (
-            <OrgNode key={c.id} position={c} byId={byId} reports={byId.get(c.id) ?? []} people={people} />
-          ))}
-        </ul>
-      )}
-    </li>
-  );
-}
-
 /** Directory + org chart of everyone in GMX Group, plus the signed-in person's own entry. */
 export default function PeopleView({ people, positions, me, error }: {
   people: Person[];
@@ -91,23 +60,7 @@ export default function PeopleView({ people, positions, me, error }: {
   const [company, setCompany] = useState<string>("all");
   const [q, setQ] = useState("");
 
-  const peopleById = useMemo(() => new Map(people.map(p => [p.id, p])), [people]);
   const mine = people.find(p => p.user_id === me) ?? null;
-
-  // Org chart: positions in the chosen department; a position whose manager is
-  // outside the selection becomes a root. Leadership (no department) first.
-  const chart = useMemo(() => {
-    const inScope = positions.filter(p => dept === "all" || p.department_id === dept);
-    const ids = new Set(inScope.map(p => p.id));
-    const byManager = new Map<string, Position[]>();
-    const roots: Position[] = [];
-    for (const p of inScope) {
-      if (p.reports_to && ids.has(p.reports_to)) byManager.set(p.reports_to, [...(byManager.get(p.reports_to) ?? []), p]);
-      else roots.push(p);
-    }
-    roots.sort((a, b) => Number(!!a.department_id) - Number(!!b.department_id) || a.sort - b.sort);
-    return { roots, byManager };
-  }, [positions, dept]);
 
   const directory = useMemo(() => {
     const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
@@ -172,17 +125,7 @@ export default function PeopleView({ people, positions, me, error }: {
       </div>
 
       {tab === "chart" ? (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-[#fbfcfb] p-5">
-          {chart.roots.length === 0 ? (
-            <p className="text-sm text-gray-500">No one in this department yet.</p>
-          ) : (
-            <ul className="-ml-6">
-              {chart.roots.map(r => (
-                <OrgNode key={r.id} position={r} byId={chart.byManager} reports={chart.byManager.get(r.id) ?? []} people={peopleById} />
-              ))}
-            </ul>
-          )}
-        </div>
+        <OrgChart people={people} positions={positions} dept={dept} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {directory.map(({ person, roles }) => (
