@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin, isAdminUser } from "@/lib/admin";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { generatePassword } from "@/lib/password";
+import { ALLOWED_EMAIL_DOMAINS, isCompanyEmail } from "@/lib/intranet";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +86,12 @@ export async function POST(request: Request) {
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 });
+  }
+  if (!isCompanyEmail(email)) {
+    return NextResponse.json(
+      { error: `Use a company email address (${ALLOWED_EMAIL_DOMAINS.join(", ")})` },
+      { status: 400 },
+    );
   }
   if (customPassword && customPassword.length < 8) {
     return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });

@@ -52,6 +52,17 @@ export const DEPARTMENTS: Department[] = [
   { id: "it", name: "IT", icon: Monitor, description: "Accounts, devices, software and help." },
 ];
 
+/** Email domains that may have an account (same list as allowed_email_domains in the database). */
+export const ALLOWED_EMAIL_DOMAINS = [
+  "gmxgroup.com", "gmxgroup.us",
+  "maximowood.com", "maximowood.us",
+  "lumberplus.com", "lumberplus.us",
+  "us4pro.com", "us4pro.us",
+] as const;
+
+export const isCompanyEmail = (email: string) =>
+  (ALLOWED_EMAIL_DOMAINS as readonly string[]).includes(email.trim().toLowerCase().split("@")[1] ?? "");
+
 export const departmentById = (id: string) => DEPARTMENTS.find(d => d.id === id);
 export const companyName = (id: CompanyId) => COMPANIES.find(c => c.id === id)?.name ?? id;
 

@@ -28,7 +28,7 @@ import { deleteQuote, sendJson, useQuotes } from "@/lib/api";
 import { generateQuotePDF } from "@/lib/generateQuotePDF";
 import { quoteEditHref, toQuoteData, type SavedQuote } from "@/lib/quotes";
 
-const GOLD = "#C9A227";
+const GREEN = "#009f67"; // GMX Forest Green
 const DARK = "#1A1A1A";
 
 export type ProfileAccount = {
@@ -84,7 +84,7 @@ function AccountCard({ account }: { account: ProfileAccount }) {
       <div className="flex items-start gap-4">
         <div
           className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-black shrink-0"
-          style={{ background: DARK, color: GOLD }}
+          style={{ background: GREEN, color: "#fff" }}
           aria-hidden
         >
           {initials(account.name, account.email)}
@@ -104,8 +104,8 @@ function AccountCard({ account }: { account: ProfileAccount }) {
               <button
                 type="submit"
                 disabled={saving}
-                className="h-9 px-3 rounded-md text-sm font-bold text-black disabled:opacity-50"
-                style={{ background: GOLD }}
+                className="h-9 px-3 rounded-md text-sm font-bold text-white disabled:opacity-50"
+                style={{ background: GREEN }}
                 aria-label="Save name"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
@@ -141,7 +141,7 @@ function AccountCard({ account }: { account: ProfileAccount }) {
               className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
               style={
                 account.isAdmin
-                  ? { background: "rgba(201,162,39,0.15)", color: "#8a6d1a" }
+                  ? { background: "rgba(0,159,103,0.12)", color: "#00704a" }
                   : { background: "#F3F4F6", color: "#6B7280" }
               }
             >
@@ -292,8 +292,8 @@ function QuotesCard({ account }: { account: ProfileAccount }) {
                   key={s}
                   type="button"
                   onClick={() => setScope(s)}
-                  className={`px-2.5 py-1 rounded ${scope === s ? "text-black" : "text-gray-500 hover:text-gray-800"}`}
-                  style={scope === s ? { background: GOLD } : {}}
+                  className={`px-2.5 py-1 rounded ${scope === s ? "text-white" : "text-gray-500 hover:text-gray-800"}`}
+                  style={scope === s ? { background: GREEN } : {}}
                 >
                   {s === "all" ? "Everyone" : "Mine"}
                 </button>
@@ -314,8 +314,8 @@ function QuotesCard({ account }: { account: ProfileAccount }) {
           </div>
           <Link
             href="/calculator"
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-sm font-bold text-black whitespace-nowrap hover:opacity-90"
-            style={{ background: GOLD }}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-sm font-bold text-white whitespace-nowrap hover:opacity-90"
+            style={{ background: GREEN }}
           >
             <Plus className="w-4 h-4" /> New quote
           </Link>
@@ -330,7 +330,7 @@ function QuotesCard({ account }: { account: ProfileAccount }) {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: GOLD }} />
+          <div className="w-8 h-8 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: GREEN }} />
         </div>
       ) : quotes.length === 0 ? (
         <div className="text-center py-14 px-6">
@@ -386,8 +386,8 @@ function QuotesCard({ account }: { account: ProfileAccount }) {
                     <div className="flex items-center justify-end gap-2">
                       <Link
                         href={quoteEditHref(q)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold text-black hover:opacity-90"
-                        style={{ background: GOLD }}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold text-white hover:opacity-90"
+                        style={{ background: GREEN }}
                       >
                         <Pencil className="w-3.5 h-3.5" /> Edit
                       </Link>
@@ -467,11 +467,11 @@ export default function Profile({ account, initialTab }: { account: ProfileAccou
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black" style={{ color: DARK, fontFamily: "'Anybody', sans-serif" }}>
+          <h1 className="text-2xl font-black" style={{ color: DARK }}>
             My Profile
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {tab === "admin" ? "Manage who can sign in to the sales calculator" : "Your account and saved quotes"}
+            {tab === "admin" ? "Manage who can sign in to the GMX Group Intranet" : "Your account and saved quotes"}
           </p>
         </div>
 
@@ -485,9 +485,9 @@ export default function Profile({ account, initialTab }: { account: ProfileAccou
                 aria-selected={tab === t.id}
                 onClick={() => selectTab(t.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-bold transition-all ${
-                  tab === t.id ? "text-black shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                  tab === t.id ? "text-white shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
                 }`}
-                style={tab === t.id ? { background: GOLD } : {}}
+                style={tab === t.id ? { background: GREEN } : {}}
               >
                 {t.icon}
                 {t.label}

@@ -6,7 +6,7 @@ import { UserPlus, RefreshCw, Trash2, KeyRound, Copy, Check, ShieldCheck, X } fr
 import { Input } from "@/components/ui/input";
 import type { AdminUser } from "@/app/api/admin/users/route";
 
-const GOLD = "#C9A227";
+const GREEN = "#009f67"; // GMX Forest Green
 const DARK = "#1A1A1A";
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
@@ -53,10 +53,10 @@ function CredentialCard({
   onDismiss: () => void;
 }) {
   return (
-    <div className="rounded-xl border-2 p-4 shadow-sm" style={{ borderColor: GOLD, background: "#FFFDF5" }}>
+    <div className="rounded-xl border-2 p-4 shadow-sm" style={{ borderColor: GREEN, background: "#F2FBF7" }}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5" style={{ color: GOLD }} />
+          <ShieldCheck className="w-5 h-5" style={{ color: GREEN }} />
           <p className="text-sm font-bold text-gray-800">
             Login ready — copy the password now, it won&apos;t be shown again
           </p>
@@ -164,11 +164,11 @@ export default function AdminUsers() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-xl font-black" style={{ color: DARK, fontFamily: "'Anybody', sans-serif" }}>
+          <h2 className="text-xl font-black" style={{ color: DARK }}>
             Team Logins
           </h2>
           <p className="text-sm text-gray-500 mt-1">
-            Create and manage sign-ins for the sales calculator · {users.length} {users.length === 1 ? "login" : "logins"}
+            Create and manage sign-ins for the GMX Group Intranet · {users.length} {users.length === 1 ? "login" : "logins"}
           </p>
         </div>
         <button
@@ -196,7 +196,7 @@ export default function AdminUsers() {
               id="new-email"
               type="email"
               required
-              placeholder="name@lumberplus.com"
+              placeholder="name@gmxgroup.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
               disabled={creating}
@@ -218,8 +218,8 @@ export default function AdminUsers() {
           <button
             type="submit"
             disabled={creating || !email}
-            className="h-9 px-5 rounded-md text-sm font-bold text-black transition-all hover:opacity-90 disabled:opacity-50"
-            style={{ background: GOLD }}
+            className="h-9 px-5 rounded-md text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-50"
+            style={{ background: GREEN }}
           >
             {creating ? "Creating…" : "Create login"}
           </button>
@@ -247,7 +247,7 @@ export default function AdminUsers() {
         )}
         {loading && users.length === 0 ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: GOLD }} />
+            <div className="w-8 h-8 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: GREEN }} />
           </div>
         ) : users.length === 0 ? (
           <div className="text-center py-14 text-gray-400 text-sm">No logins yet.</div>
@@ -277,7 +277,7 @@ export default function AdminUsers() {
                         {u.isAdmin && (
                           <span
                             className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                            style={{ background: "rgba(201,162,39,0.15)", color: "#8a6d1a" }}
+                            style={{ background: "rgba(0,159,103,0.12)", color: "#00704a" }}
                           >
                             <ShieldCheck className="w-3 h-3" /> ADMIN
                           </span>

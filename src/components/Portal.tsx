@@ -5,6 +5,8 @@ import { useSyncExternalStore } from "react";
 import { ArrowRight, CalendarDays, LifeBuoy, Newspaper } from "lucide-react";
 import { BRAND, DEPARTMENTS, TOOLS, toolsFor } from "@/lib/intranet";
 import ToolLink from "@/components/ToolLink";
+import { EventChip, eventDay, formatWhen, useMounted } from "@/components/CalendarView";
+import type { CalendarEvent } from "@/server/calendar";
 
 // Greeting depends on the viewer's clock; the server (UTC) renders a neutral one.
 const noSubscribe = () => () => {};
@@ -41,7 +43,35 @@ function EmptyState({ icon, text }: { icon: React.ReactNode; text: string }) {
 }
 
 /** GMX intranet home: greeting, featured message, quick links, news, events, departments, help. */
-export default function Portal({ name }: { name: string; isAdmin: boolean }) {
+function UpcomingEvents({ events }: { events: CalendarEvent[] }) {
+  const mounted = useMounted();
+  if (!mounted) return <div className="h-32" />;
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const next = events.filter(e => eventDay(e) >= today).slice(0, 5);
+  if (next.length === 0) return <EmptyState icon={<CalendarDays className="h-6 w-6" />} text="Nothing coming up." />;
+  return (
+    <ul className="space-y-2.5">
+      {next.map(e => {
+        const [, m, day] = eventDay(e).split("-").map(Number);
+        return (
+          <li key={e.id} className="flex items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-gray-200 leading-none">
+              <span className="text-[10px] font-bold uppercase text-gray-500">{new Date(2000, m - 1, 1).toLocaleDateString(undefined, { month: "short" })}</span>
+              <span className="text-lg font-black text-gray-900">{day}</span>
+            </span>
+            <span className="min-w-0 flex-1">
+              <EventChip e={e} />
+              <span className="mt-0.5 block truncate text-xs text-gray-500">{formatWhen(e)}</span>
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+export default function Portal({ name, events }: { name: string; isAdmin: boolean; events: CalendarEvent[] }) {
   const greeting = useGreeting();
   const firstName = name.split("@")[0].split(/[ .]/)[0];
   const first = firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : "";
@@ -89,8 +119,8 @@ export default function Portal({ name }: { name: string; isAdmin: boolean }) {
         <Panel title="Recent news" action={<Link href="/news" className="text-sm font-bold text-[#00704a] hover:underline">See all</Link>}>
           <EmptyState icon={<Newspaper className="h-6 w-6" />} text="No announcements yet." />
         </Panel>
-        <Panel title="Upcoming events">
-          <EmptyState icon={<CalendarDays className="h-6 w-6" />} text="Company events will appear here." />
+        <Panel title="Upcoming events" action={<Link href="/calendar" className="text-sm font-bold text-[#00704a] hover:underline">See all</Link>}>
+          <UpcomingEvents events={events} />
         </Panel>
       </div>
 

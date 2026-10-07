@@ -19,6 +19,7 @@ const INDEX: Result[] = [
   ...DEPARTMENTS.map(d => ({ label: d.name, hint: "Department", href: `/departments/${d.id}` })),
   { label: "Home", hint: "Page", href: "/" },
   { label: "News", hint: "Page", href: "/news" },
+  { label: "Calendar", hint: "Page · holidays & events", href: "/calendar" },
   { label: "People", hint: "Page", href: "/people" },
   { label: "Resources", hint: "Page", href: "/resources" },
   { label: "My profile & saved quotes", hint: "Page", href: "/profile" },

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
 import Portal from "@/components/Portal";
+import { getUpcomingEvents } from "@/server/calendar";
 
 export const dynamic = "force-dynamic";
 
@@ -18,10 +19,14 @@ export default async function PortalPage({
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
   if (!user) redirect("/login");
 
+  // Next few weeks for "Upcoming events" (holidays + company calendar).
+  const { events } = await getUpcomingEvents();
+
   return (
     <Portal
       name={(user.user_metadata?.name as string | undefined) || user.email || ""}
       isAdmin={isAdminUser(user)}
+      events={events}
     />
   );
 }

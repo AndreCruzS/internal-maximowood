@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronDown, FolderOpen, Home, LogOut, Menu, Newspaper, ShieldCheck, UserCircle, Users, X } from "lucide-react";
+import { CalendarDays, ChevronDown, FolderOpen, Home, LogOut, Menu, Newspaper, ShieldCheck, UserCircle, Users, X } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 import { BRAND, DEPARTMENTS, TOOLS } from "@/lib/intranet";
 import SearchBox from "@/components/SearchBox";
@@ -75,6 +75,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <NavItem href="/" icon={<Home className="h-4 w-4" />} label="Home" active={pathname === "/"} onNavigate={close} />
       <NavItem href="/news" icon={<Newspaper className="h-4 w-4" />} label="News" active={pathname === "/news"} onNavigate={close} />
+      <NavItem href="/calendar" icon={<CalendarDays className="h-4 w-4" />} label="Calendar" active={pathname === "/calendar"} onNavigate={close} />
       <NavItem href="/people" icon={<Users className="h-4 w-4" />} label="People" active={pathname === "/people"} onNavigate={close} />
 
       <button
