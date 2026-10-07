@@ -27,7 +27,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "GMX Group Intranet",
-  description: "GMX Group intranet — departments, tools and resources for Maximo, Lumber Plus and US4Pro.",
+  description: "GMX Group intranet — departments, tools and resources for Maximo, Lumber Plus and US4.",
 };
 
 export default function RootLayout({

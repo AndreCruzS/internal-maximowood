@@ -35,7 +35,7 @@ export const COMPANIES: { id: CompanyId; name: string }[] = [
   { id: "gmx", name: "GMX Group" },
   { id: "maximo", name: "Maximo" },
   { id: "lumberplus", name: "Lumber Plus" },
-  { id: "us4pro", name: "US4Pro" },
+  { id: "us4pro", name: "US4" },
 ];
 
 export type DepartmentId = "commercial" | "marketing" | "operations" | "logistics" | "finance" | "hr" | "it";

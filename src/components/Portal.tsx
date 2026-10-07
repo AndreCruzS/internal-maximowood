@@ -68,7 +68,7 @@ export default function Portal({ name }: { name: string; isAdmin: boolean }) {
           <p className="text-xs font-bold uppercase tracking-widest text-white/80">GMX Group</p>
           <h2 className="mt-2 max-w-md text-3xl font-black leading-tight">One place for every company and department</h2>
           <p className="mt-3 max-w-md text-white/85">
-            Tools, documents and news for Maximo, Lumber Plus and US4Pro — organized by department.
+            Tools, documents and news for Maximo, Lumber Plus and US4 — organized by department.
           </p>
           <a href="#departments" className="mt-6 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-[#00704a] hover:bg-white/90">
             Explore departments <ArrowRight className="h-4 w-4" />

@@ -58,7 +58,7 @@ export default function Login() {
           <h2 className="text-4xl font-black leading-tight">Intranet</h2>
           <p className="mt-3 max-w-sm text-lg text-white/85">Making sustainability our business.</p>
         </div>
-        <p className="text-xs uppercase tracking-widest text-white/60">Maximo · Lumber Plus · US4Pro</p>
+        <p className="text-xs uppercase tracking-widest text-white/60">Maximo · Lumber Plus · US4</p>
       </div>
 
       {/* Right panel — login form */}
