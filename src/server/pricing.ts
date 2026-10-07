@@ -1,5 +1,6 @@
 
-const SHEET_ID = "1nOe8Ss2ao7LkieFfWuuNa47ALMIhbSbbvkb3hs3aTxU";
+// Source of truth for prices (Maximo price sheet, shared 2026-10-07).
+const SHEET_ID = "137QK53YSQtQ0-AjqM19a46n8xq3sQ-loOcDCEnN8IeQ";
 
 /**
  * Tab GIDs in the new pricing sheet (Copy of MAXIMO_Price_Sheet_2026).
