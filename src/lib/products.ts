@@ -1,5 +1,11 @@
+import type { PricingRow } from "@/lib/api";
+
+export type ProductCategory = "thermo" | "hardwood" | "accoya";
+
 export interface Product {
   id: string;
+  /** Set on products built from the price sheet; the built-in lists are categorized by list. */
+  category?: ProductCategory;
   species: string;
   application: string;
   profile: string;
@@ -287,24 +293,25 @@ export const ACCOYA_SPECIES = Array.from(new Set(ACCOYA_PRODUCTS.map(p => p.spec
 /** All products combined */
 export const ALL_PRODUCTS: Product[] = [...THERMO_PRODUCTS, ...HARDWOOD_PRODUCTS, ...ACCOYA_PRODUCTS];
 
-/** Returns species list for a given category */
-export const getSpeciesByCategory = (category: "thermo" | "hardwood" | "accoya"): string[] => {
+/** Returns species list for a given category (built-in lists, or `products` from the price sheet). */
+export const getSpeciesByCategory = (category: ProductCategory, products?: Product[]): string[] => {
+  if (products) return Array.from(new Set(products.filter(p => p.category === category).map(p => p.species)));
   if (category === "hardwood") return HARDWOOD_SPECIES;
   if (category === "accoya")   return ACCOYA_SPECIES;
   return THERMO_SPECIES;
 };
 
-// ── Filter helpers (use ALL_PRODUCTS so hardwoods are included) ────────────────────
+// ── Filter helpers (default to ALL_PRODUCTS; pass the live list from the sheet) ──
 
-export const getSpecies = (): string[] =>
-  Array.from(new Set(ALL_PRODUCTS.map((p) => p.species)));
+export const getSpecies = (products: Product[] = ALL_PRODUCTS): string[] =>
+  Array.from(new Set(products.map((p) => p.species)));
 
-export const getNominalSizes = (species: string): string[] =>
-  Array.from(new Set(ALL_PRODUCTS.filter((p) => p.species === species).map((p) => p.nominalSize)));
+export const getNominalSizes = (species: string, products: Product[] = ALL_PRODUCTS): string[] =>
+  Array.from(new Set(products.filter((p) => p.species === species).map((p) => p.nominalSize)));
 
-export const getProfiles = (species: string, nominalSize: string): string[] =>
+export const getProfiles = (species: string, nominalSize: string, products: Product[] = ALL_PRODUCTS): string[] =>
   Array.from(new Set(
-    ALL_PRODUCTS
+    products
       .filter((p) => p.species === species && p.nominalSize === nominalSize)
       .map((p) => p.profile)
   ));
@@ -312,11 +319,88 @@ export const getProfiles = (species: string, nominalSize: string): string[] =>
 export const findProduct = (
   species: string,
   nominalSize: string,
-  profile: string
+  profile: string,
+  products: Product[] = ALL_PRODUCTS,
 ): Product | undefined =>
-  ALL_PRODUCTS.find(
+  products.find(
     (p) => p.species === species && p.nominalSize === nominalSize && p.profile === profile
   );
+
+/** Which built-in list a product comes from. */
+export const categoryOf = (p: Product): ProductCategory =>
+  p.category ?? (HARDWOOD_PRODUCTS.includes(p) ? "hardwood" : ACCOYA_PRODUCTS.includes(p) ? "accoya" : "thermo");
+
+// ── Live price list from the Google Sheet (src/server/pricing.ts) ─────────────
+// The sheet is the source of truth; these turn its rows into the calculator's
+// products, keeping the names the calculator (and saved quotes) already use.
+
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/** "MAXIMO THERMO AYOUS" → "AYOUS", "MAXIMO ACCOYA - GREY" → "ACCOYA GREY", "Ipe" → "IPE". */
+export function sheetSpeciesName(category: string, raw: string): string {
+  let s = raw.toUpperCase().replace(/\s*\/\s*/g, "/").replace(/\s+/g, " ").trim();
+  s = s.replace(/^MAXIMO /, "");
+  if (category === "THERMO") {
+    s = s.replace(/\bTHERMO\b/g, "").replace(/\s+/g, " ").trim();
+    if (s === "BURNBLOCK") s = "AYOUS BURNBLOCK";
+  }
+  if (category === "ACCOYA") s = s.replace(/ - /g, " ");
+  return s;
+}
+
+/** "5/4x6" → "5/4 x 6" (the calculator's format). */
+const sheetSize = (raw: string) => raw.replace(/\s*[xX]\s*/, " x ").trim();
+/** '9.84' → '9.84"' (a few sheet cells lack the inch mark). */
+const sheetFace = (raw: string | undefined) => {
+  const v = (raw ?? "").trim();
+  return /^\d+(\.\d+)?$/.test(v) ? `${v}"` : v;
+};
+const sheetLength = (raw: string) => raw.replace(/[’‘]/g, "'").trim();
+
+/** Exposed face in inches when the sheet has none (Hardwood tab): standard dressed width. */
+function defaultExposedFace(size: string): string {
+  const w = parseFloat(size.split(" x ")[1] ?? "");
+  if (!w) return "";
+  return `${w <= 6 ? w - 0.5 : w - 0.75}"`;
+}
+
+export function productsFromPricing(rows: PricingRow[]): Product[] {
+  const builtIn = new Map(ALL_PRODUCTS.map(p => [`${p.species}|${p.nominalSize}|${p.profile}`, p]));
+  const out: Product[] = [];
+  const seen = new Set<string>();
+  for (const r of rows) {
+    const category = r.category.toLowerCase() as ProductCategory;
+    if (!["thermo", "hardwood", "accoya"].includes(category)) continue;
+    // Per-piece items (deck tiles) don't fit the per-LF calculator.
+    if (/TILE/i.test(r.profile) || /"/.test(r.nominalSize)) continue;
+    const species = sheetSpeciesName(r.category, r.species);
+    const nominalSize = sheetSize(r.nominalSize);
+    const lengthRange = sheetLength(r.length);
+    let profile = r.profile.trim();
+    // Same product in two length ranges (e.g. IPE 2x4): tell them apart by length.
+    if (seen.has(`${species}|${nominalSize}|${profile}`)) profile = `${profile} (${lengthRange})`;
+    const key = `${species}|${nominalSize}|${profile}`;
+    seen.add(key);
+    // Blank end-customer prices: same chain as the rest of the list (base ÷0.77 ÷0.60, Fixed ÷0.75).
+    const base = r.priceDistributor;
+    const priceRL = r.priceEndCustomer ?? (base ? r2(base / 0.77 / 0.6) : 0);
+    const priceFixed = r.priceEndCustomerFixed ?? (base ? r2(base / 0.77 / 0.6 / 0.75) : priceRL ? r2(priceRL / 0.75) : 0);
+    const known = builtIn.get(key);
+    out.push({
+      id: `${category}-${key}`.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      category,
+      species,
+      application: r.application,
+      profile,
+      nominalSize,
+      lengthRange,
+      exposedFace: sheetFace(r.exposedFace) || known?.exposedFace || defaultExposedFace(nominalSize),
+      priceRL,
+      priceFixed,
+    });
+  }
+  return out;
+}
 
 // Legacy compat
 export const PRODUCTS = { thermo: THERMO_PRODUCTS, accoya: [], hardwood: HARDWOOD_PRODUCTS };

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { PricingRow } from "@/lib/api";
 import {
   getSpecies,
   getNominalSizes,
@@ -12,6 +13,8 @@ import {
   calculateAddOnCost,
   applyWaste,
   getSpeciesByCategory,
+  productsFromPricing,
+  sheetSpeciesName,
   THERMO_PRODUCTS,
   PRE_FINISH_COLOR_OPTIONS,
   PRE_FINISH_TEXTURE_PRICE_PER_LF,
@@ -211,5 +214,38 @@ describe("material waste", () => {
     expect(applyWaste(100, "10")).toBeCloseTo(110, 6);
     expect(applyWaste(100, "15")).toBeCloseTo(115, 6);
     expect(applyWaste(100, "20")).toBeCloseTo(120, 6);
+  });
+});
+
+describe("productsFromPricing (live price sheet)", () => {
+  const row = (o: Partial<PricingRow>): PricingRow => ({
+    category: "THERMO", species: "MAXIMO THERMO AYOUS", application: "Cladding", profile: "SQUARE S4S E4E",
+    nominalSize: "1 x 6", length: "4’ - 14’", exposedFace: '5.51"', piecesPerPkg: "7",
+    priceDistributor: 2.69, priceDistributorFixed: 3.59, priceDealer: 3.49, priceDealerFixed: 4.66,
+    priceEndCustomer: 5.82, priceEndCustomerFixed: 7.76, ...o,
+  });
+
+  it("keeps the calculator's species names and end-customer prices", () => {
+    const [p] = productsFromPricing([row({})]);
+    expect(p).toMatchObject({ category: "thermo", species: "AYOUS", nominalSize: "1 x 6", lengthRange: "4' - 14'", exposedFace: '5.51"', priceRL: 5.82, priceFixed: 7.76 });
+    expect(sheetSpeciesName("THERMO", "MAXIMO THERMO BURNBLOCK")).toBe("AYOUS BURNBLOCK");
+    expect(sheetSpeciesName("THERMO", "MAXIMO SCANDINAVIAN THERMO")).toBe("SCANDINAVIAN");
+    expect(sheetSpeciesName("ACCOYA", "MAXIMO ACCOYA - IPE-BROWN")).toBe("ACCOYA IPE-BROWN");
+    expect(sheetSpeciesName("HARDWOOD", "BULLETWOOD/ BALATA")).toBe("BULLETWOOD/BALATA");
+  });
+
+  it("fills blank end-customer prices from the base with the usual chain", () => {
+    const [p] = productsFromPricing([row({ category: "HARDWOOD", species: "IPE", nominalSize: "1x6", exposedFace: "", priceDistributor: 4.69, priceEndCustomer: 10.15, priceEndCustomerFixed: null })]);
+    expect(p).toMatchObject({ species: "IPE", nominalSize: "1 x 6", priceRL: 10.15, priceFixed: 13.54, exposedFace: '5.43"' });
+  });
+
+  it("separates the same product in two length ranges and skips per-tile items", () => {
+    const out = productsFromPricing([
+      row({ category: "HARDWOOD", species: "IPE", nominalSize: "2x4", length: "8' - 20'", exposedFace: "" }),
+      row({ category: "HARDWOOD", species: "IPE", nominalSize: "2x4", length: "12' / 16'", exposedFace: "" }),
+      row({ category: "HARDWOOD", species: "Ipe", profile: "DECK TILE", nominalSize: '24"X24"' }),
+    ]);
+    expect(out.map(p => p.profile)).toEqual(["SQUARE S4S E4E", "SQUARE S4S E4E (12' / 16')"]);
+    expect(out[0].exposedFace).toBe('3.5"');
   });
 });
