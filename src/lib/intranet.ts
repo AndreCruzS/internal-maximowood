@@ -29,13 +29,14 @@ export const BRAND = {
   ink: "#000000",
 } as const;
 
-export type CompanyId = "gmx" | "maximo" | "lumberplus" | "us4pro";
+export type CompanyId = "gmx" | "maximo" | "lumberplus" | "us4pro" | "builderexpress";
 
 export const COMPANIES: { id: CompanyId; name: string }[] = [
   { id: "gmx", name: "GMX Group" },
   { id: "maximo", name: "Maximo" },
   { id: "lumberplus", name: "Lumber Plus" },
   { id: "us4pro", name: "US4" },
+  { id: "builderexpress", name: "Builder Express" },
 ];
 
 export type DepartmentId = "commercial" | "marketing" | "operations" | "logistics" | "finance" | "hr" | "it";
