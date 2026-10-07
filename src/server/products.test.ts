@@ -11,6 +11,7 @@ import {
   calculateCoatingNeeded,
   calculateAddOnCost,
   applyWaste,
+  getSpeciesByCategory,
   THERMO_PRODUCTS,
   PRE_FINISH_COLOR_OPTIONS,
   PRE_FINISH_TEXTURE_PRICE_PER_LF,
@@ -19,8 +20,15 @@ import {
 } from "@/lib/products";
 
 describe("THERMO_PRODUCTS data integrity", () => {
-  it("has 37 products loaded", () => {
-    expect(THERMO_PRODUCTS.length).toBe(37);
+  it("lists Ayous Burnblock as its own Thermo species with the 2026-10 prices", () => {
+    expect(getSpeciesByCategory("thermo")).toContain("AYOUS BURNBLOCK");
+    const bb = THERMO_PRODUCTS.filter(p => p.species === "AYOUS BURNBLOCK");
+    expect(bb.map(p => p.nominalSize)).toEqual(["1 x 4", "1 x 6", "1 x 8", "1 x 10", "1 x 12", "2 x 2", "2 x 4", "2 x 6"]);
+    expect(bb.find(p => p.nominalSize === "1 x 12")).toMatchObject({ profile: "S4S", priceRL: 21.75, priceFixed: 29.0 });
+  });
+
+  it("has 45 products loaded", () => {
+    expect(THERMO_PRODUCTS.length).toBe(45);
   });
 
   it("all products have required fields", () => {

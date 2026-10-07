@@ -58,6 +58,15 @@ export const THERMO_PRODUCTS: Product[] = [
   { id: "ayous-2x4-sq",      species: "AYOUS", application: "Trim Pieces",        profile: "SQUARE S4S E4E",                         nominalSize: "2 x 4",     lengthRange: "4' - 14'",  exposedFace: '3.54"',  priceRL: 9.87,  priceFixed: 13.16 },
   // base=6.81 → RL=14.7403, Fixed=19.6537
   { id: "ayous-2x6-sq",      species: "AYOUS", application: "Trim Pieces",        profile: "SQUARE S4S E4E",                         nominalSize: "2 x 6",     lengthRange: "4' - 14'",  exposedFace: '5.51"',  priceRL: 14.74, priceFixed: 19.65 },
+  // ── Maximo Thermo Ayous Burnblock (price sheet 2026-10) — end-customer prices; base = Dist RL
+  { id: "ayous-bb-1x4-s4s",    species: "AYOUS BURNBLOCK", application: "Cladding", profile: "S4S", nominalSize: "1 x 4", lengthRange: "4' - 14'", exposedFace: '3.62"', priceRL: 5.00, priceFixed: 6.67 },
+  { id: "ayous-bb-1x6-ng",     species: "AYOUS BURNBLOCK", application: "Cladding", profile: "V JOINT / NICKEL GAP - BURN BLOCK", nominalSize: "1 x 6", lengthRange: "4' - 14'", exposedFace: '5.26"', priceRL: 7.84, priceFixed: 10.45 },
+  { id: "ayous-bb-1x8-s4s",    species: "AYOUS BURNBLOCK", application: "Cladding / Trim Pieces", profile: "S4S", nominalSize: "1 x 8", lengthRange: "4' - 14'", exposedFace: '7.09"', priceRL: 11.06, priceFixed: 14.75 },
+  { id: "ayous-bb-1x10-s4s",   species: "AYOUS BURNBLOCK", application: "Cladding / Trim Pieces", profile: "S4S", nominalSize: "1 x 10", lengthRange: "4' - 14'", exposedFace: '9.84"', priceRL: 17.90, priceFixed: 23.87 },
+  { id: "ayous-bb-1x12-s4s",   species: "AYOUS BURNBLOCK", application: "Cladding / Trim Pieces", profile: "S4S", nominalSize: "1 x 12", lengthRange: "4' - 14'", exposedFace: '11.25"', priceRL: 21.75, priceFixed: 29.00 },
+  { id: "ayous-bb-2x2-s4s",    species: "AYOUS BURNBLOCK", application: "Cladding / Trim Pieces", profile: "S4S", nominalSize: "2 x 2", lengthRange: "4' - 14'", exposedFace: '1.57"', priceRL: 6.58, priceFixed: 8.77 },
+  { id: "ayous-bb-2x4-s4s",    species: "AYOUS BURNBLOCK", application: "Cladding / Trim Pieces", profile: "S4S", nominalSize: "2 x 4", lengthRange: "4' - 14'", exposedFace: '3.54"', priceRL: 13.27, priceFixed: 17.69 },
+  { id: "ayous-bb-2x6-s4s",    species: "AYOUS BURNBLOCK", application: "Cladding / Trim Pieces", profile: "S4S", nominalSize: "2 x 6", lengthRange: "4' - 14'", exposedFace: '5.51"', priceRL: 19.81, priceFixed: 26.41 },
 
   // ── ASH ───────────────────────────────────────────────────────────────────
   // base=4.23 → RL=9.1558, Fixed=12.2078
