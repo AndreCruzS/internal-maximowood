@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: var(--font-anybody), "Anybody", sans-serif;
+  --font-sans: var(--font-lato), "Lato", sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -127,6 +127,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-lato), "Lato", sans-serif;
+  }
+  /* Maximo tools keep Maximo's typeface inside the GMX intranet. */
+  .font-maximo {
     font-family: var(--font-anybody), "Anybody", sans-serif;
   }
   button:not(:disabled),
