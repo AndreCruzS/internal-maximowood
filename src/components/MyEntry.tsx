@@ -1,26 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2, UserCheck } from "lucide-react";
+import { Clock, Loader2, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { COMPANIES, DEPARTMENTS } from "@/lib/intranet";
 import type { Person, Position } from "@/components/PeopleView";
 import { useI18n } from "@/components/I18nProvider";
+import { useMe } from "@/components/MeProvider";
+import PositionRequests, { type PositionRequest } from "@/components/people/PositionRequests";
 import { fmt } from "@/lib/i18n/locale";
 import { deptName } from "@/lib/i18n/text";
-
-type Draft = { id?: string; title: string; department_id: string; team: string; reports_to: string };
 
 const field = "h-9 w-full rounded-lg border border-gray-300 bg-white px-2.5 text-sm outline-none focus:border-[#009f67]";
 const label = "mb-1 block text-xs font-bold text-gray-500";
 
 /**
  * The signed-in person's own entry. First visit: claim their name from the
- * org chart (or add themselves). After that: keep contact details and
- * positions (title, department, team, manager) up to date — the org chart
- * is built from these.
+ * org chart (or add themselves). After that: keep their details up to date and
+ * request position changes, which an admin approves (people can't change
+ * their own position). Admins also see the pending requests here.
  */
 export default function MyEntry({ mine, people, positions }: {
   mine: Person | null;
@@ -28,10 +28,11 @@ export default function MyEntry({ mine, people, positions }: {
   positions: Position[];
 }) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, tag } = useI18n();
+  const me = useMe();
   const supabase = getSupabase();
   const [busy, setBusy] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<"details" | "request" | null>(null);
 
   // ── First visit: claim ────────────────────────────────────────────────────
   const unclaimed = people.filter(p => !p.user_id);
@@ -50,24 +51,35 @@ export default function MyEntry({ mine, people, positions }: {
     }
   };
 
-  // ── Edit ──────────────────────────────────────────────────────────────────
-  const myPositions = useMemo(() => (mine ? positions.filter(p => p.person_id === mine.id) : []), [mine, positions]);
+  // ── Details & position requests ───────────────────────────────────────────
+  const myPositions = useMemo(() => (mine ? positions.filter(p => p.person_id === mine.id).sort((a, b) => a.sort - b.sort) : []), [mine, positions]);
   const [details, setDetails] = useState({
     full_name: mine?.full_name ?? "",
-    phone: mine?.phone ?? "",
     location: mine?.location ?? "",
     company_id: mine?.company_id ?? "",
   });
-  const [drafts, setDrafts] = useState<Draft[]>(
-    myPositions.map(p => ({ id: p.id, title: p.title, department_id: p.department_id ?? "", team: p.team ?? "", reports_to: p.reports_to ?? "" })),
-  );
-  const managerOptions = useMemo(() => {
-    const byId = new Map(people.map(p => [p.id, p.full_name]));
-    return positions
-      .filter(p => p.person_id !== mine?.id)
-      .map(p => ({ id: p.id, label: `${byId.get(p.person_id) ?? "?"} — ${p.title}` }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }, [people, positions, mine]);
+  const [request, setRequest] = useState({ title: "", department_id: "", reports_to: "", note: "" });
+  const [pending, setPending] = useState<PositionRequest | null>(null);
+  const [reload, setReload] = useState(0);
+  const others = useMemo(() => people.filter(p => p.id !== mine?.id).sort((a, b) => a.full_name.localeCompare(b.full_name)), [people, mine]);
+
+  useEffect(() => {
+    if (!supabase || !mine) return;
+    let active = true;
+    supabase
+      .from("position_requests")
+      .select("*")
+      .eq("person_id", mine.id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (active) setPending((data?.[0] as PositionRequest | undefined) ?? null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [supabase, mine, reload]);
 
   if (!mine) {
     return (
@@ -113,52 +125,48 @@ export default function MyEntry({ mine, people, positions }: {
     );
   }
 
-  const save = async () => {
-    if (!supabase) return;
-    if (drafts.some(d => !d.title.trim())) return toast.error(t.myEntry.titleRequired);
-    setBusy(true);
-    const fail = (m: string) => {
-      setBusy(false);
-      toast.error(m);
-    };
-    const { error: e1 } = await supabase
-      .from("people")
-      .update({
-        full_name: details.full_name.trim() || mine.full_name,
-        phone: details.phone.trim() || null,
-        location: details.location.trim() || null,
-        company_id: details.company_id || null,
-      })
-      .eq("id", mine.id);
-    if (e1) return fail(e1.message);
+  const saveDetails = () =>
+    run(async () => {
+      const r = await supabase!
+        .from("people")
+        .update({
+          full_name: details.full_name.trim() || mine.full_name,
+          location: details.location.trim() || null,
+          company_id: details.company_id || null,
+        })
+        .eq("id", mine.id);
+      if (!r.error) setOpen(null);
+      return r;
+    }, t.myEntry.updated);
 
-    const keep = new Set(drafts.filter(d => d.id).map(d => d.id));
-    const removed = myPositions.filter(p => !keep.has(p.id)).map(p => p.id);
-    if (removed.length) {
-      const { error } = await supabase.from("positions").delete().in("id", removed);
-      if (error) return fail(error.message);
-    }
-    for (const [i, d] of drafts.entries()) {
-      const row = {
-        person_id: mine.id,
-        title: d.title.trim(),
-        department_id: d.department_id || null,
-        team: d.team.trim() || null,
-        reports_to: d.reports_to || null,
-        sort: myPositions.find(p => p.id === d.id)?.sort ?? 1000 + i,
-      };
-      const { error } = d.id
-        ? await supabase.from("positions").update(row).eq("id", d.id)
-        : await supabase.from("positions").insert(row);
-      if (error) return fail(error.message);
-    }
+  const sendRequest = async () => {
+    if (!supabase) return;
+    const row = {
+      person_id: mine.id,
+      title: request.title.trim(),
+      department_id: request.department_id || null,
+      reports_to: request.reports_to || null,
+      note: request.note.trim(),
+    };
+    if (!row.title && !row.department_id && !row.reports_to && !row.note) return toast.error(t.myEntry.requestEmpty);
+    setBusy(true);
+    const { error } = await supabase.from("position_requests").insert(row);
     setBusy(false);
-    setOpen(false);
-    toast.success(t.myEntry.updated);
-    router.refresh();
+    if (error) return toast.error(error.message);
+    toast.success(t.myEntry.requestSent);
+    setOpen(null);
+    setRequest({ title: "", department_id: "", reports_to: "", note: "" });
+    setReload(n => n + 1);
   };
 
-  const setDraft = (i: number, patch: Partial<Draft>) => setDrafts(ds => ds.map((d, j) => (j === i ? { ...d, ...patch } : d)));
+  const cancelRequest = async () => {
+    if (!supabase || !pending) return;
+    const { error } = await supabase.from("position_requests").delete().eq("id", pending.id);
+    if (error) return toast.error(error.message);
+    setPending(null);
+  };
+
+  const button = "h-9 rounded-lg border border-gray-300 px-4 text-sm font-bold text-gray-800 hover:bg-gray-50 disabled:opacity-50";
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -166,26 +174,33 @@ export default function MyEntry({ mine, people, positions }: {
         <div>
           <h2 className="font-black text-gray-900">{t.myEntry.yourEntry}</h2>
           <p className="text-sm text-gray-500">
-            {myPositions.length ? myPositions.map(p => p.title).join(" · ") : t.myEntry.addPositionHint}
+            {myPositions.length ? myPositions.map(p => `${p.title} · ${deptName(t, p.department_id)}`).join("  |  ") : t.myEntry.addPositionHint}
           </p>
         </div>
         {!open && (
-          <button type="button" onClick={() => setOpen(true)} className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-bold text-gray-800 hover:bg-gray-50">
-            {t.myEntry.editButton}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => setOpen("details")} className={button}>{t.myEntry.editDetails}</button>
+            <button type="button" onClick={() => setOpen("request")} disabled={!!pending} className={button}>{t.myEntry.requestButton}</button>
+          </div>
         )}
       </div>
 
-      {open && (
-        <div className="mt-4 space-y-5">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {pending && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <span className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            {fmt(t.myEntry.pending, { date: new Date(pending.created_at).toLocaleDateString(tag, { month: "short", day: "numeric" }) })}
+          </span>
+          <button type="button" onClick={cancelRequest} className="text-xs font-bold underline">{t.myEntry.cancelRequest}</button>
+        </div>
+      )}
+
+      {open === "details" && (
+        <div className="mt-4 space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <label className={label} htmlFor="me-name">{t.myEntry.fullName}</label>
               <input id="me-name" value={details.full_name} onChange={e => setDetails(d => ({ ...d, full_name: e.target.value }))} className={field} />
-            </div>
-            <div>
-              <label className={label} htmlFor="me-phone">{t.myEntry.phone}</label>
-              <input id="me-phone" value={details.phone} onChange={e => setDetails(d => ({ ...d, phone: e.target.value }))} placeholder="+1 305 555 0100" className={field} />
             </div>
             <div>
               <label className={label} htmlFor="me-loc">{t.myEntry.location}</label>
@@ -201,62 +216,60 @@ export default function MyEntry({ mine, people, positions }: {
               </select>
             </div>
           </div>
-          <p className="-mt-3 text-xs text-gray-400">{fmt(t.myEntry.email, { email: mine.email ?? "—" })}</p>
-
-          <div className="space-y-3">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">{t.myEntry.positions}</p>
-            {drafts.map((d, i) => (
-              <div key={d.id ?? `new-${i}`} className="grid items-end gap-3 rounded-lg border border-gray-200 p-3 sm:grid-cols-2 lg:grid-cols-[2fr_1.5fr_1fr_2fr_auto]">
-                <div>
-                  <label className={label}>{t.myEntry.title}</label>
-                  <input value={d.title} onChange={e => setDraft(i, { title: e.target.value })} placeholder={t.myEntry.titlePlaceholder} className={field} />
-                </div>
-                <div>
-                  <label className={label}>{t.myEntry.department}</label>
-                  <select value={d.department_id} onChange={e => setDraft(i, { department_id: e.target.value })} className={field}>
-                    <option value="">{t.departments.leadership}</option>
-                    {DEPARTMENTS.map(x => (
-                      <option key={x.id} value={x.id}>{deptName(t, x.id)}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={label}>{t.myEntry.team}</label>
-                  <input value={d.team} onChange={e => setDraft(i, { team: e.target.value })} placeholder={t.myEntry.teamPlaceholder} className={field} />
-                </div>
-                <div>
-                  <label className={label}>{t.myEntry.reportsTo}</label>
-                  <select value={d.reports_to} onChange={e => setDraft(i, { reports_to: e.target.value })} className={field}>
-                    <option value="">{t.myEntry.noOne}</option>
-                    {managerOptions.map(m => (
-                      <option key={m.id} value={m.id}>{m.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <button type="button" onClick={() => setDrafts(ds => ds.filter((_, j) => j !== i))} className="h-9 rounded-lg px-2 text-red-600 hover:bg-red-50" aria-label={t.myEntry.removePosition}>
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => setDrafts(ds => [...ds, { title: "", department_id: "", team: "", reports_to: "" }])}
-              className="flex items-center gap-1.5 text-sm font-bold text-[#00704a] hover:underline"
-            >
-              <Plus className="h-4 w-4" /> {t.myEntry.addPosition}
-            </button>
-          </div>
-
+          <p className="-mt-2 text-xs text-gray-400">{fmt(t.myEntry.email, { email: mine.email ?? "—" })}</p>
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setOpen(false)} className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-bold text-gray-700">
-              {t.common.cancel}
-            </button>
-            <button type="button" onClick={save} disabled={busy} className="flex h-9 items-center gap-2 rounded-lg bg-[#009f67] px-4 text-sm font-bold text-white disabled:opacity-50">
+            <button type="button" onClick={() => setOpen(null)} className={button}>{t.common.cancel}</button>
+            <button type="button" onClick={saveDetails} disabled={busy} className="flex h-9 items-center gap-2 rounded-lg bg-[#009f67] px-4 text-sm font-bold text-white disabled:opacity-50">
               {busy && <Loader2 className="h-4 w-4 animate-spin" />} {t.common.save}
             </button>
           </div>
         </div>
       )}
+
+      {open === "request" && (
+        <div className="mt-4 space-y-4">
+          <div>
+            <p className="font-bold text-gray-900">{t.myEntry.requestTitle}</p>
+            <p className="text-sm text-gray-500">{t.myEntry.requestHint}</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <label className={label} htmlFor="rq-title">{t.myEntry.newTitle}</label>
+              <input id="rq-title" value={request.title} onChange={e => setRequest(r => ({ ...r, title: e.target.value }))} placeholder={myPositions[0]?.title || t.myEntry.titlePlaceholder} className={field} />
+            </div>
+            <div>
+              <label className={label} htmlFor="rq-dept">{t.myEntry.department}</label>
+              <select id="rq-dept" value={request.department_id} onChange={e => setRequest(r => ({ ...r, department_id: e.target.value }))} className={field}>
+                <option value="">{t.myEntry.keep}</option>
+                {DEPARTMENTS.map(x => (
+                  <option key={x.id} value={x.id}>{deptName(t, x.id)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={label} htmlFor="rq-boss">{t.myEntry.reportsToPerson}</label>
+              <select id="rq-boss" value={request.reports_to} onChange={e => setRequest(r => ({ ...r, reports_to: e.target.value }))} className={field}>
+                <option value="">{t.myEntry.keep}</option>
+                {others.map(p => (
+                  <option key={p.id} value={p.id}>{p.full_name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className={label} htmlFor="rq-note">{t.myEntry.note}</label>
+            <textarea id="rq-note" rows={2} maxLength={1000} value={request.note} onChange={e => setRequest(r => ({ ...r, note: e.target.value }))} placeholder={t.myEntry.notePlaceholder} className={`${field} h-auto py-2`} />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setOpen(null)} className={button}>{t.common.cancel}</button>
+            <button type="button" onClick={sendRequest} disabled={busy} className="flex h-9 items-center gap-2 rounded-lg bg-[#009f67] px-4 text-sm font-bold text-white disabled:opacity-50">
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />} {t.myEntry.sendRequest}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {me.isAdmin && <PositionRequests people={people} positions={positions} />}
     </section>
   );
 }

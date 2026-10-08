@@ -40,7 +40,7 @@ export default function PersonFacts({ p, compact }: { p: PersonalFields; compact
     <div className="space-y-1">
       {office && (
         <p className={row}>
-          <MapPin className={icon} /> {office.name}
+          <MapPin className={icon} /> <span className="text-gray-400">{t.facts.office}:</span> {office.name}
           {office.timeZone && (
             <span className="flex items-center gap-1 text-gray-400">
               · <Clock className="h-3 w-3" /> <LocalTime timeZone={office.timeZone} />
@@ -48,7 +48,7 @@ export default function PersonFacts({ p, compact }: { p: PersonalFields; compact
           )}
         </p>
       )}
-      {p.location && <p className={row}><Home className={icon} /> {p.location}</p>}
+      {p.location && <p className={row}><Home className={icon} /> <span className="text-gray-400">{t.facts.livesIn}:</span> {p.location}</p>}
       {p.nationality && <p className={row}><Flag className={icon} /> {p.nationality}</p>}
       {p.companies && p.companies.length > 0 && (
         <p className={row}><Briefcase className={icon} /> {p.companies.map(c => companyName(c as CompanyId)).join(", ")}</p>

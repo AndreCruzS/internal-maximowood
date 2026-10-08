@@ -15,6 +15,7 @@ export type MyPerson = {
   id: string;
   full_name: string;
   phone: string | null;
+  slack_id?: string | null;
   languages: string[];
   office: string | null;
   birth_month: number | null;
@@ -26,12 +27,13 @@ export type MyPerson = {
 const field = "h-9 w-full rounded-lg border border-gray-300 bg-white px-2.5 text-sm outline-none focus:border-[#009f67]";
 const label = "mb-1 block text-xs font-bold text-gray-500";
 
-/** Personal details people keep themselves: office, birthday, start date, phone, languages, "ask me about". */
+/** Personal details people keep themselves: office, birthday, start date, RingCentral number, Slack ID, languages, "ask me about". */
 export default function AboutMeCard({ person }: { person: MyPerson | null }) {
   const router = useRouter();
   const { t, tag } = useI18n();
   const [draft, setDraft] = useState({
     phone: person?.phone ?? "",
+    slack_id: person?.slack_id ?? "",
     languages: person?.languages ?? [],
     office: person?.office ?? "",
     birth_month: person?.birth_month ? String(person.birth_month) : "",
@@ -66,12 +68,15 @@ export default function AboutMeCard({ person }: { person: MyPerson | null }) {
     const supabase = getSupabase();
     if (!supabase) return;
     if (!!draft.birth_month !== !!draft.birth_day) return toast.error(t.about.pickBoth);
+    const slackId = draft.slack_id.trim().toUpperCase();
+    if (slackId && !/^[UW][A-Z0-9]{6,}$/.test(slackId)) return toast.error(t.about.slackInvalid);
     const skills = skill.trim() ? [...draft.skills, skill.trim()] : draft.skills;
     setBusy(true);
     const { error } = await supabase
       .from("people")
       .update({
         phone: draft.phone.trim() || null,
+        slack_id: slackId || null,
         languages: draft.languages,
         office: draft.office || null,
         birth_month: draft.birth_month ? Number(draft.birth_month) : null,
@@ -151,7 +156,13 @@ export default function AboutMeCard({ person }: { person: MyPerson | null }) {
         </div>
         <div>
           <label className={label} htmlFor="phone">{t.about.phone}</label>
-          <input id="phone" value={draft.phone} onChange={e => setDraft(d => ({ ...d, phone: e.target.value }))} placeholder="+55 41 99999 0000" className={field} />
+          <input id="phone" value={draft.phone} onChange={e => setDraft(d => ({ ...d, phone: e.target.value }))} placeholder="+1 305 555 0100" className={field} />
+          <p className="mt-1 text-[11px] text-gray-400">{t.about.phoneHint}</p>
+        </div>
+        <div>
+          <label className={label} htmlFor="slack">{t.about.slack}</label>
+          <input id="slack" value={draft.slack_id} onChange={e => setDraft(d => ({ ...d, slack_id: e.target.value }))} placeholder="U01AB2CD3EF" className={`${field} font-mono`} />
+          <p className="mt-1 text-[11px] text-gray-400">{t.about.slackHint}</p>
         </div>
       </div>
 

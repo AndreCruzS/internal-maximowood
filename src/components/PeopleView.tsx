@@ -1,15 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AtSign, Network, Phone, Search, Users } from "lucide-react";
-import { COMPANIES, DEPARTMENTS, companyName, type CompanyId } from "@/lib/intranet";
+import { Network, Search, Users } from "lucide-react";
+import { COMPANIES, DEPARTMENTS, officeById } from "@/lib/intranet";
 import { useI18n } from "@/components/I18nProvider";
 import { plural } from "@/lib/i18n/dictionaries";
 import { fmt } from "@/lib/i18n/locale";
 import { deptName as deptNameT } from "@/lib/i18n/text";
 import MyEntry from "@/components/MyEntry";
 import OrgChart from "@/components/OrgChart";
-import PersonFacts from "@/components/PersonFacts";
+import PersonPanel from "@/components/people/PersonPanel";
 
 export type Person = {
   id: string;
@@ -30,6 +30,7 @@ export type Person = {
   nickname?: string | null;
   nationality?: string | null;
   companies?: string[] | null;
+  slack_id?: string | null;
 };
 
 export type Position = {
@@ -72,6 +73,7 @@ export default function PeopleView({ people, positions, me, error }: {
   const { t } = useI18n();
   const deptName = (id: string | null) => deptNameT(t, id);
   const [tab, setTab] = useState<"directory" | "chart">("chart");
+  const [openPos, setOpenPos] = useState<Position | null>(null);
   const [dept, setDept] = useState<string>("all");
   const [company, setCompany] = useState<string>("all");
   const [q, setQ] = useState("");
@@ -140,42 +142,35 @@ export default function PeopleView({ people, positions, me, error }: {
         )}
       </div>
 
+      {openPos && <PersonPanel position={openPos} people={people} positions={positions} onSelect={setOpenPos} onClose={() => setOpenPos(null)} />}
+
       {tab === "chart" ? (
         <OrgChart people={people} positions={positions} dept={dept} />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {directory.map(({ person, roles }) => (
-            <div key={person.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-              <div className="flex items-start gap-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {directory.map(({ person, roles }) => {
+            const main = roles.slice().sort((x, y) => x.sort - y.sort)[0];
+            const office = officeById(person.office);
+            return (
+              <button
+                key={person.id}
+                type="button"
+                onClick={() => main && setOpenPos(main)}
+                disabled={!main}
+                className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm transition-all hover:border-[#009f67] hover:shadow-md disabled:cursor-default"
+              >
                 <Avatar person={person} size={44} />
-                <div className="min-w-0">
-                  <p className="truncate font-bold text-gray-900">{person.full_name}{person.nickname ? <span className="font-normal text-gray-500"> “{person.nickname}”</span> : null}</p>
-                  {roles.map(r => (
-                    <p key={r.id} className="truncate text-xs text-gray-500">
-                      {r.title} · {deptName(r.department_id)}
-                    </p>
-                  ))}
-                  {person.company_id && (
-                    <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">{companyName(person.company_id as CompanyId)}</p>
-                  )}
-                </div>
-              </div>
-              <div className="mt-3 space-y-1 text-sm">
-                {person.email && (
-                  <a href={`mailto:${person.email}`} className="flex items-center gap-2 truncate text-gray-700 hover:text-[#00704a]">
-                    <AtSign className="h-3.5 w-3.5 shrink-0 text-gray-400" /> {person.email}
-                  </a>
-                )}
-                {person.phone && (
-                  <a href={`tel:${person.phone.replace(/[^\d+]/g, "")}`} className="flex items-center gap-2 text-gray-700 hover:text-[#00704a]">
-                    <Phone className="h-3.5 w-3.5 shrink-0 text-gray-400" /> {person.phone}
-                  </a>
-                )}
-                <PersonFacts p={person} />
-                {!person.user_id && <p className="text-xs text-gray-400">{t.people.detailsLater}</p>}
-              </div>
-            </div>
-          ))}
+                <span className="min-w-0">
+                  <span className="block truncate font-bold text-gray-900">
+                    {person.full_name}
+                    {person.nickname ? <span className="font-normal text-gray-500"> “{person.nickname}”</span> : null}
+                  </span>
+                  <span className="block truncate text-xs text-gray-500">{main ? `${main.title} · ${deptName(main.department_id)}` : ""}</span>
+                  <span className="block truncate text-xs text-gray-400">{office?.name ?? (person.user_id ? "" : t.people.notSignedIn)}</span>
+                </span>
+              </button>
+            );
+          })}
           {directory.length === 0 && <p className="text-sm text-gray-500">{t.common.noMatches}</p>}
         </div>
       )}

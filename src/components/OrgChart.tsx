@@ -1,50 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AtSign, ChevronDown, ChevronUp, Maximize2, MapPin, Minus, Phone, Plus, X } from "lucide-react";
-import { companyName, type CompanyId } from "@/lib/intranet";
+import { ChevronDown, ChevronUp, Maximize2, Minus, Plus } from "lucide-react";
 import { useI18n } from "@/components/I18nProvider";
 import { fmt } from "@/lib/i18n/locale";
 import { deptName } from "@/lib/i18n/text";
-import { getSupabase } from "@/lib/supabase/client";
-import { Heart } from "lucide-react";
 import type { Person, Position } from "@/components/PeopleView";
-import PersonFacts from "@/components/PersonFacts";
-
-// One color per department (Whale-style label + card strip). Leadership = GMX green.
-const DEPT_COLOR: Record<string, string> = {
-  leadership: "#009f67",
-  commercial: "#e8702a",
-  marketing: "#d6336c",
-  operations: "#3b6fd8",
-  logistics: "#0f9fb0",
-  finance: "#7b4fd6",
-  hr: "#d99a00",
-  it: "#5b6b7a",
-};
-const colorOf = (dept: string | null) => DEPT_COLOR[dept ?? "leadership"] ?? "#5b6b7a";
+import PersonPanel from "@/components/people/PersonPanel";
+import { Photo, colorOf } from "@/components/people/shared";
 
 const ROOT = "__gmx__";
 const DEFAULT_DEPTH = 2; // levels expanded below the GMX root on first load
-
-const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join("");
-
-/** `inverse`: white disc with colored initials (for colored backgrounds). */
-function Photo({ person, size, color, inverse }: { person: Person; size: number; color: string; inverse?: boolean }) {
-  const ring = { width: size, height: size, boxShadow: inverse ? "0 0 0 3px rgba(255,255,255,0.6)" : `0 0 0 3px #fff, 0 0 0 5px ${color}` };
-  return person.photo_url ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={person.photo_url} alt="" className="rounded-full object-cover" style={ring} />
-  ) : (
-    <span
-      className="flex items-center justify-center rounded-full font-black"
-      style={{ ...ring, background: inverse ? "#fff" : color, color: inverse ? color : "#fff", fontSize: size * 0.36 }}
-      aria-hidden
-    >
-      {initials(person.full_name)}
-    </span>
-  );
-}
 
 type Tree = { children: Map<string, Position[]>; roots: Position[]; board: Position[] };
 
@@ -58,7 +24,6 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
     return team && d && !label.toLowerCase().includes(team.toLowerCase()) ? `${label} · ${team}` : label;
   };
   const peopleById = useMemo(() => new Map(people.map(p => [p.id, p])), [people]);
-  const positionById = useMemo(() => new Map(positions.map(p => [p.id, p])), [positions]);
 
   // Positions in scope; a position whose manager is out of scope hangs off the GMX root.
   const tree: Tree = useMemo(() => {
@@ -149,29 +114,6 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
 
   // ── Detail panel ──────────────────────────────────────────────────────────
   const [selected, setSelected] = useState<Position | null>(null);
-  const selectedPerson = selected ? peopleById.get(selected.person_id) ?? null : null;
-  const [received, setReceived] = useState<{ personId: string; items: { id: string; from_person_id: string; message: string; created_at: string }[] } | null>(null);
-  useEffect(() => {
-    const id = selectedPerson?.id;
-    const supabase = getSupabase();
-    if (!id || !supabase) return;
-    let active = true;
-    supabase
-      .from("kudos")
-      .select("id, from_person_id, message, created_at")
-      .eq("to_person_id", id)
-      // Kudos are public for the week they're given.
-      .gte("created_at", new Date(Date.now() - ((new Date().getDay() + 6) % 7) * 86_400_000 - new Date().getHours() * 3_600_000).toISOString())
-      .order("created_at", { ascending: false })
-      .limit(3)
-      .then(({ data }) => {
-        if (active) setReceived({ personId: id, items: (data as NonNullable<typeof received>["items"] | null) ?? [] });
-      });
-    return () => {
-      active = false;
-    };
-  }, [selectedPerson?.id]);
-  const kudosList = received && received.personId === selectedPerson?.id ? received.items : [];
 
   const card = (p: Position) => {
     const person = peopleById.get(p.person_id);
@@ -281,111 +223,7 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
       <p className="pointer-events-none absolute bottom-3 right-4 text-[11px] text-gray-400">{t.people.hint}</p>
 
       {/* Detail panel */}
-      {selected && selectedPerson && (
-        <div className="absolute inset-0 z-30 flex justify-end bg-black/20" onClick={() => setSelected(null)}>
-          <aside className="h-full w-full max-w-sm overflow-y-auto bg-white shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="relative px-6 pb-6 pt-8 text-white" style={{ background: colorOf(selected.department_id) }}>
-              <button type="button" onClick={() => setSelected(null)} className="absolute right-3 top-3 rounded p-1 hover:bg-white/20" aria-label={t.common.close}>
-                <X className="h-5 w-5" />
-              </button>
-              <Photo person={selectedPerson} size={72} color={colorOf(selected.department_id)} inverse />
-              <p className="mt-4 text-xl font-black">{selectedPerson.full_name}</p>
-              <p className="text-sm text-white/90">
-                {positions.filter(x => x.person_id === selectedPerson.id).map(x => x.title).join(" · ")}
-              </p>
-            </div>
-            <div className="space-y-6 p-6 text-sm">
-              <div className="space-y-2">
-                {selectedPerson.email && (
-                  <a href={`mailto:${selectedPerson.email}`} className="flex items-center gap-2 text-gray-800 hover:text-[#00704a]">
-                    <AtSign className="h-4 w-4 text-gray-400" /> {selectedPerson.email}
-                  </a>
-                )}
-                {selectedPerson.phone && (
-                  <a href={`tel:${selectedPerson.phone.replace(/[^\d+]/g, "")}`} className="flex items-center gap-2 text-gray-800 hover:text-[#00704a]">
-                    <Phone className="h-4 w-4 text-gray-400" /> {selectedPerson.phone}
-                  </a>
-                )}
-                {selectedPerson.location && (
-                  <p className="flex items-center gap-2 text-gray-600"><MapPin className="h-4 w-4 text-gray-400" /> {selectedPerson.location}</p>
-                )}
-                <PersonFacts p={selectedPerson} />
-                {!selectedPerson.email && !selectedPerson.phone && (
-                  <p className="text-gray-400">{selectedPerson.user_id ? t.people.noContact : t.people.contactLater}</p>
-                )}
-              </div>
-
-              <div>
-                <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">{t.people.departmentsLabel}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {positions.filter(x => x.person_id === selectedPerson.id).map(x => (
-                    <span key={x.id} className="rounded-full px-2.5 py-1 text-xs font-bold text-white" style={{ background: colorOf(x.department_id) }}>
-                      {deptTeam(x.department_id, x.team)}
-                    </span>
-                  ))}
-                </div>
-                {selectedPerson.company_id && <p className="mt-2 text-xs text-gray-500">{companyName(selectedPerson.company_id as CompanyId)}</p>}
-              </div>
-
-              {kudosList.length > 0 && (
-                <div>
-                  <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">{t.people.kudos}</p>
-                  <ul className="space-y-2">
-                    {kudosList.map(k => (
-                      <li key={k.id} className="flex gap-2">
-                        <Heart className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-pink-400 text-pink-400" />
-                        <span>
-                          <span className="text-gray-700">{k.message}</span>{" "}
-                          <span className="text-xs text-gray-400">{t.kudos.from.replace("{name}", peopleById.get(k.from_person_id)?.full_name ?? "—")}</span>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {(() => {
-                const manager = selected.reports_to ? positionById.get(selected.reports_to) : null;
-                const managerPerson = manager ? peopleById.get(manager.person_id) : null;
-                const reports = positions.filter(x => x.reports_to === selected.id);
-                return (
-                  <>
-                    {manager && managerPerson && (
-                      <div>
-                        <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">{t.people.reportsTo}</p>
-                        <button type="button" onClick={() => setSelected(manager)} className="flex w-full items-center gap-3 rounded-lg p-1.5 text-left hover:bg-gray-50">
-                          <Photo person={managerPerson} size={32} color={colorOf(manager.department_id)} />
-                          <span>
-                            <span className="block font-bold text-gray-900">{managerPerson.full_name}</span>
-                            <span className="block text-xs text-gray-500">{manager.title}</span>
-                          </span>
-                        </button>
-                      </div>
-                    )}
-                    {reports.length > 0 && (
-                      <div>
-                        <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">{fmt(t.people.directReports, { n: reports.length })}</p>
-                        {reports.map(r => {
-                          const rp = peopleById.get(r.person_id);
-                          return rp ? (
-                            <button key={r.id} type="button" onClick={() => setSelected(r)} className="flex w-full items-center gap-3 rounded-lg p-1.5 text-left hover:bg-gray-50">
-                              <Photo person={rp} size={32} color={colorOf(r.department_id)} />
-                              <span>
-                                <span className="block font-bold text-gray-900">{rp.full_name}</span>
-                                <span className="block text-xs text-gray-500">{r.title}</span>
-                              </span>
-                            </button>
-                          ) : null;
-                        })}
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-          </aside>
-        </div>
-      )}
+      {selected && <PersonPanel position={selected} people={people} positions={positions} onSelect={setSelected} onClose={() => setSelected(null)} />}
     </div>
   );
 }
