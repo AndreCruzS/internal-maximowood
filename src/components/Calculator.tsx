@@ -27,6 +27,8 @@ import {
   applyWaste,
   getSpeciesByCategory,
   ALL_PRODUCTS,
+  productsFromPricing,
+  categoryOf,
   PROMO_PRODUCTS,
   type LengthType,
   type CoatingId,
@@ -40,6 +42,7 @@ import QuoteModal, { type QuoteCartItem } from "@/components/QuoteModal";
 import { distributePieces, type PieceLengthResult } from "@/lib/pieceLengths";
 import SavedQuoteBanner from "@/components/SavedQuoteBanner";
 import { useSavedQuote } from "@/hooks/useSavedQuote";
+import { usePricing } from "@/lib/api";
 import type { QuoteLineItem } from "@/lib/generateQuotePDF";
 
 type InputMode = "lf" | "sqft" | "boards";
@@ -224,13 +227,21 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
   const [promoScenario, setPromoScenario] = useState<PromoScenario>("conservador");
   const [usePromoPrice, setUsePromoPrice] = useState(false);
 
+  // Live price list from the Google Sheet (source of truth); the built-in list
+  // covers the moment before it loads, or a sheet outage.
+  const { data: pricingRows } = usePricing();
+  const products = useMemo(() => {
+    const live = pricingRows ? productsFromPricing(pricingRows) : [];
+    return live.length ? live : ALL_PRODUCTS.map(p => ({ ...p, category: categoryOf(p) }));
+  }, [pricingRows]);
+
   // Derived lists
-  const speciesList = useMemo(() => getSpeciesByCategory(category), [category]);
-  const sizeList = useMemo(() => getNominalSizes(selectedSpecies), [selectedSpecies]);
-  const profileList = useMemo(() => getProfiles(selectedSpecies, selectedSize), [selectedSpecies, selectedSize]);
+  const speciesList = useMemo(() => getSpeciesByCategory(category, products), [category, products]);
+  const sizeList = useMemo(() => getNominalSizes(selectedSpecies, products), [selectedSpecies, products]);
+  const profileList = useMemo(() => getProfiles(selectedSpecies, selectedSize, products), [selectedSpecies, selectedSize, products]);
   const selectedProduct = useMemo(
-    () => findProduct(selectedSpecies, selectedSize, selectedProfile),
-    [selectedSpecies, selectedSize, selectedProfile]
+    () => findProduct(selectedSpecies, selectedSize, selectedProfile, products),
+    [selectedSpecies, selectedSize, selectedProfile, products]
   );
 
   // Find a matching promo entry for the currently selected product
