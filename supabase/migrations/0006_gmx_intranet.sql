@@ -154,9 +154,10 @@ language sql stable security definer set search_path = public as $$
   select department_id from public.profiles where user_id = auth.uid()
 $$;
 
+-- Intranet admins are profiles.role = 'admin' only (not the calculator's app_metadata role).
 create function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as $$
-  select public.my_role() = 'admin' or coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin'
+  select public.my_role() = 'admin'
 $$;
 
 -- Admins manage everything; a leader manages their own department's content.
@@ -640,5 +641,8 @@ select u.id, lower(u.email), coalesce(u.raw_user_meta_data ->> 'name', ''),
        (select d.company_id from public.allowed_email_domains d where d.domain = lower(split_part(u.email, '@', 2)))
   from auth.users u
 on conflict (user_id) do nothing;
+
+-- The only intranet admin for now (calculator admins are not intranet admins).
+update public.profiles set role = 'admin' where email = 'anna.miguel@gmxgroup.com';
 
 commit;

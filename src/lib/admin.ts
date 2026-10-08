@@ -2,13 +2,13 @@ import type { User } from "@supabase/supabase-js";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 /**
- * Admin allowlist. Set CALCULATOR_ADMIN_EMAILS in the environment to a
- * comma-separated list, e.g. "anna@lumberplus.com, performance@lumberplus.com".
- * A user whose auth `app_metadata.role` is "admin" also counts, so you can
- * promote people without a redeploy once the first admin is in place.
+ * Intranet admins: INTRANET_ADMIN_EMAILS (comma-separated). Deliberately NOT
+ * the calculator's CALCULATOR_ADMIN_EMAILS or auth app_metadata.role — the
+ * intranet shares the login system with the calculator app, and being an
+ * admin there must not make someone an intranet admin.
  */
 export function adminEmails(): string[] {
-  return (process.env.CALCULATOR_ADMIN_EMAILS ?? "")
+  return (process.env.INTRANET_ADMIN_EMAILS ?? "")
     .split(",")
     .map(e => e.trim().toLowerCase())
     .filter(Boolean);
@@ -18,7 +18,6 @@ export function isAdminUser(
   user: { email?: string | null; app_metadata?: User["app_metadata"] | null } | null | undefined,
 ): boolean {
   if (!user) return false;
-  if (user.app_metadata?.role === "admin") return true;
   const email = user.email?.toLowerCase();
   return !!email && adminEmails().includes(email);
 }
