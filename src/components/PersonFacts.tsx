@@ -1,8 +1,8 @@
 "use client";
 
-import { Cake, Clock, Languages, Lightbulb, MapPin, PartyPopper } from "lucide-react";
+import { Briefcase, Cake, Clock, Flag, Home, Languages, Lightbulb, MapPin, PartyPopper } from "lucide-react";
 import { useMounted } from "@/components/CalendarView";
-import { officeById, yearsSince } from "@/lib/intranet";
+import { companyName, officeById, yearsSince, type CompanyId } from "@/lib/intranet";
 import { useI18n } from "@/components/I18nProvider";
 import { plural } from "@/lib/i18n/dictionaries";
 import { monthName } from "@/lib/i18n/text";
@@ -13,7 +13,11 @@ export type PersonalFields = {
   birth_month?: number | null;
   birth_day?: number | null;
   start_date?: string | null;
+  start_year?: number | null;
   skills?: string[] | null;
+  nationality?: string | null;
+  location?: string | null;
+  companies?: string[] | null;
 };
 
 /** "3:42 PM" in a time zone, rendered in the browser. */
@@ -28,7 +32,8 @@ export function LocalTime({ timeZone }: { timeZone: string }) {
 export default function PersonFacts({ p, compact }: { p: PersonalFields; compact?: boolean }) {
   const { t, tag } = useI18n();
   const office = officeById(p.office);
-  const years = p.start_date ? yearsSince(p.start_date) : null;
+  // Exact start date, or just the year when that's all the person knows.
+  const years = p.start_date ? yearsSince(p.start_date) : p.start_year ? Math.max(0, new Date().getFullYear() - p.start_year) : null;
   const row = `flex items-center gap-2 ${compact ? "text-xs" : "text-sm"} text-gray-600`;
   const icon = "h-3.5 w-3.5 shrink-0 text-gray-400";
   return (
@@ -42,6 +47,11 @@ export default function PersonFacts({ p, compact }: { p: PersonalFields; compact
             </span>
           )}
         </p>
+      )}
+      {p.location && <p className={row}><Home className={icon} /> {p.location}</p>}
+      {p.nationality && <p className={row}><Flag className={icon} /> {p.nationality}</p>}
+      {p.companies && p.companies.length > 0 && (
+        <p className={row}><Briefcase className={icon} /> {p.companies.map(c => companyName(c as CompanyId)).join(", ")}</p>
       )}
       {p.languages && p.languages.length > 0 && (
         <p className={row}><Languages className={icon} /> {p.languages.join(", ")}</p>

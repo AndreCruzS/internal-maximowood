@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AtSign, MapPin, Network, Phone, Search, Users } from "lucide-react";
+import { AtSign, Network, Phone, Search, Users } from "lucide-react";
 import { COMPANIES, DEPARTMENTS, companyName, type CompanyId } from "@/lib/intranet";
 import { useI18n } from "@/components/I18nProvider";
 import { plural } from "@/lib/i18n/dictionaries";
@@ -26,6 +26,10 @@ export type Person = {
   birth_day?: number | null;
   start_date?: string | null;
   skills?: string[] | null;
+  start_year?: number | null;
+  nickname?: string | null;
+  nationality?: string | null;
+  companies?: string[] | null;
 };
 
 export type Position = {
@@ -145,7 +149,7 @@ export default function PeopleView({ people, positions, me, error }: {
               <div className="flex items-start gap-3">
                 <Avatar person={person} size={44} />
                 <div className="min-w-0">
-                  <p className="truncate font-bold text-gray-900">{person.full_name}</p>
+                  <p className="truncate font-bold text-gray-900">{person.full_name}{person.nickname ? <span className="font-normal text-gray-500"> “{person.nickname}”</span> : null}</p>
                   {roles.map(r => (
                     <p key={r.id} className="truncate text-xs text-gray-500">
                       {r.title} · {deptName(r.department_id)}
@@ -166,11 +170,6 @@ export default function PeopleView({ people, positions, me, error }: {
                   <a href={`tel:${person.phone.replace(/[^\d+]/g, "")}`} className="flex items-center gap-2 text-gray-700 hover:text-[#00704a]">
                     <Phone className="h-3.5 w-3.5 shrink-0 text-gray-400" /> {person.phone}
                   </a>
-                )}
-                {person.location && !person.office && (
-                  <p className="flex items-center gap-2 text-gray-500">
-                    <MapPin className="h-3.5 w-3.5 shrink-0 text-gray-400" /> {person.location}
-                  </p>
                 )}
                 <PersonFacts p={person} />
                 {!person.user_id && <p className="text-xs text-gray-400">{t.people.detailsLater}</p>}
