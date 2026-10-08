@@ -33,7 +33,7 @@ export function Photo({ person, size, color, inverse }: { person: Pick<Person, "
 }
 
 /** Slack workspace (subdomain of slack.com) used for "Message on Slack" links. */
-export const SLACK_WORKSPACE = process.env.NEXT_PUBLIC_SLACK_WORKSPACE ?? "";
+export const SLACK_WORKSPACE = process.env.NEXT_PUBLIC_SLACK_WORKSPACE || "gmxg";
 
 /** Contact links: Gmail compose, Slack profile, RingCentral call. */
 export const gmailLink = (email: string) => `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}`;
