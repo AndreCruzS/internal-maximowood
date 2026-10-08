@@ -76,6 +76,23 @@ export function CelebrationsList({ people }: { people: CelebrationPerson[] }) {
   );
 }
 
+/** "New joiners" panel — rendered only when someone started in the last NEW_JOINER_DAYS days. */
+export function NewJoinersPanel({ people }: { people: CelebrationPerson[] }) {
+  const { t } = useI18n();
+  const mounted = useMounted();
+  const [now] = useState(() => Date.now());
+  if (!mounted) return null;
+  const cutoff = now - NEW_JOINER_DAYS * 86_400_000;
+  const any = people.some(p => p.start_date && new Date(`${p.start_date}T12:00:00`).getTime() >= cutoff && new Date(`${p.start_date}T12:00:00`).getTime() <= now);
+  if (!any) return null;
+  return (
+    <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <h2 className="mb-3 font-black text-gray-900">{t.home.newJoiners}</h2>
+      <NewJoinersList people={people} />
+    </section>
+  );
+}
+
 export function NewJoinersList({ people }: { people: CelebrationPerson[] }) {
   const { t, tag } = useI18n();
   const mounted = useMounted();

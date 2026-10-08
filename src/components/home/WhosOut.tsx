@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plane, Plus, Stethoscope, Sun, Umbrella, Building2, X } from "lucide-react";
+import { Building2, ChevronDown, Plane, Plus, Stethoscope, Sun, Umbrella, UserRoundCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
@@ -16,14 +16,15 @@ const KIND_ICON = { vacation: Umbrella, sick: Stethoscope, travel: Plane, ooo: B
 
 const localYmd = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-/** Who's out today and in the next two weeks; anyone linked to the org chart can add their own time off. */
+/** Who's out today and in the next two weeks, and who covers for them; anyone in the org chart can add their own time off. */
 export default function WhosOut({ absences, people }: { absences: Absence[]; people: PersonLite[] }) {
   const { t, tag } = useI18n();
   const me = useMe();
   const router = useRouter();
   const mounted = useMounted();
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState({ starts_on: "", ends_on: "", kind: "vacation", note: "" });
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [draft, setDraft] = useState({ starts_on: "", ends_on: "", kind: "vacation", note: "", covered_by: [] as string[] });
   const [busy, setBusy] = useState(false);
   if (!mounted) return <div className="h-24" />;
 
@@ -35,28 +36,51 @@ export default function WhosOut({ absences, people }: { absences: Absence[]; peo
 
   const save = async () => {
     const supabase = getSupabase();
-    if (!supabase || !me.personId) return;
-    if (!draft.starts_on || !draft.ends_on) return;
+    if (!supabase || !me.personId || !draft.starts_on || !draft.ends_on) return;
     setBusy(true);
     const { error } = await supabase.from("absences").insert({ ...draft, note: draft.note.trim(), person_id: me.personId });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(t.absences.added);
     setOpen(false);
-    setDraft({ starts_on: "", ends_on: "", kind: "vacation", note: "" });
+    setDraft({ starts_on: "", ends_on: "", kind: "vacation", note: "", covered_by: [] });
     router.refresh();
   };
 
   const row = (a: Absence) => {
     const Icon = KIND_ICON[a.kind as keyof typeof KIND_ICON] ?? Umbrella;
+    const covers = (a.covered_by ?? []).map(id => names.get(id)).filter(Boolean) as string[];
+    const isOpen = expanded === a.id;
     return (
-      <li key={a.id} className="flex items-center gap-3 rounded-lg px-2 py-1.5">
-        <Icon className="h-4 w-4 shrink-0 text-gray-400" />
-        <span className="min-w-0 flex-1 truncate text-sm font-bold text-gray-900">{names.get(a.person_id) ?? "—"}</span>
-        <span className="shrink-0 text-xs text-gray-500">
-          {t.absences.kinds[a.kind as keyof typeof t.absences.kinds] ?? a.kind} · {a.starts_on > today ? `${d(a.starts_on)} – ` : ""}
-          {fmt(t.absences.until, { date: d(a.ends_on) })}
-        </span>
+      <li key={a.id}>
+        <button
+          type="button"
+          onClick={() => setExpanded(isOpen ? null : a.id)}
+          aria-expanded={isOpen}
+          className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-gray-50"
+        >
+          <Icon className="h-4 w-4 shrink-0 text-gray-400" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-bold text-gray-900">{names.get(a.person_id) ?? "—"}</span>
+            <span className="block truncate text-xs text-gray-500">
+              {t.absences.kinds[a.kind as keyof typeof t.absences.kinds] ?? a.kind} · {a.starts_on > today ? `${d(a.starts_on)} – ` : ""}
+              {fmt(t.absences.until, { date: d(a.ends_on) })}
+            </span>
+          </span>
+          {covers.length > 0 && <UserRoundCheck className="h-4 w-4 shrink-0 text-[#009f67]" aria-label={t.absences.coveredBy} />}
+          <ChevronDown className={`h-4 w-4 shrink-0 text-gray-300 transition-transform ${isOpen ? "" : "-rotate-90"}`} />
+        </button>
+        {isOpen && (
+          <div className="mb-1 ml-9 rounded-lg bg-[#f2fbf7] px-3 py-2 text-sm">
+            <p className="text-[11px] font-black uppercase tracking-widest text-[#00704a]">{t.absences.coveredBy}</p>
+            {covers.length ? (
+              <ul className="mt-1 space-y-0.5">{covers.map(n => <li key={n} className="font-bold text-gray-800">{n}</li>)}</ul>
+            ) : (
+              <p className="mt-1 text-gray-500">{t.absences.noCover}</p>
+            )}
+            {a.note && <p className="mt-1.5 text-xs text-gray-500">{a.note}</p>}
+          </div>
+        )}
       </li>
     );
   };
@@ -84,6 +108,28 @@ export default function WhosOut({ absences, people }: { absences: Absence[]; peo
           <select value={draft.kind} onChange={e => setDraft(x => ({ ...x, kind: e.target.value }))} className={field} aria-label={t.absences.kind}>
             {ABSENCE_KINDS.map(k => <option key={k} value={k}>{t.absences.kinds[k]}</option>)}
           </select>
+          <div>
+            <p className="mb-1 text-xs font-bold text-gray-500">{t.absences.whoCovers}</p>
+            {draft.covered_by.length > 0 && (
+              <div className="mb-1.5 flex flex-wrap gap-1.5">
+                {draft.covered_by.map(id => (
+                  <span key={id} className="flex items-center gap-1 rounded-full bg-[#e6f6f0] px-2.5 py-0.5 text-xs font-bold text-[#00704a]">
+                    {names.get(id)}
+                    <button type="button" onClick={() => setDraft(x => ({ ...x, covered_by: x.covered_by.filter(c => c !== id) }))} aria-label={`${t.common.delete} ${names.get(id)}`}><X className="h-3 w-3" /></button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <select
+              value=""
+              onChange={e => e.target.value && setDraft(x => ({ ...x, covered_by: [...x.covered_by, e.target.value] }))}
+              className={field}
+              aria-label={t.absences.whoCovers}
+            >
+              <option value="">{t.absences.addCover}</option>
+              {people.filter(p => p.id !== me.personId && !draft.covered_by.includes(p.id)).map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+            </select>
+          </div>
           <input value={draft.note} onChange={e => setDraft(x => ({ ...x, note: e.target.value }))} placeholder={t.absences.note} className={field} />
           <button type="button" disabled={busy || !draft.starts_on || !draft.ends_on} onClick={save} className="h-9 w-full rounded-lg bg-[#009f67] text-sm font-bold text-white disabled:opacity-50">{t.absences.add}</button>
         </div>

@@ -119,6 +119,7 @@ const en = {
     kinds: { vacation: "Vacation", sick: "Sick", travel: "Travel", ooo: "Out of office", holiday: "Holiday" },
     add: "Add", myTimeOff: "My time off", none: "Nothing planned.", until: "until {date}", today: "Today",
     upcoming: "Coming up", added: "Added", needProfile: "Link yourself in People first.",
+    whoCovers: "Who covers for you while you're out?", addCover: "Add a colleague…", coveredBy: "Covered by", noCover: "No one assigned",
   },
   faq: {
     title: "Help & FAQ", subtitle: "Answers to common questions, by department.", empty: "No questions yet.",
@@ -129,6 +130,15 @@ const en = {
     title: "Kudos", give: "Give kudos", to: "To", message: "Message", messagePlaceholder: "Thanks for…", send: "Send",
     empty: "No kudos yet — be the first to thank a colleague.", sent: "Kudos sent 🎉", chooseColleague: "Choose a colleague…",
     needProfile: "Link yourself in People first.", from: "from {name}",
+    weekTitle: "This week's kudos", weekHint: "Kudos stay on the home page for the week they're given.", chooseValue: "What are you recognizing?",
+    values: {
+      teamwork: { name: "Teamwork", desc: "Helped the team win together" },
+      innovation: { name: "Innovation", desc: "Found a better way to do things" },
+      agility: { name: "Agility", desc: "Adapted fast and got it done" },
+      ownership: { name: "Entrepreneurial spirit", desc: "Took ownership like it's their own business" },
+      customer: { name: "Customer focus", desc: "Went the extra mile for a customer" },
+      sustainability: { name: "Sustainability", desc: "Made a difference for people and the planet" },
+    },
   },
   onboarding: {
     title: "Onboarding", subtitle: "Your first steps at GMX Group.", progress: "{done} of {total} done",
@@ -293,6 +303,7 @@ const es: Dict = {
     kinds: { vacation: "Vacaciones", sick: "Enfermedad", travel: "Viaje", ooo: "Fuera de la oficina", holiday: "Feriado" },
     add: "Agregar", myTimeOff: "Mis ausencias", none: "Nada planeado.", until: "hasta el {date}", today: "Hoy",
     upcoming: "Próximamente", added: "Agregado", needProfile: "Primero vincúlate en Personas.",
+    whoCovers: "¿Quién te cubre mientras estás ausente?", addCover: "Agregar un colega…", coveredBy: "Lo cubre", noCover: "Nadie asignado",
   },
   faq: {
     title: "Ayuda y FAQ", subtitle: "Respuestas a preguntas frecuentes, por departamento.", empty: "Aún no hay preguntas.",
@@ -303,6 +314,15 @@ const es: Dict = {
     title: "Reconocimientos", give: "Reconocer", to: "Para", message: "Mensaje", messagePlaceholder: "Gracias por…", send: "Enviar",
     empty: "Aún no hay reconocimientos — sé el primero en agradecer a un colega.", sent: "Reconocimiento enviado 🎉", chooseColleague: "Elige un colega…",
     needProfile: "Primero vincúlate en Personas.", from: "de {name}",
+    weekTitle: "Reconocimientos de la semana", weekHint: "Los reconocimientos quedan en el inicio durante la semana en que se dan.", chooseValue: "¿Qué estás reconociendo?",
+    values: {
+      teamwork: { name: "Trabajo en equipo", desc: "Ayudó al equipo a ganar juntos" },
+      innovation: { name: "Innovación", desc: "Encontró una mejor forma de hacer las cosas" },
+      agility: { name: "Agilidad", desc: "Se adaptó rápido y lo resolvió" },
+      ownership: { name: "Espíritu emprendedor", desc: "Lo asumió como si fuera su propio negocio" },
+      customer: { name: "Foco en el cliente", desc: "Hizo un esfuerzo extra por un cliente" },
+      sustainability: { name: "Sostenibilidad", desc: "Marcó la diferencia para las personas y el planeta" },
+    },
   },
   onboarding: {
     title: "Bienvenida", subtitle: "Tus primeros pasos en GMX Group.", progress: "{done} de {total} completados",
@@ -465,6 +485,7 @@ const pt: Dict = {
     kinds: { vacation: "Férias", sick: "Doença", travel: "Viagem", ooo: "Fora do escritório", holiday: "Feriado" },
     add: "Adicionar", myTimeOff: "Minhas ausências", none: "Nada planejado.", until: "até {date}", today: "Hoje",
     upcoming: "Em breve", added: "Adicionado", needProfile: "Vincule-se primeiro em Pessoas.",
+    whoCovers: "Quem te cobre enquanto você estiver fora?", addCover: "Adicionar um colega…", coveredBy: "Quem cobre", noCover: "Ninguém definido",
   },
   faq: {
     title: "Ajuda e FAQ", subtitle: "Respostas para dúvidas comuns, por departamento.", empty: "Ainda não há perguntas.",
@@ -475,6 +496,15 @@ const pt: Dict = {
     title: "Reconhecimentos", give: "Reconhecer", to: "Para", message: "Mensagem", messagePlaceholder: "Obrigado por…", send: "Enviar",
     empty: "Ainda não há reconhecimentos — seja o primeiro a agradecer um colega.", sent: "Reconhecimento enviado 🎉", chooseColleague: "Escolha um colega…",
     needProfile: "Vincule-se primeiro em Pessoas.", from: "de {name}",
+    weekTitle: "Reconhecimentos da semana", weekHint: "Os reconhecimentos ficam na página inicial durante a semana em que são dados.", chooseValue: "O que você está reconhecendo?",
+    values: {
+      teamwork: { name: "Trabalho em equipe", desc: "Ajudou o time a vencer junto" },
+      innovation: { name: "Inovação", desc: "Encontrou um jeito melhor de fazer" },
+      agility: { name: "Agilidade", desc: "Se adaptou rápido e resolveu" },
+      ownership: { name: "Espírito empreendedor", desc: "Assumiu como se fosse o próprio negócio" },
+      customer: { name: "Foco no cliente", desc: "Foi além por um cliente" },
+      sustainability: { name: "Sustentabilidade", desc: "Fez a diferença para as pessoas e o planeta" },
+    },
   },
   onboarding: {
     title: "Integração", subtitle: "Seus primeiros passos na GMX Group.", progress: "{done} de {total} concluídas",

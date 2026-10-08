@@ -160,6 +160,8 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
       .from("kudos")
       .select("id, from_person_id, message, created_at")
       .eq("to_person_id", id)
+      // Kudos are public for the week they're given.
+      .gte("created_at", new Date(Date.now() - ((new Date().getDay() + 6) % 7) * 86_400_000 - new Date().getHours() * 3_600_000).toISOString())
       .order("created_at", { ascending: false })
       .limit(3)
       .then(({ data }) => {

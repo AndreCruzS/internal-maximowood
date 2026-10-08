@@ -7,7 +7,7 @@ import { BRAND, DEPARTMENTS, TOOLS, toolsFor } from "@/lib/intranet";
 import ToolLink from "@/components/ToolLink";
 import StarButton from "@/components/StarButton";
 import { EventChip, eventDay, formatWhen, useMounted } from "@/components/CalendarView";
-import { CelebrationsList, NewJoinersList } from "@/components/Celebrations";
+import { CelebrationsList, NewJoinersPanel } from "@/components/Celebrations";
 import WhosOut from "@/components/home/WhosOut";
 import Kudos from "@/components/home/Kudos";
 import { MustReadBanner, OnboardingCard } from "@/components/home/HomeBanners";
@@ -135,7 +135,8 @@ export default function Portal({ name, events, home }: { name: string; isAdmin: 
       </div>
 
       <MustReadBanner count={home.unreadMustRead} />
-      <OnboardingCard total={home.onboarding.items.length} done={doneItems} />
+      {/* Portal onboarding is for new employees only (company onboarding comes later). */}
+      {home.isNewEmployee && <OnboardingCard total={home.onboarding.items.length} done={doneItems} />}
 
       {/* Featured + Quick links */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -205,16 +206,14 @@ export default function Portal({ name, events, home }: { name: string; isAdmin: 
       </div>
 
       {/* People moments */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:auto-cols-fr lg:grid-flow-col">
         <Panel title={t.absences.title}>
           <WhosOut absences={home.absences} people={home.people} />
         </Panel>
         <Panel title={t.home.celebrations} action={<Link href="/people" className="text-sm font-bold text-[#00704a] hover:underline">{t.nav.people}</Link>}>
           <CelebrationsList people={home.celebrations} />
         </Panel>
-        <Panel title={t.home.newJoiners}>
-          <NewJoinersList people={home.celebrations} />
-        </Panel>
+        <NewJoinersPanel people={home.celebrations} />
       </div>
 
       <Panel title={t.kudos.title}>

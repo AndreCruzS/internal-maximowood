@@ -163,14 +163,19 @@ async function fetchIcs(url: string): Promise<RawEvent[]> {
 /** National public holidays only (Google marks observances like DST separately). */
 async function holidays(country: "us" | "br", locale: CalendarLocale, from: Date, to: Date): Promise<CalendarEvent[]> {
   // Classify with the English feed ("Public holiday" vs "Observance"), name with the viewer's language.
+  // The localized feeds don't always share event UIDs with the English one (pt-BR doesn't),
+  // so the localized name is matched by date, falling back to the English event.
   const [en, local] = await Promise.all([
     fetchIcs(holidayUrl(country, "en")),
     locale === "en" ? Promise.resolve(null) : fetchIcs(holidayUrl(country, locale)).catch(() => null),
   ]);
   const isNational = (e: RawEvent) => unescape(first(e, "DESCRIPTION")?.value ?? "").trim() === "Public holiday";
-  const nationalUids = new Set(en.filter(isNational).map(e => first(e, "UID")?.value));
-  const source = local ?? en;
-  return toEvents(source, country, from, to, e => nationalUids.has(first(e, "UID")?.value));
+  const dateOf = (e: RawEvent) => first(e, "DTSTART")?.value.slice(0, 8) ?? "";
+  const localByDate = new Map<string, RawEvent>();
+  for (const e of local ?? []) if (!localByDate.has(dateOf(e))) localByDate.set(dateOf(e), e);
+  const localByUid = new Map((local ?? []).map(e => [first(e, "UID")?.value, e]));
+  const national = en.filter(isNational).map(e => localByUid.get(first(e, "UID")?.value) ?? localByDate.get(dateOf(e)) ?? e);
+  return toEvents(national, country, from, to);
 }
 
 export function companyCalendarUrls(): string[] {

@@ -42,6 +42,18 @@ describe("calendar", () => {
     expect(events[1]).toMatchObject({ allDay: false, location: "Room 1", end: "2026-11-04T14:00:00.000Z" });
   });
 
+  it("names holidays in the viewer's language even when the localized feed uses other UIDs", async () => {
+    const BR_PT = ics(
+      ev(["DTSTART;VALUE=DATE:20261102", "DTEND;VALUE=DATE:20261103", "UID:other-uid@google.com", "DESCRIPTION:Feriado", "SUMMARY:Dia de Finados"]),
+    );
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(url.includes("pt-br.brazilian") ? BR_PT : url.includes("usa") ? US : BR)));
+    const { events } = await getCalendarEvents(new Date("2026-11-01T00:00:00Z"), new Date("2026-12-01T00:00:00Z"), "pt");
+    expect(events.map(e => [e.source, e.title])).toEqual([
+      ["br", "Dia de Finados"],
+      ["us", "Thanksgiving Day"],
+    ]);
+  });
+
   it("reports a failing feed instead of failing the page", async () => {
     vi.stubGlobal("fetch", vi.fn(async (url: string) => (url.includes("usa") ? new Response("nope", { status: 500 }) : new Response(BR))));
     const { events, failed, companyConnected } = await getCalendarEvents(new Date("2026-11-01T00:00:00Z"), new Date("2026-12-01T00:00:00Z"));
