@@ -18,7 +18,7 @@ export default async function ProfilePage({
   const isAdmin = isAdminUser(user);
   const { data: person } = await supabase!
     .from("people")
-    .select("id, full_name, phone, languages, office, birth_month, birth_day, start_date")
+    .select("id, full_name, phone, languages, office, birth_month, birth_day, start_date, skills")
     .eq("user_id", user.id)
     .maybeSingle();
 

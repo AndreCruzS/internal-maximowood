@@ -7,6 +7,9 @@ import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { COMPANIES, DEPARTMENTS } from "@/lib/intranet";
 import type { Person, Position } from "@/components/PeopleView";
+import { useI18n } from "@/components/I18nProvider";
+import { fmt } from "@/lib/i18n/locale";
+import { deptName } from "@/lib/i18n/text";
 
 type Draft = { id?: string; title: string; department_id: string; team: string; reports_to: string };
 
@@ -25,6 +28,7 @@ export default function MyEntry({ mine, people, positions }: {
   positions: Position[];
 }) {
   const router = useRouter();
+  const { t } = useI18n();
   const supabase = getSupabase();
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
@@ -69,14 +73,14 @@ export default function MyEntry({ mine, people, positions }: {
     return (
       <section className="rounded-xl border-2 border-[#009f67] bg-[#f2fbf7] p-5">
         <h2 className="flex items-center gap-2 font-black text-gray-900">
-          <UserCheck className="h-5 w-5 text-[#00704a]" /> Add yourself to the org chart
+          <UserCheck className="h-5 w-5 text-[#00704a]" /> {t.myEntry.addTitle}
         </h2>
-        <p className="mt-1 text-sm text-gray-600">Find your name below — then fill in your position and contact details.</p>
+        <p className="mt-1 text-sm text-gray-600">{t.myEntry.addText}</p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <div className="min-w-64 flex-1">
-            <label className={label} htmlFor="claim">I&apos;m already listed</label>
+            <label className={label} htmlFor="claim">{t.myEntry.listed}</label>
             <select id="claim" value={pick} onChange={e => setPick(e.target.value)} className={field}>
-              <option value="">Choose your name…</option>
+              <option value="">{t.myEntry.chooseName}</option>
               {unclaimed.map(p => (
                 <option key={p.id} value={p.id}>{p.full_name}</option>
               ))}
@@ -85,24 +89,24 @@ export default function MyEntry({ mine, people, positions }: {
           <button
             type="button"
             disabled={!pick || busy}
-            onClick={() => run(async () => supabase!.rpc("claim_person", { target: pick }), "You're linked to your org chart entry")}
+            onClick={() => run(async () => supabase!.rpc("claim_person", { target: pick }), t.myEntry.linked)}
             className="h-9 rounded-lg bg-[#009f67] px-4 text-sm font-bold text-white disabled:opacity-50"
           >
-            That&apos;s me
+            {t.myEntry.thatsMe}
           </button>
         </div>
         <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-[#cdeee0] pt-4">
           <div className="min-w-64 flex-1">
-            <label className={label} htmlFor="newname">I&apos;m not listed</label>
-            <input id="newname" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Your full name" className={field} />
+            <label className={label} htmlFor="newname">{t.myEntry.notListed}</label>
+            <input id="newname" value={newName} onChange={e => setNewName(e.target.value)} placeholder={t.myEntry.yourName} className={field} />
           </div>
           <button
             type="button"
             disabled={!newName.trim() || busy}
-            onClick={() => run(async () => supabase!.rpc("create_my_person", { name: newName }), "Added — now fill in your position")}
+            onClick={() => run(async () => supabase!.rpc("create_my_person", { name: newName }), t.myEntry.added)}
             className="h-9 rounded-lg border border-[#009f67] bg-white px-4 text-sm font-bold text-[#00704a] disabled:opacity-50"
           >
-            Add me
+            {t.myEntry.addMe}
           </button>
         </div>
       </section>
@@ -111,7 +115,7 @@ export default function MyEntry({ mine, people, positions }: {
 
   const save = async () => {
     if (!supabase) return;
-    if (drafts.some(d => !d.title.trim())) return toast.error("Every position needs a title.");
+    if (drafts.some(d => !d.title.trim())) return toast.error(t.myEntry.titleRequired);
     setBusy(true);
     const fail = (m: string) => {
       setBusy(false);
@@ -150,7 +154,7 @@ export default function MyEntry({ mine, people, positions }: {
     }
     setBusy(false);
     setOpen(false);
-    toast.success("Your entry is updated");
+    toast.success(t.myEntry.updated);
     router.refresh();
   };
 
@@ -160,14 +164,14 @@ export default function MyEntry({ mine, people, positions }: {
     <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="font-black text-gray-900">Your entry</h2>
+          <h2 className="font-black text-gray-900">{t.myEntry.yourEntry}</h2>
           <p className="text-sm text-gray-500">
-            {myPositions.length ? myPositions.map(p => p.title).join(" · ") : "Add your position so you appear in the org chart."}
+            {myPositions.length ? myPositions.map(p => p.title).join(" · ") : t.myEntry.addPositionHint}
           </p>
         </div>
         {!open && (
           <button type="button" onClick={() => setOpen(true)} className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-bold text-gray-800 hover:bg-gray-50">
-            Edit my position &amp; contact
+            {t.myEntry.editButton}
           </button>
         )}
       </div>
@@ -176,19 +180,19 @@ export default function MyEntry({ mine, people, positions }: {
         <div className="mt-4 space-y-5">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label className={label} htmlFor="me-name">Full name</label>
+              <label className={label} htmlFor="me-name">{t.myEntry.fullName}</label>
               <input id="me-name" value={details.full_name} onChange={e => setDetails(d => ({ ...d, full_name: e.target.value }))} className={field} />
             </div>
             <div>
-              <label className={label} htmlFor="me-phone">Phone / WhatsApp</label>
+              <label className={label} htmlFor="me-phone">{t.myEntry.phone}</label>
               <input id="me-phone" value={details.phone} onChange={e => setDetails(d => ({ ...d, phone: e.target.value }))} placeholder="+1 305 555 0100" className={field} />
             </div>
             <div>
-              <label className={label} htmlFor="me-loc">Location</label>
+              <label className={label} htmlFor="me-loc">{t.myEntry.location}</label>
               <input id="me-loc" value={details.location} onChange={e => setDetails(d => ({ ...d, location: e.target.value }))} placeholder="Curitiba, Brazil" className={field} />
             </div>
             <div>
-              <label className={label} htmlFor="me-co">Company</label>
+              <label className={label} htmlFor="me-co">{t.myEntry.company}</label>
               <select id="me-co" value={details.company_id} onChange={e => setDetails(d => ({ ...d, company_id: e.target.value }))} className={field}>
                 <option value="">—</option>
                 {COMPANIES.map(c => (
@@ -197,39 +201,39 @@ export default function MyEntry({ mine, people, positions }: {
               </select>
             </div>
           </div>
-          <p className="-mt-3 text-xs text-gray-400">Email: {mine.email ?? "—"} (from your login)</p>
+          <p className="-mt-3 text-xs text-gray-400">{fmt(t.myEntry.email, { email: mine.email ?? "—" })}</p>
 
           <div className="space-y-3">
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">Positions</p>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400">{t.myEntry.positions}</p>
             {drafts.map((d, i) => (
               <div key={d.id ?? `new-${i}`} className="grid items-end gap-3 rounded-lg border border-gray-200 p-3 sm:grid-cols-2 lg:grid-cols-[2fr_1.5fr_1fr_2fr_auto]">
                 <div>
-                  <label className={label}>Title</label>
-                  <input value={d.title} onChange={e => setDraft(i, { title: e.target.value })} placeholder="e.g. Coordenadora de Vendas" className={field} />
+                  <label className={label}>{t.myEntry.title}</label>
+                  <input value={d.title} onChange={e => setDraft(i, { title: e.target.value })} placeholder={t.myEntry.titlePlaceholder} className={field} />
                 </div>
                 <div>
-                  <label className={label}>Department</label>
+                  <label className={label}>{t.myEntry.department}</label>
                   <select value={d.department_id} onChange={e => setDraft(i, { department_id: e.target.value })} className={field}>
-                    <option value="">Leadership</option>
+                    <option value="">{t.departments.leadership}</option>
                     {DEPARTMENTS.map(x => (
-                      <option key={x.id} value={x.id}>{x.name}</option>
+                      <option key={x.id} value={x.id}>{deptName(t, x.id)}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className={label}>Team</label>
-                  <input value={d.team} onChange={e => setDraft(i, { team: e.target.value })} placeholder="e.g. Comex" className={field} />
+                  <label className={label}>{t.myEntry.team}</label>
+                  <input value={d.team} onChange={e => setDraft(i, { team: e.target.value })} placeholder={t.myEntry.teamPlaceholder} className={field} />
                 </div>
                 <div>
-                  <label className={label}>Reports to</label>
+                  <label className={label}>{t.myEntry.reportsTo}</label>
                   <select value={d.reports_to} onChange={e => setDraft(i, { reports_to: e.target.value })} className={field}>
-                    <option value="">No one (top of the chart)</option>
+                    <option value="">{t.myEntry.noOne}</option>
                     {managerOptions.map(m => (
                       <option key={m.id} value={m.id}>{m.label}</option>
                     ))}
                   </select>
                 </div>
-                <button type="button" onClick={() => setDrafts(ds => ds.filter((_, j) => j !== i))} className="h-9 rounded-lg px-2 text-red-600 hover:bg-red-50" aria-label="Remove position">
+                <button type="button" onClick={() => setDrafts(ds => ds.filter((_, j) => j !== i))} className="h-9 rounded-lg px-2 text-red-600 hover:bg-red-50" aria-label={t.myEntry.removePosition}>
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -239,16 +243,16 @@ export default function MyEntry({ mine, people, positions }: {
               onClick={() => setDrafts(ds => [...ds, { title: "", department_id: "", team: "", reports_to: "" }])}
               className="flex items-center gap-1.5 text-sm font-bold text-[#00704a] hover:underline"
             >
-              <Plus className="h-4 w-4" /> Add a position
+              <Plus className="h-4 w-4" /> {t.myEntry.addPosition}
             </button>
           </div>
 
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => setOpen(false)} className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-bold text-gray-700">
-              Cancel
+              {t.common.cancel}
             </button>
             <button type="button" onClick={save} disabled={busy} className="flex h-9 items-center gap-2 rounded-lg bg-[#009f67] px-4 text-sm font-bold text-white disabled:opacity-50">
-              {busy && <Loader2 className="h-4 w-4 animate-spin" />} Save
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />} {t.common.save}
             </button>
           </div>
         </div>

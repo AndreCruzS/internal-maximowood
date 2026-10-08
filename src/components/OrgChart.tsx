@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AtSign, ChevronDown, ChevronUp, Maximize2, MapPin, Minus, Phone, Plus, X } from "lucide-react";
-import { companyName, departmentById, type CompanyId } from "@/lib/intranet";
+import { companyName, type CompanyId } from "@/lib/intranet";
+import { useI18n } from "@/components/I18nProvider";
+import { fmt } from "@/lib/i18n/locale";
+import { deptName } from "@/lib/i18n/text";
+import { getSupabase } from "@/lib/supabase/client";
+import { Heart } from "lucide-react";
 import type { Person, Position } from "@/components/PeopleView";
 import PersonFacts from "@/components/PersonFacts";
 
@@ -18,12 +23,6 @@ const DEPT_COLOR: Record<string, string> = {
   it: "#5b6b7a",
 };
 const colorOf = (dept: string | null) => DEPT_COLOR[dept ?? "leadership"] ?? "#5b6b7a";
-const deptLabel = (dept: string | null) => (dept ? departmentById(dept)?.name ?? dept : "Leadership");
-/** "Department · Team", without repeating a team named like its department. */
-const deptTeam = (dept: string | null, team: string | null) => {
-  const d = deptLabel(dept);
-  return team && dept && !d.toLowerCase().includes(team.toLowerCase()) ? `${d} · ${team}` : d;
-};
 
 const ROOT = "__gmx__";
 const DEFAULT_DEPTH = 2; // levels expanded below the GMX root on first load
@@ -51,6 +50,13 @@ type Tree = { children: Map<string, Position[]>; roots: Position[]; board: Posit
 
 /** Whale-style org chart: top-down cards, collapsible branches, zoom/pan canvas, detail panel. */
 export default function OrgChart({ people, positions, dept }: { people: Person[]; positions: Position[]; dept: string }) {
+  const { t } = useI18n();
+  const deptLabel = (d: string | null) => deptName(t, d);
+  /** "Department · Team", without repeating a team named like its department. */
+  const deptTeam = (d: string | null, team: string | null) => {
+    const label = deptLabel(d);
+    return team && d && !label.toLowerCase().includes(team.toLowerCase()) ? `${label} · ${team}` : label;
+  };
   const peopleById = useMemo(() => new Map(people.map(p => [p.id, p])), [people]);
   const positionById = useMemo(() => new Map(positions.map(p => [p.id, p])), [positions]);
 
@@ -144,6 +150,26 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
   // ── Detail panel ──────────────────────────────────────────────────────────
   const [selected, setSelected] = useState<Position | null>(null);
   const selectedPerson = selected ? peopleById.get(selected.person_id) ?? null : null;
+  const [received, setReceived] = useState<{ personId: string; items: { id: string; from_person_id: string; message: string; created_at: string }[] } | null>(null);
+  useEffect(() => {
+    const id = selectedPerson?.id;
+    const supabase = getSupabase();
+    if (!id || !supabase) return;
+    let active = true;
+    supabase
+      .from("kudos")
+      .select("id, from_person_id, message, created_at")
+      .eq("to_person_id", id)
+      .order("created_at", { ascending: false })
+      .limit(3)
+      .then(({ data }) => {
+        if (active) setReceived({ personId: id, items: (data as NonNullable<typeof received>["items"] | null) ?? [] });
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedPerson?.id]);
+  const kudosList = received && received.personId === selectedPerson?.id ? received.items : [];
 
   const card = (p: Position) => {
     const person = peopleById.get(p.person_id);
@@ -168,7 +194,7 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
             <span className="mt-2 block truncate text-xs font-bold" style={{ color }}>
               {deptTeam(p.department_id, p.team)}
             </span>
-            {!person.user_id && <span className="mt-1 block text-[10px] text-gray-400">Not signed in yet</span>}
+            {!person.user_id && <span className="mt-1 block text-[10px] text-gray-400">{t.people.notSignedIn}</span>}
             <span className="absolute inset-x-0 bottom-0 h-1 rounded-b-[10px]" style={{ background: color }} />
           </button>
           {kids.length > 0 && (
@@ -178,7 +204,7 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
               className="absolute -bottom-3.5 left-1/2 z-10 flex h-7 -translate-x-1/2 items-center gap-1 rounded-full border-2 bg-white px-2.5 text-xs font-black text-gray-700 hover:bg-gray-50"
               style={{ borderColor: `${color}88` }}
               aria-expanded={!isCollapsed}
-              aria-label={`${isCollapsed ? "Show" : "Hide"} ${kids.length} direct report${kids.length === 1 ? "" : "s"} of ${person.full_name}`}
+              aria-label={fmt(isCollapsed ? t.people.showReports : t.people.hideReports, { n: kids.length, name: person.full_name })}
             >
               {kids.length}
               {isCollapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
@@ -196,15 +222,15 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
     <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-[#f4f6f5]">
       {/* Toolbar */}
       <div className="absolute left-3 top-3 z-20 flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
-        <button type="button" className={btn} onClick={() => zoomBy(1.2)} aria-label="Zoom in"><Plus className="h-4 w-4" /></button>
-        <button type="button" className={btn} onClick={() => zoomBy(1 / 1.2)} aria-label="Zoom out"><Minus className="h-4 w-4" /></button>
-        <button type="button" className={btn} onClick={() => fit()} aria-label="Fit to screen"><Maximize2 className="h-4 w-4" /></button>
+        <button type="button" className={btn} onClick={() => zoomBy(1.2)} aria-label={t.people.zoomIn}><Plus className="h-4 w-4" /></button>
+        <button type="button" className={btn} onClick={() => zoomBy(1 / 1.2)} aria-label={t.people.zoomOut}><Minus className="h-4 w-4" /></button>
+        <button type="button" className={btn} onClick={() => fit()} aria-label={t.people.fit}><Maximize2 className="h-4 w-4" /></button>
         <button type="button" className="h-9 rounded-lg px-2 text-xs font-bold text-gray-600 hover:bg-gray-100" onClick={() => setView(v => ({ ...v, scale: 1 }))}>
           {Math.round(view.scale * 100)}%
         </button>
         <span className="mx-1 h-5 w-px bg-gray-200" />
-        <button type="button" className="h-9 rounded-lg px-2 text-xs font-bold text-gray-600 hover:bg-gray-100" onClick={expandAll}>Expand all</button>
-        <button type="button" className="h-9 rounded-lg px-2 text-xs font-bold text-gray-600 hover:bg-gray-100" onClick={collapseAll}>Collapse all</button>
+        <button type="button" className="h-9 rounded-lg px-2 text-xs font-bold text-gray-600 hover:bg-gray-100" onClick={expandAll}>{t.people.expandAll}</button>
+        <button type="button" className="h-9 rounded-lg px-2 text-xs font-bold text-gray-600 hover:bg-gray-100" onClick={collapseAll}>{t.people.collapseAll}</button>
       </div>
 
       {/* Canvas */}
@@ -232,7 +258,7 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
       >
         <div ref={canvas} className="orgchart inline-block origin-top-left px-6 pb-10" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}>
           {tree.roots.length === 0 && tree.board.length === 0 ? (
-            <p className="p-10 text-sm text-gray-500">No one in this department yet.</p>
+            <p className="p-10 text-sm text-gray-500">{t.people.noOne}</p>
           ) : (
             <ul>
               <li key={ROOT}>
@@ -250,14 +276,14 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
         </div>
       </div>
 
-      <p className="pointer-events-none absolute bottom-3 right-4 text-[11px] text-gray-400">Drag to move · ⌘/Ctrl + scroll to zoom · click a card for details</p>
+      <p className="pointer-events-none absolute bottom-3 right-4 text-[11px] text-gray-400">{t.people.hint}</p>
 
       {/* Detail panel */}
       {selected && selectedPerson && (
         <div className="absolute inset-0 z-30 flex justify-end bg-black/20" onClick={() => setSelected(null)}>
           <aside className="h-full w-full max-w-sm overflow-y-auto bg-white shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="relative px-6 pb-6 pt-8 text-white" style={{ background: colorOf(selected.department_id) }}>
-              <button type="button" onClick={() => setSelected(null)} className="absolute right-3 top-3 rounded p-1 hover:bg-white/20" aria-label="Close">
+              <button type="button" onClick={() => setSelected(null)} className="absolute right-3 top-3 rounded p-1 hover:bg-white/20" aria-label={t.common.close}>
                 <X className="h-5 w-5" />
               </button>
               <Photo person={selectedPerson} size={72} color={colorOf(selected.department_id)} inverse />
@@ -283,12 +309,12 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
                 )}
                 <PersonFacts p={selectedPerson} />
                 {!selectedPerson.email && !selectedPerson.phone && (
-                  <p className="text-gray-400">{selectedPerson.user_id ? "No contact details added yet." : "Contact details appear once they sign in."}</p>
+                  <p className="text-gray-400">{selectedPerson.user_id ? t.people.noContact : t.people.contactLater}</p>
                 )}
               </div>
 
               <div>
-                <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">Departments</p>
+                <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">{t.people.departmentsLabel}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {positions.filter(x => x.person_id === selectedPerson.id).map(x => (
                     <span key={x.id} className="rounded-full px-2.5 py-1 text-xs font-bold text-white" style={{ background: colorOf(x.department_id) }}>
@@ -299,6 +325,23 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
                 {selectedPerson.company_id && <p className="mt-2 text-xs text-gray-500">{companyName(selectedPerson.company_id as CompanyId)}</p>}
               </div>
 
+              {kudosList.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">{t.people.kudos}</p>
+                  <ul className="space-y-2">
+                    {kudosList.map(k => (
+                      <li key={k.id} className="flex gap-2">
+                        <Heart className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-pink-400 text-pink-400" />
+                        <span>
+                          <span className="text-gray-700">{k.message}</span>{" "}
+                          <span className="text-xs text-gray-400">{t.kudos.from.replace("{name}", peopleById.get(k.from_person_id)?.full_name ?? "—")}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {(() => {
                 const manager = selected.reports_to ? positionById.get(selected.reports_to) : null;
                 const managerPerson = manager ? peopleById.get(manager.person_id) : null;
@@ -307,7 +350,7 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
                   <>
                     {manager && managerPerson && (
                       <div>
-                        <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">Reports to</p>
+                        <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">{t.people.reportsTo}</p>
                         <button type="button" onClick={() => setSelected(manager)} className="flex w-full items-center gap-3 rounded-lg p-1.5 text-left hover:bg-gray-50">
                           <Photo person={managerPerson} size={32} color={colorOf(manager.department_id)} />
                           <span>
@@ -319,7 +362,7 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
                     )}
                     {reports.length > 0 && (
                       <div>
-                        <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">Direct reports ({reports.length})</p>
+                        <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">{fmt(t.people.directReports, { n: reports.length })}</p>
                         {reports.map(r => {
                           const rp = peopleById.get(r.person_id);
                           return rp ? (

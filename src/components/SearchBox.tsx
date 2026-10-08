@@ -3,43 +3,52 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { ArrowUpRight, Search } from "lucide-react";
-import { COMPANIES, DEPARTMENTS, TOOLS, companyName, departmentById } from "@/lib/intranet";
+import { COMPANIES, DEPARTMENTS, TOOLS, companyName } from "@/lib/intranet";
+import { useI18n } from "@/components/I18nProvider";
+import { deptName, toolText } from "@/lib/i18n/text";
+import { fmt } from "@/lib/i18n/locale";
 
 type Result = { label: string; hint: string; href: string; external?: boolean };
 
-// Everything the intranet knows about today. People, news and documents join
-// this index as those sections arrive.
-const INDEX: Result[] = [
-  ...TOOLS.map(t => ({
-    label: t.name,
-    hint: `${companyName(t.company)} · ${departmentById(t.department)?.name ?? ""}`,
-    href: t.href,
-    external: t.external,
-  })),
-  ...DEPARTMENTS.map(d => ({ label: d.name, hint: "Department", href: `/departments/${d.id}` })),
-  ...COMPANIES.map(c => ({ label: c.name, hint: "Brand · websites, social media, contact", href: `/brands/${c.id}` })),
-  { label: "Home", hint: "Page", href: "/" },
-  { label: "News", hint: "Page", href: "/news" },
-  { label: "Calendar", hint: "Page · holidays & events", href: "/calendar" },
-  { label: "People", hint: "Page", href: "/people" },
-  { label: "Resources", hint: "Page", href: "/resources" },
-  { label: "My profile & saved quotes", hint: "Page", href: "/profile" },
-];
-
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
+/** Search over tools, departments, brands and pages (in the viewer's language, plus English names). */
 export default function SearchBox() {
   const router = useRouter();
+  const { t } = useI18n();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [cursor, setCursor] = useState(0);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const index: (Result & { extra: string })[] = useMemo(
+    () => [
+      ...TOOLS.map(tool => ({
+        label: toolText(t, tool).name,
+        hint: `${companyName(tool.company)} · ${deptName(t, tool.department)}`,
+        href: tool.href,
+        external: tool.external,
+        extra: `${tool.name} ${tool.description} ${toolText(t, tool).description}`,
+      })),
+      ...DEPARTMENTS.map(d => ({ label: deptName(t, d.id), hint: t.nav.department, href: `/departments/${d.id}`, extra: d.name })),
+      ...COMPANIES.map(c => ({ label: c.name, hint: t.nav.brandHint, href: `/brands/${c.id}`, extra: "" })),
+      { label: t.nav.home, hint: t.nav.page, href: "/", extra: "home" },
+      { label: t.nav.news, hint: t.nav.page, href: "/news", extra: "news announcements" },
+      { label: t.nav.calendar, hint: t.nav.calendarHint, href: "/calendar", extra: "calendar holidays events" },
+      { label: t.nav.people, hint: t.nav.page, href: "/people", extra: "people org chart directory" },
+      { label: t.nav.resources, hint: t.nav.page, href: "/resources", extra: "resources documents links" },
+      { label: t.nav.help, hint: t.nav.page, href: "/help", extra: "help faq" },
+      { label: t.nav.onboarding, hint: t.nav.page, href: "/onboarding", extra: "onboarding" },
+      { label: t.nav.myProfile, hint: t.nav.page, href: "/profile", extra: "profile" },
+    ],
+    [t],
+  );
+
   const results = useMemo(() => {
     const terms = norm(q).split(/\s+/).filter(Boolean);
     if (!terms.length) return [];
-    return INDEX.filter(r => terms.every(t => norm(`${r.label} ${r.hint}`).includes(t))).slice(0, 8);
-  }, [q]);
+    return index.filter(r => terms.every(term => norm(`${r.label} ${r.hint} ${r.extra}`).includes(term))).slice(0, 8);
+  }, [q, index]);
 
   const go = (r: Result) => {
     setOpen(false);
@@ -69,8 +78,8 @@ export default function SearchBox() {
           else if (e.key === "Enter" && results[cursor]) { e.preventDefault(); go(results[cursor]); }
           else if (e.key === "Escape") setOpen(false);
         }}
-        placeholder="Search tools, departments and pages"
-        aria-label="Search the intranet"
+        placeholder={t.nav.searchPlaceholder}
+        aria-label={t.common.search}
         className="h-10 w-full rounded-lg border border-transparent bg-gray-100 pl-9 pr-3 text-sm outline-none transition focus:border-[#009f67] focus:bg-white"
       />
       {open && q.trim() && (
@@ -79,7 +88,7 @@ export default function SearchBox() {
           onMouseDown={() => blurTimer.current && clearTimeout(blurTimer.current)}
         >
           {results.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-gray-500">No matches for “{q.trim()}”.</p>
+            <p className="px-4 py-3 text-sm text-gray-500">{fmt(t.nav.searchNoMatch, { q: q.trim() })}</p>
           ) : (
             <ul role="listbox">
               {results.map((r, i) => (

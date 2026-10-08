@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/client";
+import { useI18n } from "@/components/I18nProvider";
 
 const LOGO_WHITE = "/brand/gmx-logo-white.png";
 const LOGO_COLOR = "/brand/gmx-logo-color.png";
@@ -16,6 +17,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { t } = useI18n();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,14 +32,14 @@ export default function Login() {
       }
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) {
-        setError("Incorrect email or password. Please try again.");
+        setError(t.login.wrong);
         setPassword("");
         return;
       }
       router.push("/");
       router.refresh();
     } catch {
-      setError("Could not reach the server. Please try again.");
+      setError(t.login.unreachable);
     } finally {
       setIsLoading(false);
     }
@@ -55,8 +57,8 @@ export default function Login() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={LOGO_WHITE} alt="GMX Group" className="h-12 w-auto self-start" />
         <div className="relative">
-          <h2 className="text-4xl font-black leading-tight">Intranet</h2>
-          <p className="mt-3 max-w-sm text-lg text-white/85">Making sustainability our business.</p>
+          <h2 className="text-4xl font-black leading-tight">{t.login.intranet}</h2>
+          <p className="mt-3 max-w-sm text-lg text-white/85">{t.login.tagline}</p>
         </div>
         <p className="text-xs uppercase tracking-widest text-white/60">Maximo · Lumber Plus · US4 · Builder Express</p>
       </div>
@@ -69,13 +71,13 @@ export default function Login() {
             <img src={LOGO_COLOR} alt="GMX Group" className="h-10 w-auto" />
           </div>
 
-          <h1 className="text-gray-900 text-3xl font-black mb-1">Welcome back</h1>
-          <p className="text-gray-500 text-sm mb-8">Sign in to the GMX Group Intranet with your company email.</p>
+          <h1 className="text-gray-900 text-3xl font-black mb-1">{t.login.welcome}</h1>
+          <p className="text-gray-500 text-sm mb-8">{t.login.subtitle}</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-bold text-gray-700">
-                Email
+                {t.login.email}
               </label>
               <Input
                 id="email"
@@ -91,7 +93,7 @@ export default function Login() {
 
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-bold text-gray-700">
-                Password
+                {t.login.password}
               </label>
               <Input
                 id="password"
@@ -116,12 +118,12 @@ export default function Login() {
               className="w-full h-12 text-white font-bold text-base transition-all hover:opacity-90"
               style={{ background: GREEN }}
             >
-              {isLoading ? "Signing in…" : "Sign in"}
+              {isLoading ? t.login.signingIn : t.login.signIn}
             </Button>
           </form>
 
           <p className="mt-8 pt-6 border-t border-gray-100 text-xs text-gray-400 text-center">
-            For GMX Group employees · Ask your admin for an account
+            {t.login.footer}
           </p>
         </div>
       </div>

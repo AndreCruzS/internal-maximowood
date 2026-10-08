@@ -1,5 +1,6 @@
 import CalendarView from "@/components/CalendarView";
 import { getCalendarEvents } from "@/server/calendar";
+import { getLocale } from "@/lib/i18n/server";
 
 export const metadata = { title: "Calendar · GMX Group Intranet" };
 
@@ -17,6 +18,6 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const first = Date.UTC(y, m - 1, 1);
   const from = new Date(first - (new Date(first).getUTCDay() + 1) * DAY);
   const to = new Date(from.getTime() + 44 * DAY);
-  const { events, companyConnected, failed } = await getCalendarEvents(from, to);
+  const { events, companyConnected, failed } = await getCalendarEvents(from, to, await getLocale());
   return <CalendarView month={month} events={events} companyConnected={companyConnected} failed={failed} />;
 }

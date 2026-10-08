@@ -3,6 +3,8 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
 import Portal from "@/components/Portal";
 import { getUpcomingEvents } from "@/server/calendar";
+import { loadHome } from "@/server/intranet";
+import { getLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -19,22 +21,15 @@ export default async function PortalPage({
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
   if (!user) redirect("/login");
 
-  // Next few weeks for "Upcoming events" (holidays + company calendar).
-  const [{ events }, { data: celebrations }] = await Promise.all([
-    getUpcomingEvents(),
-    supabase!
-      .from("people")
-      .select("id, full_name, birth_month, birth_day, start_date")
-      .eq("active", true)
-      .or("birth_month.not.is.null,start_date.not.is.null"),
-  ]);
+  const locale = await getLocale();
+  const [{ events }, home] = await Promise.all([getUpcomingEvents(60, locale), loadHome(supabase!, user.id)]);
 
   return (
     <Portal
       name={(user.user_metadata?.name as string | undefined) || user.email || ""}
       isAdmin={isAdminUser(user)}
       events={events}
-      celebrations={celebrations ?? []}
+      home={home}
     />
   );
 }

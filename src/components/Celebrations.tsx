@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { Cake, PartyPopper, Sparkles } from "lucide-react";
 import { useMounted } from "@/components/CalendarView";
-import { MONTHS, yearsSince } from "@/lib/intranet";
+import { yearsSince } from "@/lib/intranet";
+import { useI18n } from "@/components/I18nProvider";
+import { plural } from "@/lib/i18n/dictionaries";
+import { fmt } from "@/lib/i18n/locale";
+import { monthName } from "@/lib/i18n/text";
 
 export type CelebrationPerson = {
   id: string;
@@ -27,6 +31,7 @@ function Row({ icon, name, text, today }: { icon: React.ReactNode; name: string;
 
 /** This month's birthdays and work anniversaries; people who joined recently. Computed in the viewer's time zone. */
 export function CelebrationsList({ people }: { people: CelebrationPerson[] }) {
+  const { t, tag } = useI18n();
   const mounted = useMounted();
   if (!mounted) return <div className="h-24" />;
   const now = new Date();
@@ -41,7 +46,7 @@ export function CelebrationsList({ people }: { people: CelebrationPerson[] }) {
     .sort((a, b) => a.start_date!.slice(8).localeCompare(b.start_date!.slice(8)));
 
   if (!birthdays.length && !anniversaries.length) {
-    return <p className="py-6 text-center text-sm text-gray-400">No birthdays or anniversaries in {MONTHS[month - 1]} yet — add yours on your profile.</p>;
+    return <p className="py-6 text-center text-sm text-gray-400">{fmt(t.celebrations.none, { month: monthName(tag, month) })}</p>;
   }
   return (
     <ul className="space-y-0.5">
@@ -50,7 +55,7 @@ export function CelebrationsList({ people }: { people: CelebrationPerson[] }) {
           key={`b-${p.id}`}
           icon={<Cake className="h-4 w-4 text-pink-500" />}
           name={p.full_name}
-          text={p.birth_day === day ? "Birthday today! 🎉" : `Birthday · ${MONTHS[month - 1].slice(0, 3)} ${p.birth_day}`}
+          text={p.birth_day === day ? t.celebrations.birthdayToday : fmt(t.celebrations.birthday, { date: `${monthName(tag, month, "short")} ${p.birth_day}` })}
           today={p.birth_day === day}
         />
       ))}
@@ -62,7 +67,7 @@ export function CelebrationsList({ people }: { people: CelebrationPerson[] }) {
             key={`a-${p.id}`}
             icon={<PartyPopper className="h-4 w-4 text-[#009f67]" />}
             name={p.full_name}
-            text={`${years} year${years === 1 ? "" : "s"} · ${MONTHS[month - 1].slice(0, 3)} ${d}`}
+            text={plural(t.celebrations, "years", years).replace("{date}", `${monthName(tag, month, "short")} ${d}`)}
             today={d === day}
           />
         );
@@ -72,6 +77,7 @@ export function CelebrationsList({ people }: { people: CelebrationPerson[] }) {
 }
 
 export function NewJoinersList({ people }: { people: CelebrationPerson[] }) {
+  const { t, tag } = useI18n();
   const mounted = useMounted();
   const [now] = useState(() => Date.now());
   if (!mounted) return <div className="h-24" />;
@@ -79,17 +85,17 @@ export function NewJoinersList({ people }: { people: CelebrationPerson[] }) {
   const joiners = people
     .filter(p => p.start_date && new Date(`${p.start_date}T12:00:00`).getTime() >= cutoff && new Date(`${p.start_date}T12:00:00`).getTime() <= now)
     .sort((a, b) => b.start_date!.localeCompare(a.start_date!));
-  if (!joiners.length) return <p className="py-6 text-center text-sm text-gray-400">No new joiners in the last {NEW_JOINER_DAYS} days.</p>;
+  if (!joiners.length) return <p className="py-6 text-center text-sm text-gray-400">{fmt(t.celebrations.noJoiners, { n: NEW_JOINER_DAYS })}</p>;
   return (
     <ul className="space-y-0.5">
       {joiners.map(p => {
-        const [y, m, d] = p.start_date!.split("-").map(Number);
+        const date = new Date(`${p.start_date}T12:00:00`).toLocaleDateString(tag, { month: "short", day: "numeric", year: "numeric" });
         return (
           <Row
             key={p.id}
             icon={<Sparkles className="h-4 w-4 text-amber-500" />}
             name={p.full_name}
-            text={yearsSince(p.start_date!) === 0 ? `Joined ${MONTHS[m - 1].slice(0, 3)} ${d}, ${y}` : ""}
+            text={yearsSince(p.start_date!) === 0 ? fmt(t.celebrations.joined, { date }) : ""}
           />
         );
       })}

@@ -1,8 +1,11 @@
 "use client";
 
-import { Cake, Clock, Languages, MapPin, PartyPopper } from "lucide-react";
+import { Cake, Clock, Languages, Lightbulb, MapPin, PartyPopper } from "lucide-react";
 import { useMounted } from "@/components/CalendarView";
-import { MONTHS, officeById, yearsSince } from "@/lib/intranet";
+import { officeById, yearsSince } from "@/lib/intranet";
+import { useI18n } from "@/components/I18nProvider";
+import { plural } from "@/lib/i18n/dictionaries";
+import { monthName } from "@/lib/i18n/text";
 
 export type PersonalFields = {
   languages?: string[] | null;
@@ -10,17 +13,20 @@ export type PersonalFields = {
   birth_month?: number | null;
   birth_day?: number | null;
   start_date?: string | null;
+  skills?: string[] | null;
 };
 
 /** "3:42 PM" in a time zone, rendered in the browser. */
 export function LocalTime({ timeZone }: { timeZone: string }) {
   const mounted = useMounted();
+  const { tag } = useI18n();
   if (!mounted) return null;
-  return <>{new Date().toLocaleTimeString(undefined, { timeZone, hour: "numeric", minute: "2-digit" })}</>;
+  return <>{new Date().toLocaleTimeString(tag, { timeZone, hour: "numeric", minute: "2-digit" })}</>;
 }
 
-/** Office + local time, languages, birthday and years with the company — whatever the person filled in. */
+/** Office + local time, languages, birthday, years with the company and "ask me about" — whatever the person filled in. */
 export default function PersonFacts({ p, compact }: { p: PersonalFields; compact?: boolean }) {
+  const { t, tag } = useI18n();
   const office = officeById(p.office);
   const years = p.start_date ? yearsSince(p.start_date) : null;
   const row = `flex items-center gap-2 ${compact ? "text-xs" : "text-sm"} text-gray-600`;
@@ -41,12 +47,21 @@ export default function PersonFacts({ p, compact }: { p: PersonalFields; compact
         <p className={row}><Languages className={icon} /> {p.languages.join(", ")}</p>
       )}
       {p.birth_month && p.birth_day && (
-        <p className={row}><Cake className={icon} /> {MONTHS[p.birth_month - 1]} {p.birth_day}</p>
+        <p className={row}><Cake className={icon} /> {monthName(tag, p.birth_month)} {p.birth_day}</p>
       )}
       {years !== null && (
         <p className={row}>
-          <PartyPopper className={icon} /> {years === 0 ? "Joined this year" : `${years} year${years === 1 ? "" : "s"} at GMX Group`}
+          <PartyPopper className={icon} /> {years === 0 ? t.facts.joinedThisYear : plural(t.facts, "years", years)}
         </p>
+      )}
+      {p.skills && p.skills.length > 0 && (
+        <div className={`${row} items-start`}>
+          <Lightbulb className={`${icon} mt-1`} />
+          <span className="flex flex-wrap gap-1">
+            <span className="sr-only">{t.about.askMe}:</span>
+            {p.skills.map(s => <span key={s} className="rounded-full bg-[#e6f6f0] px-2 py-0.5 text-xs font-bold text-[#00704a]">{s}</span>)}
+          </span>
+        </div>
       )}
     </div>
   );

@@ -2,7 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { AtSign, MapPin, Network, Phone, Search, Users } from "lucide-react";
-import { COMPANIES, DEPARTMENTS, companyName, departmentById, type CompanyId } from "@/lib/intranet";
+import { COMPANIES, DEPARTMENTS, companyName, type CompanyId } from "@/lib/intranet";
+import { useI18n } from "@/components/I18nProvider";
+import { plural } from "@/lib/i18n/dictionaries";
+import { fmt } from "@/lib/i18n/locale";
+import { deptName as deptNameT } from "@/lib/i18n/text";
 import MyEntry from "@/components/MyEntry";
 import OrgChart from "@/components/OrgChart";
 import PersonFacts from "@/components/PersonFacts";
@@ -21,6 +25,7 @@ export type Person = {
   birth_month?: number | null;
   birth_day?: number | null;
   start_date?: string | null;
+  skills?: string[] | null;
 };
 
 export type Position = {
@@ -51,7 +56,6 @@ export function Avatar({ person, size = 40 }: { person: Person; size?: number })
   );
 }
 
-const deptName = (id: string | null) => (id ? departmentById(id)?.name ?? id : "Leadership");
 
 /** Directory + org chart of everyone in GMX Group, plus the signed-in person's own entry. */
 export default function PeopleView({ people, positions, me, error }: {
@@ -61,6 +65,8 @@ export default function PeopleView({ people, positions, me, error }: {
   isAdmin: boolean;
   error: string | null;
 }) {
+  const { t } = useI18n();
+  const deptName = (id: string | null) => deptNameT(t, id);
   const [tab, setTab] = useState<"directory" | "chart">("chart");
   const [dept, setDept] = useState<string>("all");
   const [company, setCompany] = useState<string>("all");
@@ -75,10 +81,10 @@ export default function PeopleView({ people, positions, me, error }: {
       .filter(({ person, roles }) => {
         if (company !== "all" && person.company_id !== company) return false;
         if (dept !== "all" && !roles.some(r => r.department_id === dept)) return false;
-        const hay = `${person.full_name} ${person.email ?? ""} ${roles.map(r => `${r.title} ${r.team ?? ""} ${deptName(r.department_id)}`).join(" ")}`.toLowerCase();
+        const hay = `${person.full_name} ${person.email ?? ""} ${roles.map(r => `${r.title} ${r.team ?? ""} ${deptNameT(t, r.department_id)}`).join(" ")} ${(person.skills ?? []).join(" ")} ${(person.languages ?? []).join(" ")}`.toLowerCase();
         return terms.every(t => hay.includes(t));
       });
-  }, [people, positions, q, dept, company]);
+  }, [people, positions, q, dept, company, t]);
 
   const select = "h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm";
 
@@ -86,11 +92,11 @@ export default function PeopleView({ people, positions, me, error }: {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">People</h1>
-          <p className="text-gray-500">{people.length} people across GMX Group</p>
+          <h1 className="text-2xl font-black text-gray-900">{t.people.title}</h1>
+          <p className="text-gray-500">{plural(t.people, "count", people.length)}</p>
         </div>
         <div className="flex rounded-lg border border-gray-200 bg-white p-0.5 text-sm font-bold">
-          {([["chart", "Org chart", Network], ["directory", "Directory", Users]] as const).map(([id, label, Icon]) => (
+          {([["chart", t.people.orgChart, Network], ["directory", t.people.directory, Users]] as const).map(([id, label, Icon]) => (
             <button
               key={id}
               type="button"
@@ -103,7 +109,7 @@ export default function PeopleView({ people, positions, me, error }: {
         </div>
       </div>
 
-      {error && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">Couldn&apos;t load people: {error}</p>}
+      {error && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{fmt(t.common.couldntLoad, { error })}</p>}
 
       {me && <MyEntry key={mine?.id ?? "new"} mine={mine} people={people} positions={positions} />}
 
@@ -111,18 +117,18 @@ export default function PeopleView({ people, positions, me, error }: {
         {tab === "directory" && (
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name, title, team…" className={`${select} w-64 pl-8`} aria-label="Search people" />
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder={t.people.search} className={`${select} w-64 pl-8`} aria-label={t.common.search} />
           </div>
         )}
-        <select value={dept} onChange={e => setDept(e.target.value)} className={select} aria-label="Department">
-          <option value="all">All departments</option>
+        <select value={dept} onChange={e => setDept(e.target.value)} className={select} aria-label={t.myEntry.department}>
+          <option value="all">{t.people.allDepartments}</option>
           {DEPARTMENTS.map(d => (
-            <option key={d.id} value={d.id}>{d.name}</option>
+            <option key={d.id} value={d.id}>{deptName(d.id)}</option>
           ))}
         </select>
         {tab === "directory" && (
-          <select value={company} onChange={e => setCompany(e.target.value)} className={select} aria-label="Company">
-            <option value="all">All companies</option>
+          <select value={company} onChange={e => setCompany(e.target.value)} className={select} aria-label={t.myEntry.company}>
+            <option value="all">{t.people.allCompanies}</option>
             {COMPANIES.map(c => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
@@ -167,11 +173,11 @@ export default function PeopleView({ people, positions, me, error }: {
                   </p>
                 )}
                 <PersonFacts p={person} />
-                {!person.user_id && <p className="text-xs text-gray-400">Not signed in yet — details will appear once they do.</p>}
+                {!person.user_id && <p className="text-xs text-gray-400">{t.people.detailsLater}</p>}
               </div>
             </div>
           ))}
-          {directory.length === 0 && <p className="text-sm text-gray-500">No matches.</p>}
+          {directory.length === 0 && <p className="text-sm text-gray-500">{t.common.noMatches}</p>}
         </div>
       )}
     </div>

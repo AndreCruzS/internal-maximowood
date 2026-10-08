@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import AdminUsers from "@/components/AdminUsers";
 import AboutMeCard, { type MyPerson } from "@/components/AboutMeCard";
+import { useI18n } from "@/components/I18nProvider";
 import { sendJson } from "@/lib/api";
 
 const GREEN = "#009f67"; // GMX Forest Green
@@ -45,6 +46,7 @@ const sectionLabel = "text-xs font-semibold text-gray-500 uppercase tracking-wid
 
 // ── Account ──────────────────────────────────────────────────────────────────
 function AccountCard({ account }: { account: ProfileAccount }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(account.name);
@@ -136,9 +138,9 @@ function AccountCard({ account }: { account: ProfileAccount }) {
             </span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-xs max-w-sm">
-            <span className="text-gray-400">Member since</span>
+            <span className="text-gray-400">{t.profile.memberSince}</span>
             <span className="text-gray-700 font-semibold">{fmtDate(account.createdAt)}</span>
-            <span className="text-gray-400">Last sign-in</span>
+            <span className="text-gray-400">{t.profile.lastSignIn}</span>
             <span className="text-gray-700 font-semibold">{fmtDate(account.lastSignInAt)}</span>
           </div>
         </div>
@@ -149,6 +151,7 @@ function AccountCard({ account }: { account: ProfileAccount }) {
 
 // ── Password ─────────────────────────────────────────────────────────────────
 function PasswordCard() {
+  const { t } = useI18n();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -178,20 +181,20 @@ function PasswordCard() {
     <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <KeyRound className="w-4 h-4 text-gray-500" />
-        <span className="text-sm font-bold text-gray-700">Change password</span>
+        <span className="text-sm font-bold text-gray-700">{t.profile.changePassword}</span>
       </div>
       <form onSubmit={submit} className="space-y-3">
         <div className="space-y-1.5">
-          <label htmlFor="pw-current" className={sectionLabel}>Current password</label>
+          <label htmlFor="pw-current" className={sectionLabel}>{t.profile.currentPassword}</label>
           <Input id="pw-current" type="password" autoComplete="current-password" required value={current} onChange={e => setCurrent(e.target.value)} disabled={saving} />
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <label htmlFor="pw-new" className={sectionLabel}>New password</label>
+            <label htmlFor="pw-new" className={sectionLabel}>{t.profile.newPassword}</label>
             <Input id="pw-new" type="password" autoComplete="new-password" required minLength={8} value={next} onChange={e => setNext(e.target.value)} disabled={saving} />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="pw-confirm" className={sectionLabel}>Confirm</label>
+            <label htmlFor="pw-confirm" className={sectionLabel}>{t.profile.confirm}</label>
             <Input id="pw-confirm" type="password" autoComplete="new-password" required value={confirm} onChange={e => setConfirm(e.target.value)} disabled={saving} />
           </div>
         </div>
@@ -202,7 +205,7 @@ function PasswordCard() {
           className="h-9 px-5 rounded-md text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-50"
           style={{ background: DARK }}
         >
-          {saving ? "Saving…" : "Update password"}
+          {saving ? t.common.loading : t.profile.updatePassword}
         </button>
       </form>
     </div>
@@ -213,6 +216,7 @@ function PasswordCard() {
 export type ProfileTab = "profile" | "admin";
 
 export default function Profile({ account, initialTab, person }: { account: ProfileAccount; initialTab: ProfileTab; person: MyPerson | null }) {
+  const { t } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
   const [tab, setTab] = useState<ProfileTab>(initialTab);
@@ -224,8 +228,8 @@ export default function Profile({ account, initialTab, person }: { account: Prof
   };
 
   const tabs: { id: ProfileTab; label: string; icon: React.ReactNode }[] = [
-    { id: "profile", label: "My profile", icon: <UserCircle className="w-4 h-4" /> },
-    { id: "admin", label: "Admin · Team logins", icon: <Users className="w-4 h-4" /> },
+    { id: "profile", label: t.profile.tabProfile, icon: <UserCircle className="w-4 h-4" /> },
+    { id: "admin", label: t.profile.tabAdmin, icon: <Users className="w-4 h-4" /> },
   ];
 
   return (
@@ -233,10 +237,10 @@ export default function Profile({ account, initialTab, person }: { account: Prof
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-black" style={{ color: DARK }}>
-            My Profile
+            {t.profile.title}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {tab === "admin" ? "Manage who can sign in to the GMX Group Intranet" : "Your account and how colleagues see you"}
+            {tab === "admin" ? t.profile.adminSubtitle : t.profile.subtitle}
           </p>
         </div>
 

@@ -1,3 +1,7 @@
+"use client";
+
+import { useI18n } from "@/components/I18nProvider";
+import { fmt } from "@/lib/i18n/locale";
 import { ArrowUpRight, AtSign, Clock, Globe, Link2, MapPin, Megaphone, Phone, Rocket } from "lucide-react";
 
 export type BrandLink = {
@@ -43,19 +47,21 @@ function LinkList({ links }: { links: BrandLink[] }) {
 }
 
 function Card({ title, icon, empty, children }: { title: string; icon: React.ReactNode; empty?: boolean; children: React.ReactNode }) {
+  const { t } = useI18n();
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <h2 className="mb-2 flex items-center gap-2 font-black text-gray-900">
         <span className="text-[#00704a]">{icon}</span>
         {title}
       </h2>
-      {empty ? <p className="py-2 text-sm text-gray-400">Nothing added yet.</p> : children}
+      {empty ? <p className="py-2 text-sm text-gray-400">{t.brands.nothingYet}</p> : children}
     </section>
   );
 }
 
 /** One brand: websites, landing pages, social media, contact details, other links. */
 export default function BrandView({ name, links, error }: { name: string; links: BrandLink[]; error: string | null }) {
+  const { t } = useI18n();
   const of = (...kinds: BrandLink["kind"][]) => links.filter(l => kinds.includes(l.kind));
   const CONTACT_ORDER = ["email", "phone", "address", "hours"];
   const contact = of("phone", "email", "address", "hours").sort(
@@ -66,22 +72,22 @@ export default function BrandView({ name, links, error }: { name: string; links:
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs font-black uppercase tracking-widest text-gray-400">Brand</p>
+        <p className="text-xs font-black uppercase tracking-widest text-gray-400">{t.brands.brand}</p>
         <h1 className="text-3xl font-black text-gray-900">{name}</h1>
       </div>
-      {error && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">Couldn&apos;t load this brand: {error}</p>}
+      {error && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{fmt(t.common.couldntLoad, { error })}</p>}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Websites" icon={<Globe className="h-4 w-4" />} empty={!of("website").length}>
+        <Card title={t.brands.websites} icon={<Globe className="h-4 w-4" />} empty={!of("website").length}>
           <LinkList links={of("website")} />
         </Card>
-        <Card title="Landing pages" icon={<Rocket className="h-4 w-4" />} empty={!of("landing").length}>
+        <Card title={t.brands.landing} icon={<Rocket className="h-4 w-4" />} empty={!of("landing").length}>
           <LinkList links={of("landing")} />
         </Card>
-        <Card title="Social media" icon={<Megaphone className="h-4 w-4" />} empty={!of("social").length}>
+        <Card title={t.brands.social} icon={<Megaphone className="h-4 w-4" />} empty={!of("social").length}>
           <LinkList links={of("social")} />
         </Card>
-        <Card title="Contact" icon={<Phone className="h-4 w-4" />} empty={!contact.length}>
+        <Card title={t.brands.contact} icon={<Phone className="h-4 w-4" />} empty={!contact.length}>
           <ul className="divide-y divide-gray-100">
             {contact.map(l => {
               const Icon = icon[l.kind as keyof typeof icon];
@@ -103,7 +109,7 @@ export default function BrandView({ name, links, error }: { name: string; links:
       </div>
 
       {of("other").length > 0 && (
-        <Card title="Other links" icon={<Link2 className="h-4 w-4" />}>
+        <Card title={t.brands.other} icon={<Link2 className="h-4 w-4" />}>
           <LinkList links={of("other")} />
         </Card>
       )}
