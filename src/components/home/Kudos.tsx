@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { HandHeart, Leaf, Lightbulb, Rocket, Send, Users, X, Zap, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -37,6 +38,12 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
   const [to, setTo] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  useEffect(() => {
+    if (!celebrate) return;
+    const id = setTimeout(() => setCelebrate(false), 2600);
+    return () => clearTimeout(id);
+  }, [celebrate]);
   const names = new Map(people.map(p => [p.id, p.full_name]));
   const valueOf = (id: string | null) => KUDO_VALUES.find(v => v.id === id);
 
@@ -49,6 +56,7 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(t.kudos.sent);
+    setCelebrate(true);
     setValue(null);
     setTo("");
     setMessage("");
@@ -60,6 +68,11 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
+      {celebrate && (
+        <button type="button" onClick={() => setCelebrate(false)} aria-label={t.common.close} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <Image src="/kudos/nice.gif" alt={t.kudos.sent} width={260} height={260} unoptimized className="rounded-3xl shadow-2xl" />
+        </button>
+      )}
       {/* Give */}
       <div>
         <p className="mb-2 text-sm font-bold text-gray-700">{t.kudos.chooseValue}</p>
@@ -106,7 +119,10 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
         <p className="text-sm font-bold text-gray-700">{t.kudos.weekTitle}</p>
         <p className="mb-2 text-xs text-gray-400">{t.kudos.weekHint}</p>
         {thisWeek.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-400">{t.kudos.empty}</p>
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-400">
+            <Image src="/kudos/nice.gif" alt="" width={120} height={120} unoptimized className="rounded-2xl" />
+            <p>{t.kudos.empty}</p>
+          </div>
         ) : (
           <ul className="space-y-2.5">
             {thisWeek.map(k => {
