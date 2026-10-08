@@ -5,6 +5,7 @@ import { AtSign, MapPin, Network, Phone, Search, Users } from "lucide-react";
 import { COMPANIES, DEPARTMENTS, companyName, departmentById, type CompanyId } from "@/lib/intranet";
 import MyEntry from "@/components/MyEntry";
 import OrgChart from "@/components/OrgChart";
+import PersonFacts from "@/components/PersonFacts";
 
 export type Person = {
   id: string;
@@ -15,6 +16,11 @@ export type Person = {
   photo_url: string | null;
   company_id: string | null;
   user_id: string | null;
+  languages?: string[] | null;
+  office?: string | null;
+  birth_month?: number | null;
+  birth_day?: number | null;
+  start_date?: string | null;
 };
 
 export type Position = {
@@ -155,11 +161,12 @@ export default function PeopleView({ people, positions, me, error }: {
                     <Phone className="h-3.5 w-3.5 shrink-0 text-gray-400" /> {person.phone}
                   </a>
                 )}
-                {person.location && (
+                {person.location && !person.office && (
                   <p className="flex items-center gap-2 text-gray-500">
                     <MapPin className="h-3.5 w-3.5 shrink-0 text-gray-400" /> {person.location}
                   </p>
                 )}
+                <PersonFacts p={person} />
                 {!person.user_id && <p className="text-xs text-gray-400">Not signed in yet — details will appear once they do.</p>}
               </div>
             </div>

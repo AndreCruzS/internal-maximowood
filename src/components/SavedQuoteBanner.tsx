@@ -61,7 +61,7 @@ export default function SavedQuoteBanner({
             <button type="button" onClick={onStartNew} className="inline-flex items-center gap-1 text-gray-600 hover:text-black">
               <FilePlus2 className="w-3.5 h-3.5" /> Start new quote
             </button>
-            <Link href="/profile" className="text-gray-600 hover:text-black underline">
+            <Link href="/quotes" className="text-gray-600 hover:text-black underline">
               My quotes
             </Link>
           </div>

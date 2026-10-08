@@ -20,13 +20,21 @@ export default async function PortalPage({
   if (!user) redirect("/login");
 
   // Next few weeks for "Upcoming events" (holidays + company calendar).
-  const { events } = await getUpcomingEvents();
+  const [{ events }, { data: celebrations }] = await Promise.all([
+    getUpcomingEvents(),
+    supabase!
+      .from("people")
+      .select("id, full_name, birth_month, birth_day, start_date")
+      .eq("active", true)
+      .or("birth_month.not.is.null,start_date.not.is.null"),
+  ]);
 
   return (
     <Portal
       name={(user.user_metadata?.name as string | undefined) || user.email || ""}
       isAdmin={isAdminUser(user)}
       events={events}
+      celebrations={celebrations ?? []}
     />
   );
 }

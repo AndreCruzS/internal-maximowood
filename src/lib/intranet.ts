@@ -1,5 +1,7 @@
 import {
   BarChart3,
+  ClipboardList,
+  FileText,
   Briefcase,
   Building2,
   Calculator,
@@ -64,6 +66,30 @@ export const ALLOWED_EMAIL_DOMAINS = [
 export const isCompanyEmail = (email: string) =>
   (ALLOWED_EMAIL_DOMAINS as readonly string[]).includes(email.trim().toLowerCase().split("@")[1] ?? "");
 
+export type OfficeId = "curitiba" | "aventura" | "lumberplus-miami" | "remote";
+
+/** Offices (same ids as the people.office check in 0006). `timeZone` shows each person's local time. */
+export const OFFICES: { id: OfficeId; name: string; place: string; timeZone: string | null }[] = [
+  { id: "curitiba", name: "Curitiba", place: "Curitiba, PR · Brazil", timeZone: "America/Sao_Paulo" },
+  { id: "aventura", name: "Aventura", place: "Aventura, FL · United States", timeZone: "America/New_York" },
+  { id: "lumberplus-miami", name: "Lumber Plus Miami", place: "Miami, FL · United States", timeZone: "America/New_York" },
+  { id: "remote", name: "Remote", place: "Remote location", timeZone: null },
+];
+export const officeById = (id: string | null | undefined) => OFFICES.find(o => o.id === id);
+
+/** Languages people can list on their profile. */
+export const LANGUAGES = ["English", "Português", "Español", "Italiano", "Français", "Deutsch"] as const;
+
+export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** Whole years since a "YYYY-MM-DD" start date (0 in the first year). */
+export function yearsSince(startDate: string, today = new Date()): number {
+  const [y, m, d] = startDate.split("-").map(Number);
+  let years = today.getFullYear() - y;
+  if (today.getMonth() + 1 < m || (today.getMonth() + 1 === m && today.getDate() < d)) years--;
+  return Math.max(0, years);
+}
+
 export const departmentById = (id: string) => DEPARTMENTS.find(d => d.id === id);
 export const companyName = (id: CompanyId) => COMPANIES.find(c => c.id === id)?.name ?? id;
 
@@ -84,8 +110,10 @@ export type Tool = {
 export const TOOLS: Tool[] = [
   { name: "Retail Calculator", description: "Thermowood, hardwood & Accoya quotes", icon: Calculator, href: "/calculator", department: "commercial", company: "maximo", pinned: true },
   { name: "B2B Calculator", description: "Distributor & dealer quotes", icon: Building2, href: "/b2b", department: "commercial", company: "maximo", pinned: true },
+  { name: "My Quotes", description: "Your saved quotes — reopen, download, edit", icon: FileText, href: "/quotes", department: "commercial", company: "maximo", pinned: true },
   { name: "Pricing", description: "Maximo price list", icon: Tag, href: "/pricing", department: "commercial", company: "maximo" },
   { name: "Inventory", description: "Live stock by branch", icon: Package, href: "/inventory", department: "commercial", company: "maximo", pinned: true },
+  { name: "Orders", description: "GMX logistics order platform", icon: ClipboardList, href: "https://orders.gmxgroup.com/", department: "logistics", company: "gmx", external: true, pinned: true },
   { name: "Data Center", description: "Ads & campaign dashboard", icon: BarChart3, href: "https://maximo-ads-dashboard.vercel.app/login", department: "marketing", company: "maximo", external: true, pinned: true },
 ];
 

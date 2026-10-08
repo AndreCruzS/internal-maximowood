@@ -12,7 +12,7 @@ export default async function PeoplePage() {
     data: { user },
   } = await supabase.auth.getUser();
   const [people, positions] = await Promise.all([
-    supabase.from("people").select("id, full_name, email, phone, location, photo_url, company_id, user_id").eq("active", true).order("full_name"),
+    supabase.from("people").select("id, full_name, email, phone, location, photo_url, company_id, user_id, languages, office, birth_month, birth_day, start_date").eq("active", true).order("full_name"),
     supabase.from("positions").select("id, person_id, title, department_id, team, reports_to, sort").order("sort"),
   ]);
   const error = people.error?.message ?? positions.error?.message ?? null;

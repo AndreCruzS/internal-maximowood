@@ -348,7 +348,7 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
             {projectError ? (
               <p className="text-xs text-red-600">{projectError}</p>
             ) : (
-              <p className="text-xs text-[#888]">The quote is saved under this name — reopen it from your Profile to make changes.</p>
+              <p className="text-xs text-[#888]">The quote is saved under this name — reopen it from My Quotes to make changes.</p>
             )}
           </div>
 

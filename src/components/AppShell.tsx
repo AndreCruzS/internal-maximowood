@@ -152,7 +152,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="ml-auto flex items-center gap-1">
             <Link
               href="/profile"
-              title="My profile & saved quotes"
+              title="My profile"
               className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
                 pathname === "/profile" ? "text-[#00704a]" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
               }`}

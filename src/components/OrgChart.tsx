@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AtSign, ChevronDown, ChevronUp, Maximize2, MapPin, Minus, Phone, Plus, X } from "lucide-react";
 import { companyName, departmentById, type CompanyId } from "@/lib/intranet";
 import type { Person, Position } from "@/components/PeopleView";
+import PersonFacts from "@/components/PersonFacts";
 
 // One color per department (Whale-style label + card strip). Leadership = GMX green.
 const DEPT_COLOR: Record<string, string> = {
@@ -280,6 +281,7 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
                 {selectedPerson.location && (
                   <p className="flex items-center gap-2 text-gray-600"><MapPin className="h-4 w-4 text-gray-400" /> {selectedPerson.location}</p>
                 )}
+                <PersonFacts p={selectedPerson} />
                 {!selectedPerson.email && !selectedPerson.phone && (
                   <p className="text-gray-400">{selectedPerson.user_id ? "No contact details added yet." : "Contact details appear once they sign in."}</p>
                 )}

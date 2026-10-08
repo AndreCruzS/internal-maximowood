@@ -7,6 +7,7 @@ import { BRAND, DEPARTMENTS, TOOLS, toolsFor } from "@/lib/intranet";
 import ToolLink from "@/components/ToolLink";
 import { EventChip, eventDay, formatWhen, useMounted } from "@/components/CalendarView";
 import type { CalendarEvent } from "@/server/calendar";
+import { CelebrationsList, NewJoinersList, type CelebrationPerson } from "@/components/Celebrations";
 
 // Greeting depends on the viewer's clock; the server (UTC) renders a neutral one.
 const noSubscribe = () => () => {};
@@ -71,7 +72,7 @@ function UpcomingEvents({ events }: { events: CalendarEvent[] }) {
   );
 }
 
-export default function Portal({ name, events }: { name: string; isAdmin: boolean; events: CalendarEvent[] }) {
+export default function Portal({ name, events, celebrations }: { name: string; isAdmin: boolean; events: CalendarEvent[]; celebrations: CelebrationPerson[] }) {
   const greeting = useGreeting();
   const firstName = name.split("@")[0].split(/[ .]/)[0];
   const first = firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : "";
@@ -121,6 +122,16 @@ export default function Portal({ name, events }: { name: string; isAdmin: boolea
         </Panel>
         <Panel title="Upcoming events" action={<Link href="/calendar" className="text-sm font-bold text-[#00704a] hover:underline">See all</Link>}>
           <UpcomingEvents events={events} />
+        </Panel>
+      </div>
+
+      {/* People moments */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Panel title="Celebrations" action={<Link href="/people" className="text-sm font-bold text-[#00704a] hover:underline">People</Link>}>
+          <CelebrationsList people={celebrations} />
+        </Panel>
+        <Panel title="New joiners">
+          <NewJoinersList people={celebrations} />
         </Panel>
       </div>
 
