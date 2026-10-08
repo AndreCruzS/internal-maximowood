@@ -31,7 +31,7 @@ export const BRAND = {
   ink: "#000000",
 } as const;
 
-export type CompanyId = "gmx" | "maximo" | "lumberplus" | "us4pro" | "builderexpress";
+export type CompanyId = "gmx" | "maximo" | "lumberplus" | "us4pro" | "builderexpress" | "globallbm";
 
 export const COMPANIES: { id: CompanyId; name: string }[] = [
   { id: "gmx", name: "GMX Group" },
@@ -39,6 +39,7 @@ export const COMPANIES: { id: CompanyId; name: string }[] = [
   { id: "lumberplus", name: "Lumber Plus" },
   { id: "us4pro", name: "US4" },
   { id: "builderexpress", name: "Builder Express" },
+  { id: "globallbm", name: "Global LBM" },
 ];
 
 export type DepartmentId = "commercial" | "marketing" | "operations" | "logistics" | "finance" | "hr" | "it";
@@ -66,13 +67,14 @@ export const ALLOWED_EMAIL_DOMAINS = [
 export const isCompanyEmail = (email: string) =>
   (ALLOWED_EMAIL_DOMAINS as readonly string[]).includes(email.trim().toLowerCase().split("@")[1] ?? "");
 
-export type OfficeId = "curitiba" | "aventura" | "lumberplus-miami" | "remote";
+export type OfficeId = "curitiba" | "aventura" | "lumberplus-miami" | "lumberplus-houston" | "remote";
 
 /** Offices (same ids as the people.office check in 0006). `timeZone` shows each person's local time. */
 export const OFFICES: { id: OfficeId; name: string; place: string; timeZone: string | null }[] = [
   { id: "curitiba", name: "Curitiba", place: "Curitiba, PR · Brazil", timeZone: "America/Sao_Paulo" },
   { id: "aventura", name: "Aventura", place: "Aventura, FL · United States", timeZone: "America/New_York" },
   { id: "lumberplus-miami", name: "Lumber Plus Miami", place: "Miami, FL · United States", timeZone: "America/New_York" },
+  { id: "lumberplus-houston", name: "Lumber Plus Houston", place: "Houston, TX · United States", timeZone: "America/Chicago" },
   { id: "remote", name: "Remote", place: "Remote location", timeZone: null },
 ];
 export const officeById = (id: string | null | undefined) => OFFICES.find(o => o.id === id);

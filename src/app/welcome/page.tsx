@@ -19,7 +19,7 @@ export default async function WelcomePage() {
   const [people, positions, relations] = await Promise.all([
     supabase
       .from("people")
-      .select("id, full_name, first_name, last_name, nickname, nationality, location, office, languages, companies, birth_month, birth_day, start_date, start_year, user_id, email")
+      .select("id, full_name, first_name, last_name, nickname, nationality, location, live_country, live_city, office, languages, companies, birth_month, birth_day, start_date, start_year, user_id, email")
       .eq("active", true)
       .order("full_name"),
     supabase.from("positions").select("id, person_id, title, department_id, team, reports_to, sort").order("sort"),

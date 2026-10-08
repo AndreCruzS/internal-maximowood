@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Globe, Loader2, PartyPopper, Trash2, UserCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Globe, Loader2, PartyPopper, Plus, Trash2, UserCheck } from "lucide-react";
+import { CITIES, countryName, countryOptions } from "@/lib/places";
 import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { COMPANIES, DEPARTMENTS, LANGUAGES, OFFICES } from "@/lib/intranet";
@@ -18,6 +19,8 @@ export type WelcomePerson = {
   nickname: string | null;
   nationality: string | null;
   location: string | null;
+  live_country?: string | null;
+  live_city?: string | null;
   office: string | null;
   languages: string[] | null;
   companies: string[] | null;
@@ -62,7 +65,7 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
   const { t, tag, locale } = useI18n();
   const w = t.welcome;
   const router = useRouter();
-  const myPosition = me ? positions.filter(p => p.person_id === me.id).sort((a, b) => a.sort - b.sort)[0] ?? null : null;
+  const myPositions = me ? positions.filter(p => p.person_id === me.id).sort((a, b) => a.sort - b.sort) : [];
   const nameParts = (me?.full_name || metaName).trim().split(/\s+/);
 
   const [step, setStep] = useState(0); // 0..3 questions, 4 = done
@@ -75,11 +78,12 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
     nationality: me?.nationality ?? "",
     birth_month: me?.birth_month ? String(me.birth_month) : "",
     birth_day: me?.birth_day ? String(me.birth_day) : "",
-    location: me?.location ?? "",
+    country: me?.live_country ?? "",
+    city: me?.live_city ?? "",
+    cityOther: false,
     languages: me?.languages ?? [],
     office: me?.office ?? "",
-    department: myPosition ? myPosition.department_id ?? "leadership" : "",
-    title: myPosition?.title ?? "",
+
     companies: me?.companies ?? [],
     isNew: null as boolean | null,
     startMode: (me?.start_year && !me?.start_date ? "year" : "exact") as "exact" | "year",
@@ -87,6 +91,12 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
     start_year: me?.start_year ? String(me.start_year) : "",
   });
   const set = (p: Partial<typeof d>) => setD(x => ({ ...x, ...p }));
+  // One or more positions (title + department); "leadership" = no department.
+  type Pos = { id?: string; title: string; department: string };
+  const toPos = (p: WelcomePosition): Pos => ({ id: p.id, title: p.title, department: p.department_id ?? "leadership" });
+  const [roles, setRoles] = useState<Pos[]>(myPositions.length ? myPositions.map(toPos) : [{ title: "", department: "" }]);
+  const setRole = (i: number, patch: Partial<Pos>) => setRoles(list => list.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const [showAll, setShowAll] = useState(false);
   const [team, setTeam] = useState<{ person: string; relation: Relation }[]>(
     savedTeam.filter(r => ["superior", "peer", "report"].includes(r.relation)).map(r => ({ person: r.other_person_id, relation: r.relation as Relation })),
   );
@@ -107,13 +117,21 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
       .slice(0, 4);
   }, [people, me, d.first, d.last]);
   const titleOf = (personId: string) => positions.find(p => p.person_id === personId)?.title ?? "";
-  const colleagues = people.filter(p => p.id !== me?.id && p.id !== d.claim);
+  // Team step: colleagues in my department(s) (Leadership = no department); everyone on request.
+  const myself = me?.id ?? (d.claim && d.claim !== "new" ? d.claim : null);
+  const myDepts = new Set(roles.map(r => r.department).filter(Boolean));
+  const deptOf = (personId: string) => positions.filter(x => x.person_id === personId).map(x => x.department_id ?? "leadership");
+  const deptColleagues = people.filter(p => p.id !== myself && deptOf(p.id).some(x => myDepts.has(x)));
+  const colleagues = showAll ? people.filter(p => p.id !== myself) : deptColleagues;
+  const hasTeamStep = deptColleagues.length > 0 || team.length > 0;
+  const lastStep = hasTeamStep ? 3 : 2;
   const daysInMonth = d.birth_month ? new Date(2024, Number(d.birth_month), 0).getDate() : 31;
   const thisYear = new Date().getFullYear();
 
   const missing = (): string[] => {
     if (step === 0) return [!d.first.trim() && w.firstName, !d.last.trim() && w.lastName, !me && matches.length > 0 && !d.claim && w.isThisYou].filter(Boolean) as string[];
-    if (step === 2) return [!d.office && w.office, !d.department && w.department, !d.title.trim() && w.position].filter(Boolean) as string[];
+    if (step === 1) return [!d.country && w.country, !!d.country && !d.city.trim() && w.city].filter(Boolean) as string[];
+    if (step === 2) return [!d.office && w.office, roles.some(r => !r.department) && w.department, roles.some(r => !r.title.trim()) && w.position].filter(Boolean) as string[];
     return [];
   };
   const next = () => {
@@ -152,7 +170,9 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
         last_name: d.last.trim(),
         nickname: d.nickname.trim(),
         nationality: d.nationality.trim(),
-        location: d.location.trim() || null,
+        live_country: d.country || null,
+        live_city: d.city.trim(),
+        location: d.country ? `${d.city.trim()}${d.city.trim() ? ", " : ""}${countryName(d.country, "en")}` : null,
         office: d.office || null,
         languages: d.languages,
         companies: d.companies,
@@ -164,13 +184,23 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
       .eq("id", personId);
     if (e1) return fail(e1.message);
 
-    // 3. Main position (title + department).
-    const existing = positions.filter(p => p.person_id === personId).sort((a, b) => a.sort - b.sort)[0];
-    const pos = { title: d.title.trim(), department_id: d.department && d.department !== "leadership" ? d.department : null };
-    const { error: e2 } = existing
-      ? await supabase.from("positions").update(pos).eq("id", existing.id)
-      : await supabase.from("positions").insert({ ...pos, person_id: personId, sort: 1000 });
-    if (e2) return fail(e2.message);
+    // 3. Positions: update the ones kept, add new ones, remove the ones taken out.
+    const current = positions.filter(p => p.person_id === personId).sort((a, b) => a.sort - b.sort);
+    const keep = new Set(roles.map(r => r.id).filter(Boolean));
+    const gone = current.filter(p => !keep.has(p.id)).map(p => p.id);
+    if (gone.length) {
+      const { error } = await supabase.from("positions").delete().in("id", gone);
+      if (error) return fail(error.message);
+    }
+    for (const [i, r] of roles.entries()) {
+      // A claimed entry's positions become this person's, matched by order.
+      const id = r.id && current.some(p => p.id === r.id) ? r.id : undefined;
+      const row = { title: r.title.trim(), department_id: r.department && r.department !== "leadership" ? r.department : null };
+      const { error } = id
+        ? await supabase.from("positions").update(row).eq("id", id)
+        : await supabase.from("positions").insert({ ...row, person_id: personId, sort: (current[0]?.sort ?? 1000) + i });
+      if (error) return fail(error.message);
+    }
 
     // 4. Team → org chart, then mark the questionnaire done.
     const { error: e3 } = await supabase.rpc("save_my_team", { answers: team });
@@ -181,7 +211,7 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
     setStep(4);
   };
 
-  const steps = [w.s1, w.s2, w.s3, w.s4];
+  const steps = hasTeamStep ? [w.s1, w.s2, w.s3, w.s4] : [w.s1, w.s2, w.s3];
 
   return (
     <div className="min-h-screen bg-[#F7F8F7] px-4 py-8 sm:py-14">
@@ -209,7 +239,7 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
           <>
             <h1 className="text-3xl font-black text-gray-900">{w.heading}</h1>
             <p className="mt-2 text-gray-600">{w.intro}</p>
-            <div className="mt-6 flex gap-2" aria-label={fmt(w.step, { n: step + 1, total: 4 })}>
+            <div className="mt-6 flex gap-2" aria-label={fmt(w.step, { n: step + 1, total: steps.length })}>
               {steps.map((s, i) => (
                 <div key={s} className="flex-1">
                   <div className={`h-1.5 rounded-full ${i <= step ? "bg-[#009f67]" : "bg-gray-200"}`} />
@@ -240,7 +270,11 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
                   <div className="mt-3 space-y-2">
                     {matches.map(p => (
                       <label key={p.id} className={`flex cursor-pointer items-center gap-3 rounded-lg border bg-white px-3 py-2.5 ${d.claim === p.id ? "border-[#009f67]" : "border-gray-200"}`}>
-                        <input type="radio" name="claim" checked={d.claim === p.id} onChange={() => set({ claim: p.id, title: d.title || titleOf(p.id), department: d.department || positions.find(x => x.person_id === p.id)?.department_id || "" })} className="accent-[#009f67]" />
+                        <input type="radio" name="claim" checked={d.claim === p.id} onChange={() => {
+                          set({ claim: p.id });
+                          const theirs = positions.filter(x => x.person_id === p.id).sort((a, b) => a.sort - b.sort);
+                          if (theirs.length && roles.every(r => !r.title.trim())) setRoles(theirs.map(toPos));
+                        }} className="accent-[#009f67]" />
                         <span><span className="block font-bold text-gray-900">{p.full_name}</span><span className="block text-xs text-gray-500">{titleOf(p.id)}</span></span>
                         {d.claim === p.id && <span className="ml-auto text-xs font-bold text-[#00704a]">{w.yesMe}</span>}
                       </label>
@@ -282,7 +316,31 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
                   <p className="mt-1 text-xs text-gray-400">{t.about.ageHidden}</p>
                 </div>
               </div>
-              <div><label className={label} htmlFor="live">{w.liveIn}</label><input id="live" value={d.location} onChange={e => set({ location: e.target.value })} placeholder={w.livePlaceholder} className={field} /></div>
+              <div>
+                <span className={label}>{w.liveIn}</span>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <select value={d.country} onChange={e => set({ country: e.target.value, city: "", cityOther: false })} className={field} aria-label={w.country}>
+                    <option value="">{w.chooseCountry}</option>
+                    {countryOptions(tag).map(c => (
+                      <option key={c.code} value={c.code}>{c.name}</option>
+                    ))}
+                  </select>
+                  {d.country && CITIES[d.country] && !d.cityOther ? (
+                    <select
+                      value={CITIES[d.country].includes(d.city) ? d.city : d.city ? "__other" : ""}
+                      onChange={e => (e.target.value === "__other" ? set({ cityOther: true, city: "" }) : set({ city: e.target.value }))}
+                      className={field}
+                      aria-label={w.city}
+                    >
+                      <option value="">{w.chooseCity}</option>
+                      {CITIES[d.country].map(c => <option key={c} value={c}>{c}</option>)}
+                      <option value="__other">{w.otherCity}</option>
+                    </select>
+                  ) : (
+                    d.country && <input value={d.city} onChange={e => set({ city: e.target.value })} placeholder={w.cityPlaceholder} className={field} aria-label={w.city} />
+                  )}
+                </div>
+              </div>
               <div>
                 <span className={label}>{w.languages}</span>
                 <div className="flex flex-wrap gap-2">
@@ -307,16 +365,31 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
                   ))}
                 </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className={label} htmlFor="dept">{w.department}</label>
-                  <select id="dept" value={d.department} onChange={e => set({ department: e.target.value })} className={field}>
-                    <option value="">{t.common.choose}</option>
-                    <option value="leadership">{t.departments.leadership}</option>
-                    {DEPARTMENTS.map(x => <option key={x.id} value={x.id}>{deptName(t, x.id)}</option>)}
-                  </select>
-                </div>
-                <div><label className={label} htmlFor="title">{w.position}</label><input id="title" value={d.title} onChange={e => set({ title: e.target.value })} placeholder={w.positionPlaceholder} className={field} /></div>
+              <div className="space-y-3">
+                {roles.map((r, i) => (
+                  <div key={r.id ?? `new-${i}`} className={roles.length > 1 ? "rounded-xl border border-gray-200 p-3" : ""}>
+                    {roles.length > 1 && (
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-xs font-black uppercase tracking-widest text-gray-400">{fmt(w.positionN, { n: i + 1 })}</span>
+                        <button type="button" onClick={() => setRoles(list => list.filter((_, j) => j !== i))} aria-label={w.removePosition} className="rounded p-1 text-gray-300 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+                      </div>
+                    )}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className={label} htmlFor={`dept-${i}`}>{w.department}</label>
+                        <select id={`dept-${i}`} value={r.department} onChange={e => setRole(i, { department: e.target.value })} className={field}>
+                          <option value="">{t.common.choose}</option>
+                          <option value="leadership">{t.departments.leadership}</option>
+                          {DEPARTMENTS.map(x => <option key={x.id} value={x.id}>{deptName(t, x.id)}</option>)}
+                        </select>
+                      </div>
+                      <div><label className={label} htmlFor={`title-${i}`}>{w.position}</label><input id={`title-${i}`} value={r.title} onChange={e => setRole(i, { title: e.target.value })} placeholder={w.positionPlaceholder} className={field} /></div>
+                    </div>
+                  </div>
+                ))}
+                <button type="button" onClick={() => setRoles(list => [...list, { title: "", department: "" }])} className="flex items-center gap-1.5 text-sm font-bold text-[#00704a] hover:underline">
+                  <Plus className="h-4 w-4" /> {w.addPosition}
+                </button>
               </div>
               <div>
                 <span className={label}>{w.companies}</span>
@@ -351,10 +424,13 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
             </div>
           )}
 
-          {step === 3 && (
+          {step === 3 && hasTeamStep && (
             <div className="space-y-5">
               <h2 className="text-xl font-black text-gray-900">{w.s4}</h2>
-              <p className="text-sm text-gray-600">{w.teamIntro}</p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-gray-600">{w.teamIntro}</p>
+                <button type="button" onClick={() => setShowAll(v => !v)} className="text-sm font-bold text-[#00704a] hover:underline">{showAll ? w.onlyDepartment : w.showEveryone}</button>
+              </div>
               <select
                 value={pick}
                 onChange={e => {
@@ -417,13 +493,13 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
                   <ArrowLeft className="h-4 w-4" /> {w.back}
                 </button>
               ) : <span />}
-              <span className="text-xs text-gray-400">{fmt(w.step, { n: step + 1, total: 4 })}</span>
-              {step < 3 ? (
+              <span className="text-xs text-gray-400">{fmt(w.step, { n: step + 1, total: steps.length })}</span>
+              {step < lastStep ? (
                 <button type="button" onClick={next} className="flex h-11 items-center gap-2 rounded-lg bg-[#009f67] px-6 font-bold text-white">
                   {w.next} <ArrowRight className="h-4 w-4" />
                 </button>
               ) : (
-                <button type="button" onClick={finish} disabled={busy} className="flex h-11 items-center gap-2 rounded-lg bg-[#009f67] px-6 font-bold text-white disabled:opacity-50">
+                <button type="button" onClick={() => (missing().length ? next() : finish())} disabled={busy} className="flex h-11 items-center gap-2 rounded-lg bg-[#009f67] px-6 font-bold text-white disabled:opacity-50">
                   {busy ? <><Loader2 className="h-4 w-4 animate-spin" /> {w.saving}</> : <>{w.finish} <Check className="h-4 w-4" /></>}
                 </button>
               )}

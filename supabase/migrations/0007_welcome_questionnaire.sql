@@ -14,6 +14,21 @@ alter table public.people
   -- When only the year is known; start_date wins when both are set.
   add column if not exists start_year  smallint check (start_year between 1980 and 2100);
 
+-- Where people live, from dropdowns (ISO country code + city) to avoid typos;
+-- people.location keeps the "City, Country" text for display.
+alter table public.people
+  add column if not exists live_country text check (live_country ~ '^[A-Z]{2}$'),
+  add column if not exists live_city    text not null default '';
+
+-- New office: Lumber Plus Houston.
+alter table public.people drop constraint if exists people_office_check;
+alter table public.people add constraint people_office_check
+  check (office in ('curitiba', 'aventura', 'lumberplus-miami', 'lumberplus-houston', 'remote'));
+
+-- New group company: Global LBM (with an empty brand page to fill in).
+insert into public.companies (id, name, sort) values ('globallbm', 'Global LBM', 5) on conflict (id) do nothing;
+insert into public.brand_pages (company_id) values ('globallbm') on conflict (company_id) do nothing;
+
 alter table public.profiles
   add column if not exists onboarded_at timestamptz;
 

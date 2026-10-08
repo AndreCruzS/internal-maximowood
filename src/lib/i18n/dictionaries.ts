@@ -165,6 +165,9 @@ const en = {
     addColleague: "Add a colleague…", superior: "My superior", peer: "Same level", report: "Reports to me", remove: "Remove",
     doneTitle: "All set!", doneText: "Thanks, {name} — your profile and the org chart are updated.", goPortal: "Go to the portal",
     required: "Please fill in: {fields}.",
+    country: "Country", city: "City", chooseCountry: "Choose a country…", chooseCity: "Choose a city…", otherCity: "Other city…", cityPlaceholder: "Type your city",
+    addPosition: "Add another position", removePosition: "Remove this position", positionN: "Position {n}",
+    showEveryone: "Show everyone", onlyDepartment: "Only my department",
   },
   login: {
     welcome: "Welcome back", subtitle: "Sign in to the GMX Group Intranet with your company email.", email: "Email",
@@ -336,6 +339,9 @@ const es: Dict = {
     addColleague: "Agregar un colega…", superior: "Mi superior", peer: "Mismo nivel", report: "Me reporta", remove: "Quitar",
     doneTitle: "¡Listo!", doneText: "Gracias, {name} — tu perfil y el organigrama están actualizados.", goPortal: "Ir al portal",
     required: "Completa: {fields}.",
+    country: "País", city: "Ciudad", chooseCountry: "Elige un país…", chooseCity: "Elige una ciudad…", otherCity: "Otra ciudad…", cityPlaceholder: "Escribe tu ciudad",
+    addPosition: "Agregar otro cargo", removePosition: "Quitar este cargo", positionN: "Cargo {n}",
+    showEveryone: "Mostrar a todos", onlyDepartment: "Solo mi departamento",
   },
   login: {
     welcome: "Bienvenido de nuevo", subtitle: "Ingresa a la Intranet de GMX Group con tu correo de la empresa.", email: "Correo",
@@ -505,6 +511,9 @@ const pt: Dict = {
     addColleague: "Adicionar um colega…", superior: "Meu superior", peer: "Mesmo nível", report: "Reporta-se a mim", remove: "Remover",
     doneTitle: "Tudo pronto!", doneText: "Obrigado, {name} — seu perfil e o organograma foram atualizados.", goPortal: "Ir para o portal",
     required: "Preencha: {fields}.",
+    country: "País", city: "Cidade", chooseCountry: "Escolha um país…", chooseCity: "Escolha uma cidade…", otherCity: "Outra cidade…", cityPlaceholder: "Digite sua cidade",
+    addPosition: "Adicionar outro cargo", removePosition: "Remover este cargo", positionN: "Cargo {n}",
+    showEveryone: "Mostrar todos", onlyDepartment: "Só meu departamento",
   },
   login: {
     welcome: "Bem-vindo de volta", subtitle: "Entre na Intranet da GMX Group com seu e-mail corporativo.", email: "E-mail",
