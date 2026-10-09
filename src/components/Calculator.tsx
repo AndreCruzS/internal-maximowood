@@ -40,6 +40,7 @@ import {
 import { Calculator as CalculatorIcon, Droplet, RotateCcw, Wrench, FileText, ChevronRight, Plus, Trash2, ShoppingCart, Ruler } from "lucide-react";
 import QuoteModal, { type QuoteCartItem } from "@/components/QuoteModal";
 import { distributePieces, type PieceLengthResult } from "@/lib/pieceLengths";
+import { isMetricLength, lengthLabel, realFt } from "@/lib/realLengths";
 import SavedQuoteBanner from "@/components/SavedQuoteBanner";
 import { useSavedQuote } from "@/hooks/useSavedQuote";
 import { usePricing } from "@/lib/api";
@@ -300,7 +301,7 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
     if (inputMode === "boards") {
       const bc = parseFloat(boardCount);
       const bl = parseFloat(boardLengthFt);
-      rawLF = bc * bl;
+      rawLF = bc * realFt(bl, selectedProduct?.species);
       rawSqft = lfToSqft(rawLF, exposedIn);
     } else if (inputMode === "lf") {
       rawLF = parseFloat(quantity);
@@ -348,7 +349,7 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
     }
 
     // Piece lengths: even mix with the least extra LF (src/lib/pieceLengths.ts)
-    const pieceLengthResult: Results["pieceLengthResult"] = distributePieces(wastedLF, selectedLengths);
+    const pieceLengthResult: Results["pieceLengthResult"] = distributePieces(wastedLF, selectedLengths, ft => realFt(ft, selectedProduct?.species));
 
     setResults({
       rawLF: Math.round(rawLF * 100) / 100,
@@ -588,6 +589,11 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
             Select one or more lengths. Pieces are distributed equally across all selected lengths.
             The price does not change — only the piece count.
           </p>
+          {isMetricLength(selectedProduct?.species) && (
+            <p className="text-xs text-[#888] mb-3 -mt-1">
+              Metric-cut lengths: each nominal foot is 0.30 m, so 8&apos; = 94.49&quot; (7.87 LF). Pieces, LF and price use the real length.
+            </p>
+          )}
           {/* Common length toggles */}
           <div className="flex flex-wrap gap-2 mb-3">
             {COMMON_LENGTHS.map((ft) => (
@@ -715,10 +721,10 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
                     style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}30` }}
                   >
                     <span className="text-sm font-semibold text-[#555]">
-                      {parseFloat(boardCount).toFixed(0)} boards × {parseFloat(boardLengthFt)}’
+                      {parseFloat(boardCount).toFixed(0)} boards × {lengthLabel(parseFloat(boardLengthFt), selectedProduct?.species)}
                     </span>
                     <span className="text-lg font-black" style={{ color: GOLD }}>
-                      = {(parseFloat(boardCount) * parseFloat(boardLengthFt)).toFixed(1)} LF
+                      = {(parseFloat(boardCount) * realFt(parseFloat(boardLengthFt), selectedProduct?.species)).toFixed(2)} LF
                     </span>
                   </div>
                 )}
@@ -1126,8 +1132,8 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
                   <Ruler className="w-4 h-4" style={{ color: GOLD }} />
                   <p className="text-xs font-black uppercase tracking-widest" style={{ color: GOLD }}>
                     {results.pieceLengthResult.selectedLengths.length === 1
-                      ? `Pieces — ${results.pieceLengthResult.selectedLengths[0]}' each`
-                      : `Pieces — ${results.pieceLengthResult.selectedLengths.join("', ")}' (even mix)`}
+                      ? `Pieces — ${lengthLabel(results.pieceLengthResult.selectedLengths[0], selectedProduct?.species)} each`
+                      : `Pieces — ${results.pieceLengthResult.selectedLengths.map(l => lengthLabel(l, selectedProduct?.species)).join(", ")} (even mix)`}
                   </p>
                 </div>
                 {/* Summary row */}
@@ -1151,7 +1157,7 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
                     <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-2">Breakdown by length</p>
                     {results.pieceLengthResult.breakdown.map(row => (
                       <div key={row.length} className="flex justify-between text-xs">
-                        <span className="text-white/60">{row.pieces} pcs × {row.length}'</span>
+                        <span className="text-white/60">{row.pieces} pcs × {lengthLabel(row.length, selectedProduct?.species)}</span>
                         <span className="font-bold" style={{ color: GOLD }}>{row.lf} LF</span>
                       </div>
                     ))}

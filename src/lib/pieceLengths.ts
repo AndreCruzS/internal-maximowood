@@ -7,6 +7,9 @@
  * that overshoots it the least (ties: fewer pieces). So counts differ by at
  * most one between lengths. E.g. 250.95 LF over 7', 8', 9', 10', 12', 14', 16'
  * → 3 of each (228 LF) + one extra 9' and 14' (23 LF) = 23 pieces, 251 LF.
+ *
+ * Lengths are nominal; `realLF` gives the LF one piece really covers (metric-cut
+ * species are shorter than their name — see realLengths.ts). Counts and LF use it.
  */
 
 export type PieceLengthResult = {
@@ -15,6 +18,7 @@ export type PieceLengthResult = {
   piecesEach: number;
   totalPieces: number;
   actualLF: number;
+  /** `length` is nominal (what the board is sold as); `lf` is the real LF of those pieces. */
   breakdown: { length: number; pieces: number; lf: number }[];
 };
 
@@ -59,21 +63,26 @@ function extraPieces(lengths: number[], remainder: number): number[] {
   return best;
 }
 
-export function distributePieces(neededLF: number, selectedLengths: number[]): PieceLengthResult | null {
+export function distributePieces(
+  neededLF: number,
+  selectedLengths: number[],
+  realLF: (nominalFt: number) => number = ft => ft,
+): PieceLengthResult | null {
   const lengths = selectedLengths.filter(l => l > 0);
   if (lengths.length === 0 || !(neededLF > 0)) return null;
-  const sum = lengths.reduce((a, b) => a + b, 0);
+  const real = lengths.map(realLF);
+  const sum = real.reduce((a, b) => a + b, 0);
   const base = Math.floor(neededLF / sum + EPS);
-  const extra = new Set(extraPieces(lengths, neededLF - base * sum));
+  const extra = new Set(extraPieces(real, neededLF - base * sum));
   const breakdown = lengths.map((length, i) => {
     const pieces = base + (extra.has(i) ? 1 : 0);
-    return { length, pieces, lf: pieces * length };
+    return { length, pieces, lf: Math.round(pieces * real[i] * 100) / 100 };
   });
   return {
     selectedLengths: lengths,
     piecesEach: base,
     totalPieces: breakdown.reduce((s, r) => s + r.pieces, 0),
-    actualLF: breakdown.reduce((s, r) => s + r.lf, 0),
+    actualLF: Math.round(breakdown.reduce((s, r) => s + r.lf, 0) * 100) / 100,
     breakdown,
   };
 }

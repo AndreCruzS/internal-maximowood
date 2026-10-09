@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import QuoteModal, { type QuoteCartItem } from "@/components/QuoteModal";
 import { distributePieces, type PieceLengthResult } from "@/lib/pieceLengths";
+import { isMetricLength, lengthLabel, realFt } from "@/lib/realLengths";
 import SavedQuoteBanner from "@/components/SavedQuoteBanner";
 import { useSavedQuote } from "@/hooks/useSavedQuote";
 import type { QuoteLineItem } from "@/lib/generateQuotePDF";
@@ -406,7 +407,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
     if (inputMode === "boards") {
       const bc = parseFloat(boardCount);
       const bl = parseFloat(boardLengthFt);
-      rawLF = bc * bl;
+      rawLF = bc * realFt(bl, selectedSpecies);
       rawSqft = lfToSqft(rawLF, exposedIn);
     } else if (inputMode === "lf") {
       rawLF = parseFloat(quantity);
@@ -464,7 +465,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
     }
 
     // Piece lengths: even mix with the least extra LF (src/lib/pieceLengths.ts)
-    const pieceLengthResult: Results["pieceLengthResult"] = distributePieces(wastedLF, selectedLengths);
+    const pieceLengthResult: Results["pieceLengthResult"] = distributePieces(wastedLF, selectedLengths, ft => realFt(ft, selectedSpecies));
 
     setResults({
       rawLF: Math.round(rawLF * 100) / 100,
@@ -742,6 +743,11 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
               Select one or more lengths. Pieces are distributed equally across all selected lengths.
               The price does not change — only the piece count.
             </p>
+            {isMetricLength(selectedSpecies) && (
+              <p className="text-xs text-[#888] mb-3 -mt-1">
+                Metric-cut lengths: each nominal foot is 0.30 m, so 8&apos; = 94.49&quot; (7.87 LF). Pieces, LF and price use the real length.
+              </p>
+            )}
             {/* Common length toggles */}
             <div className="flex flex-wrap gap-2 mb-3">
               {COMMON_LENGTHS.map((ft) => (
@@ -868,10 +874,10 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                       style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}30` }}
                     >
                       <span className="text-sm font-semibold text-[#555]">
-                        {parseFloat(boardCount).toFixed(0)} boards × {parseFloat(boardLengthFt)}'
+                        {parseFloat(boardCount).toFixed(0)} boards × {lengthLabel(parseFloat(boardLengthFt), selectedSpecies)}
                       </span>
                       <span className="text-lg font-black" style={{ color: GOLD }}>
-                        = {(parseFloat(boardCount) * parseFloat(boardLengthFt)).toFixed(1)} LF
+                        = {(parseFloat(boardCount) * realFt(parseFloat(boardLengthFt), selectedSpecies)).toFixed(2)} LF
                       </span>
                     </div>
                   )}
@@ -1198,8 +1204,8 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                     <Ruler className="w-4 h-4" style={{ color: tierColor }} />
                     <p className="text-xs font-black uppercase tracking-widest" style={{ color: tierColor }}>
                       {results.pieceLengthResult.selectedLengths.length === 1
-                        ? `Pieces — ${results.pieceLengthResult.selectedLengths[0]}' each`
-                        : `Pieces — ${results.pieceLengthResult.selectedLengths.join("', ")}' (even mix)`}
+                        ? `Pieces — ${lengthLabel(results.pieceLengthResult.selectedLengths[0], selectedSpecies)} each`
+                        : `Pieces — ${results.pieceLengthResult.selectedLengths.map(l => lengthLabel(l, selectedSpecies)).join(", ")} (even mix)`}
                     </p>
                   </div>
                   <div className="flex items-end gap-4 mb-3">
@@ -1221,7 +1227,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                       <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-2">Breakdown by length</p>
                       {results.pieceLengthResult.breakdown.map(row => (
                         <div key={row.length} className="flex justify-between text-xs">
-                          <span className="text-white/60">{row.pieces} pcs × {row.length}'</span>
+                          <span className="text-white/60">{row.pieces} pcs × {lengthLabel(row.length, selectedSpecies)}</span>
                           <span className="font-bold" style={{ color: tierColor }}>{row.lf} LF</span>
                         </div>
                       ))}
