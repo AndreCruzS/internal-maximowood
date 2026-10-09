@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowUpRight, ChevronRight } from "lucide-react";
-import { companyName, type Tool } from "@/lib/intranet";
+import { companyColor, companyName, type Tool } from "@/lib/intranet";
 import { useI18n } from "@/components/I18nProvider";
 import { toolText } from "@/lib/i18n/text";
 import StarButton from "@/components/StarButton";
@@ -17,15 +17,17 @@ export default function ToolLink({ tool, variant = "row" }: { tool: Tool; varian
   const star = <StarButton title={text.name} href={tool.href} external={tool.external} />;
 
   if (variant === "card") {
+    const color = companyColor(tool.company);
     return (
       <Link
         href={tool.href}
         {...external}
-        className="group relative block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-[#009f67] hover:shadow-md"
+        className="group relative block overflow-hidden rounded-xl border border-gray-200 bg-white p-5 pt-6 shadow-sm transition-all hover:shadow-md"
+        style={{ borderTop: `4px solid ${color}` }}
       >
         <div className="flex items-start justify-between">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ background: "rgba(0,159,103,0.1)" }}>
-            <Icon className="h-5 w-5 text-[#00704a]" />
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ background: `${color}1a` }}>
+            <Icon className="h-5 w-5" style={{ color }} />
           </span>
           <span className="flex items-center gap-1">
             {star}
@@ -34,7 +36,7 @@ export default function ToolLink({ tool, variant = "row" }: { tool: Tool; varian
         </div>
         <p className="mt-4 font-bold text-gray-900">{text.name}</p>
         <p className="text-sm text-gray-500">{text.description}</p>
-        <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-gray-400">{companyName(tool.company)}</p>
+        <p className="mt-3 text-[11px] font-bold uppercase tracking-wider" style={{ color }}>{companyName(tool.company)}</p>
       </Link>
     );
   }

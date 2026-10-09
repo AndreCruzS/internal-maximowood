@@ -5,7 +5,8 @@ import PeopleView, { type Person, type Position } from "@/components/PeopleView"
 export const dynamic = "force-dynamic";
 export const metadata = { title: "People · GMX Group Intranet" };
 
-export default async function PeoplePage() {
+export default async function PeoplePage({ searchParams }: { searchParams: Promise<{ person?: string; dept?: string }> }) {
+  const { person, dept } = await searchParams;
   const supabase = await getSupabaseServer();
   if (!supabase) return <p className="text-sm text-red-700">Supabase is not configured.</p>;
   const {
@@ -23,6 +24,8 @@ export default async function PeoplePage() {
       me={user?.id ?? null}
       isAdmin={isAdminUser(user)}
       error={error}
+      initialPerson={person ?? null}
+      initialDept={dept ?? null}
     />
   );
 }

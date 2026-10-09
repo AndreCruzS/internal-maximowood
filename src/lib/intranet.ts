@@ -33,13 +33,14 @@ export const BRAND = {
 
 export type CompanyId = "gmx" | "maximo" | "lumberplus" | "us4pro" | "builderexpress" | "globallbm";
 
-export const COMPANIES: { id: CompanyId; name: string }[] = [
-  { id: "gmx", name: "GMX Group" },
-  { id: "maximo", name: "Maximo" },
-  { id: "lumberplus", name: "Lumber Plus" },
-  { id: "us4pro", name: "US4" },
-  { id: "builderexpress", name: "Builder Express" },
-  { id: "globallbm", name: "Global LBM" },
+/** Companies (brands). `color` color-codes tools and playbooks on department pages. */
+export const COMPANIES: { id: CompanyId; name: string; color: string }[] = [
+  { id: "gmx", name: "GMX Group", color: "#009f67" },
+  { id: "maximo", name: "Maximo", color: "#b8901c" },
+  { id: "lumberplus", name: "Lumber Plus", color: "#2f6db5" },
+  { id: "us4pro", name: "US4", color: "#e8590c" },
+  { id: "builderexpress", name: "Builder Express", color: "#c92a2a" },
+  { id: "globallbm", name: "Global LBM", color: "#6741d9" },
 ];
 
 export type DepartmentId = "commercial" | "marketing" | "operations" | "logistics" | "finance" | "hr" | "it";
@@ -94,6 +95,8 @@ export function yearsSince(startDate: string, today = new Date()): number {
 
 export const departmentById = (id: string) => DEPARTMENTS.find(d => d.id === id);
 export const companyName = (id: CompanyId) => COMPANIES.find(c => c.id === id)?.name ?? id;
+/** Brand color; group-wide items (no company) use GMX green. */
+export const companyColor = (id: string | null | undefined) => COMPANIES.find(c => c.id === id)?.color ?? "#009f67";
 
 export type Tool = {
   name: string;

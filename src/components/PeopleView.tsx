@@ -63,18 +63,24 @@ export function Avatar({ person, size = 40 }: { person: Person; size?: number })
 
 
 /** Directory + org chart of everyone in GMX Group, plus the signed-in person's own entry. */
-export default function PeopleView({ people, positions, me, error }: {
+export default function PeopleView({ people, positions, me, error, initialPerson = null, initialDept = null }: {
   people: Person[];
   positions: Position[];
   me: string | null;
   isAdmin: boolean;
   error: string | null;
+  /** ?person=<id>: open that person's profile (links from department pages). */
+  initialPerson?: string | null;
+  /** ?dept=<id>: start with the org chart filtered to a department. */
+  initialDept?: string | null;
 }) {
   const { t } = useI18n();
   const deptName = (id: string | null) => deptNameT(t, id);
   const [tab, setTab] = useState<"directory" | "chart">("chart");
-  const [openPos, setOpenPos] = useState<Position | null>(null);
-  const [dept, setDept] = useState<string>("all");
+  const [openPos, setOpenPos] = useState<Position | null>(() =>
+    initialPerson ? (positions.filter(x => x.person_id === initialPerson).sort((a, b) => a.sort - b.sort)[0] ?? null) : null,
+  );
+  const [dept, setDept] = useState<string>(() => (initialDept && DEPARTMENTS.some(d => d.id === initialDept) ? initialDept : "all"));
   const [company, setCompany] = useState<string>("all");
   const [q, setQ] = useState("");
 

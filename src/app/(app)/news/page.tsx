@@ -3,6 +3,7 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 import { getDict } from "@/lib/i18n/server";
 import { NEWS_COLUMNS, type NewsItem } from "@/server/intranet";
 import NewsList from "@/components/news/NewsList";
+import { DEPARTMENTS } from "@/lib/intranet";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +12,8 @@ export async function generateMetadata() {
   return { title: `${t.news.title} · GMX Group Intranet` };
 }
 
-export default async function NewsPage({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
-  const { filter } = await searchParams;
+export default async function NewsPage({ searchParams }: { searchParams: Promise<{ filter?: string; dept?: string }> }) {
+  const { filter, dept } = await searchParams;
   const supabase = await getSupabaseServer();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
   if (!supabase || !user) redirect("/login");
@@ -27,6 +28,7 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
       readIds={((reads.data as { news_id: string }[] | null) ?? []).map(r => r.news_id)}
       authors={Object.fromEntries(((people.data as { user_id: string; full_name: string }[] | null) ?? []).map(p => [p.user_id, p.full_name]))}
       mustReadOnly={filter === "must-read"}
+      department={dept && DEPARTMENTS.some(d => d.id === dept) ? dept : null}
       error={news.error?.message ?? null}
     />
   );

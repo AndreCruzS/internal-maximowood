@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BellRing, CheckCircle2, Newspaper, Plus } from "lucide-react";
 import { useI18n } from "@/components/I18nProvider";
 import { useMe } from "@/components/MeProvider";
-import { companyName, type CompanyId } from "@/lib/intranet";
+import { DEPARTMENTS, companyName, type CompanyId } from "@/lib/intranet";
 import { deptName } from "@/lib/i18n/text";
 import { fmt } from "@/lib/i18n/locale";
 import type { NewsItem } from "@/server/intranet";
@@ -23,18 +24,29 @@ export function NewsTags({ n }: { n: NewsItem }) {
 }
 
 /** All announcements, newest first; must-read ones show whether you've confirmed them. */
-export default function NewsList({ news, readIds, authors, mustReadOnly, error }: {
+export default function NewsList({ news, readIds, authors, mustReadOnly, department, error }: {
   news: NewsItem[];
   readIds: string[];
   authors: Record<string, string>;
   mustReadOnly: boolean;
+  /** ?dept=<id>: only that department's announcements. */
+  department: string | null;
   error: string | null;
 }) {
   const { t, tag } = useI18n();
   const me = useMe();
   const canPost = me.isAdmin || me.role === "leader";
   const read = new Set(readIds);
-  const list = mustReadOnly ? news.filter(n => n.must_read) : news;
+  const router = useRouter();
+  const list = news.filter(n => (!mustReadOnly || n.must_read) && (!department || n.department_id === department));
+  const href = (patch: { mustRead?: boolean; dept?: string | null }) => {
+    const qs = new URLSearchParams();
+    if (patch.mustRead ?? mustReadOnly) qs.set("filter", "must-read");
+    const d = patch.dept === undefined ? department : patch.dept;
+    if (d) qs.set("dept", d);
+    const s = qs.toString();
+    return s ? `/news?${s}` : "/news";
+  };
 
   return (
     <div className="space-y-6">
@@ -45,9 +57,18 @@ export default function NewsList({ news, readIds, authors, mustReadOnly, error }
         </div>
         <div className="flex items-center gap-2">
           <div className="flex rounded-lg border border-gray-200 bg-white p-0.5 text-sm font-bold">
-            <Link href="/news" className={`rounded-md px-3 py-1.5 ${!mustReadOnly ? "bg-[#009f67] text-white" : "text-gray-500"}`}>{t.common.all}</Link>
-            <Link href="/news?filter=must-read" className={`rounded-md px-3 py-1.5 ${mustReadOnly ? "bg-[#009f67] text-white" : "text-gray-500"}`}>{t.news.mustRead}</Link>
+            <Link href={href({ mustRead: false })} className={`rounded-md px-3 py-1.5 ${!mustReadOnly ? "bg-[#009f67] text-white" : "text-gray-500"}`}>{t.common.all}</Link>
+            <Link href={href({ mustRead: true })} className={`rounded-md px-3 py-1.5 ${mustReadOnly ? "bg-[#009f67] text-white" : "text-gray-500"}`}>{t.news.mustRead}</Link>
           </div>
+          <select
+            value={department ?? ""}
+            onChange={e => router.push(href({ dept: e.target.value || null }))}
+            aria-label={t.news.department}
+            className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm"
+          >
+            <option value="">{t.news.allDepartments}</option>
+            {DEPARTMENTS.map(d => <option key={d.id} value={d.id}>{deptName(t, d.id)}</option>)}
+          </select>
           {canPost && (
             <Link href="/news/new" className="flex h-9 items-center gap-1.5 rounded-lg bg-[#009f67] px-4 text-sm font-bold text-white">
               <Plus className="h-4 w-4" /> {t.news.newPost}
