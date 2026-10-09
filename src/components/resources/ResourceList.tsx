@@ -2,10 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowUpRight, BadgeCheck, FileSpreadsheet, FileText, FileType, Film, Folder, Globe, Link2, Pencil, Plus, Presentation, Search,
-  SquarePen, Trash2,
-} from "lucide-react";
+import { ArrowUpRight, BadgeCheck, FileSpreadsheet, FileText, FileType, Film, Folder, Globe, Link2, Palette, Pencil, Plus, Presentation, Search, SquarePen, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
@@ -31,9 +28,9 @@ export type LinkRow = {
   reviewed_at: string | null;
 };
 
-export const LINK_KINDS = ["web_app", "doc", "sheet", "slides", "pdf", "folder", "form", "video", "other"] as const;
-const KIND_ICON: Record<string, typeof Globe> = {
-  web_app: Globe, doc: FileText, sheet: FileSpreadsheet, slides: Presentation, pdf: FileType, folder: Folder, form: SquarePen, video: Film, other: Link2,
+export const LINK_KINDS = ["web_app", "doc", "sheet", "slides", "pdf", "folder", "form", "video", "brand_kit", "other"] as const;
+export const KIND_ICON: Record<string, typeof Globe> = {
+  web_app: Globe, doc: FileText, sheet: FileSpreadsheet, slides: Presentation, pdf: FileType, folder: Folder, form: SquarePen, video: Film, brand_kit: Palette, other: Link2,
 };
 
 const field = "h-9 w-full rounded-lg border border-gray-300 bg-white px-2.5 text-sm outline-none focus:border-[#009f67]";

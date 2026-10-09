@@ -129,6 +129,13 @@ const en = {
   brands: {
     brand: "Brand", websites: "Websites", landing: "Landing pages", social: "Social media", contact: "Contact",
     other: "Other links", nothingYet: "Nothing added yet.",
+    autoHint: "This page fills itself: tag a document, tool, playbook or news post with {brand} on any department page and it shows up here.",
+    atAGlance: "At a glance", kit: "Brand kit", colors: "Brand color", copy: "Copy", copied: "Copied {value}",
+    kitEmpty: "No brand kit files yet — Marketing can add logos, fonts and guidelines as \"Brand kit\" documents on their department page.",
+    materials: "Sales & marketing materials", materialsEmpty: "No documents tagged with this brand yet.",
+    acrossDepartments: "Across departments", acrossEmpty: "No tools or playbooks tagged with this brand yet.",
+    latestNews: "Latest news", team: "Brand team", teamEmpty: "No one lists this brand in their profile yet.",
+    channels: "Channels & contact", from: "From {dept}", groupWide: "Group-wide",
   },
   news: {
     title: "News", subtitle: "Company and department announcements", newPost: "New post", empty: "No announcements yet.",
@@ -174,7 +181,7 @@ const en = {
   resources: {
     title: "Resources", subtitle: "The official documents and links for every department.", add: "Add a link",
     formTitle: "Title", url: "URL", description: "Description", kind: "Type", allTypes: "All types",
-    kinds: { web_app: "Web app", doc: "Doc", sheet: "Sheet", slides: "Slides", pdf: "PDF", folder: "Folder", form: "Form", video: "Video", other: "Other" },
+    kinds: { web_app: "Web app", doc: "Doc", sheet: "Sheet", slides: "Slides", pdf: "PDF", folder: "Folder", form: "Form", video: "Video", brand_kit: "Brand kit (logos, fonts, guidelines)", other: "Other" },
     language: "Language", company: "Company", department: "Department", allCompanies: "Group-wide", allDepartments: "All departments",
     visibility: "Visible to", everyone: "Everyone", departmentOnly: "This department only", reviewed: "Reviewed {date}",
     markReviewed: "Mark as reviewed", empty: "No documents or links yet.", owner: "Owner: {name}",
@@ -339,6 +346,13 @@ const es: Dict = {
   brands: {
     brand: "Marca", websites: "Sitios web", landing: "Landing pages", social: "Redes sociales", contact: "Contacto",
     other: "Otros enlaces", nothingYet: "Aún no hay nada.",
+    autoHint: "Esta página se llena sola: etiqueta un documento, herramienta, playbook o noticia con {brand} en cualquier departamento y aparecerá aquí.",
+    atAGlance: "De un vistazo", kit: "Kit de marca", colors: "Color de la marca", copy: "Copiar", copied: "Copiado {value}",
+    kitEmpty: "Aún no hay archivos del kit de marca — Marketing puede agregar logos, fuentes y guías como documentos \"Kit de marca\" en su departamento.",
+    materials: "Materiales de ventas y marketing", materialsEmpty: "Aún no hay documentos con esta marca.",
+    acrossDepartments: "En los departamentos", acrossEmpty: "Aún no hay herramientas ni playbooks con esta marca.",
+    latestNews: "Últimas noticias", team: "Equipo de la marca", teamEmpty: "Nadie indica esta marca en su perfil todavía.",
+    channels: "Canales y contacto", from: "De {dept}", groupWide: "Todo el grupo",
   },
   news: {
     title: "Noticias", subtitle: "Anuncios de la empresa y de los departamentos", newPost: "Nueva publicación", empty: "Aún no hay anuncios.",
@@ -384,7 +398,7 @@ const es: Dict = {
   resources: {
     title: "Recursos", subtitle: "Los documentos y enlaces oficiales de cada departamento.", add: "Agregar un enlace",
     formTitle: "Título", url: "URL", description: "Descripción", kind: "Tipo", allTypes: "Todos los tipos",
-    kinds: { web_app: "Aplicación web", doc: "Documento", sheet: "Hoja de cálculo", slides: "Presentación", pdf: "PDF", folder: "Carpeta", form: "Formulario", video: "Video", other: "Otro" },
+    kinds: { web_app: "Aplicación web", doc: "Documento", sheet: "Hoja de cálculo", slides: "Presentación", pdf: "PDF", folder: "Carpeta", form: "Formulario", video: "Video", brand_kit: "Kit de marca (logos, fuentes, guías)", other: "Otro" },
     language: "Idioma", company: "Empresa", department: "Departamento", allCompanies: "Todo el grupo", allDepartments: "Todos los departamentos",
     visibility: "Visible para", everyone: "Todos", departmentOnly: "Solo este departamento", reviewed: "Revisado el {date}",
     markReviewed: "Marcar como revisado", empty: "Aún no hay documentos ni enlaces.", owner: "Responsable: {name}",
@@ -547,6 +561,13 @@ const pt: Dict = {
   brands: {
     brand: "Marca", websites: "Sites", landing: "Landing pages", social: "Redes sociais", contact: "Contato",
     other: "Outros links", nothingYet: "Nada adicionado ainda.",
+    autoHint: "Esta página se preenche sozinha: marque um documento, ferramenta, playbook ou notícia com {brand} em qualquer departamento e ele aparece aqui.",
+    atAGlance: "Visão geral", kit: "Kit da marca", colors: "Cor da marca", copy: "Copiar", copied: "Copiado {value}",
+    kitEmpty: "Ainda não há arquivos do kit da marca — o Marketing pode adicionar logos, fontes e guias como documentos \"Kit da marca\" na página do departamento.",
+    materials: "Materiais de vendas e marketing", materialsEmpty: "Ainda não há documentos com esta marca.",
+    acrossDepartments: "Nos departamentos", acrossEmpty: "Ainda não há ferramentas ou playbooks com esta marca.",
+    latestNews: "Últimas notícias", team: "Time da marca", teamEmpty: "Ninguém indicou esta marca no perfil ainda.",
+    channels: "Canais e contato", from: "De {dept}", groupWide: "Todo o grupo",
   },
   news: {
     title: "Notícias", subtitle: "Comunicados da empresa e dos departamentos", newPost: "Novo comunicado", empty: "Ainda não há comunicados.",
@@ -592,7 +613,7 @@ const pt: Dict = {
   resources: {
     title: "Recursos", subtitle: "Os documentos e links oficiais de cada departamento.", add: "Adicionar um link",
     formTitle: "Título", url: "URL", description: "Descrição", kind: "Tipo", allTypes: "Todos os tipos",
-    kinds: { web_app: "App web", doc: "Documento", sheet: "Planilha", slides: "Apresentação", pdf: "PDF", folder: "Pasta", form: "Formulário", video: "Vídeo", other: "Outro" },
+    kinds: { web_app: "App web", doc: "Documento", sheet: "Planilha", slides: "Apresentação", pdf: "PDF", folder: "Pasta", form: "Formulário", video: "Vídeo", brand_kit: "Kit da marca (logos, fontes, guias)", other: "Outro" },
     language: "Idioma", company: "Empresa", department: "Departamento", allCompanies: "Todo o grupo", allDepartments: "Todos os departamentos",
     visibility: "Visível para", everyone: "Todos", departmentOnly: "Só este departamento", reviewed: "Revisado em {date}",
     markReviewed: "Marcar como revisado", empty: "Ainda não há documentos nem links.", owner: "Responsável: {name}",
