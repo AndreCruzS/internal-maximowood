@@ -19,9 +19,15 @@ export const BRAND_KITS: Record<CompanyId, BrandKit> = {
   gmx: {
     logo: "/brand/gmx-logo-color.png",
     logoBg: "#ffffff",
-    palette: [{ name: "GMX Green", hex: "#009f67" }],
-    fonts: [],
-    files: [],
+    palette: [
+      { name: "Forest Green", hex: "#009f67", note: "Pantone 6164 C · CMYK 90 0 75 0" },
+      { name: "Black", hex: "#000000", note: "Pantone Black 6 C" },
+    ],
+    fonts: [
+      { name: "Lato", use: "Brand (Black, Medium) and body text" },
+      { name: "Eurostyle Extended", use: "Titles" },
+    ],
+    files: [{ title: "GMX Group Brand Guide", path: "gmx/gmx-group-brand-guide.pdf", kind: "guide", size: "40 MB" }],
   },
   maximo: {
     logo: "/logos/logo-maximo-tagline-black.png",
