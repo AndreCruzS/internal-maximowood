@@ -73,7 +73,7 @@ const en = {
     language: "Written in", save: "Save playbook", saved: "Playbook saved", deleted: "Playbook deleted", deleteConfirm: "Delete this playbook?",
     readIt: "I've read and understood this", acked: "Read ✓ {date}", ackCount_one: "{n} person confirmed", ackCount_other: "{n} people confirmed",
     openLink: "Open document", back: "← {dept}", notFound: "This playbook no longer exists.", onlyTeam: "Only the {dept} team can edit its playbooks.",
-    titleRequired: "Give the playbook a title.", categoryPlaceholder: "e.g. Onboarding, Campaigns, Returns",
+    titleRequired: "Give the playbook a title.", categoryPlaceholder: "e.g. Onboarding, Campaigns, Returns", addImage: "Add image", imageHint: "PNG, JPG, WebP or GIF up to 5 MB — you can also paste a screenshot into the step.", uploading: "Uploading…", imageTooBig: "Images must be 5 MB or smaller.", removeImage: "Remove image", imageAlt: "Image for step {n}",
   },
   calendar: {
     today: "Today", previous: "Previous month", next: "Next month", company: "Company", us: "🇺🇸 US holiday",
@@ -283,7 +283,7 @@ const es: Dict = {
     language: "Escrito en", save: "Guardar playbook", saved: "Playbook guardado", deleted: "Playbook eliminado", deleteConfirm: "¿Eliminar este playbook?",
     readIt: "Lo leí y lo entendí", acked: "Leído ✓ {date}", ackCount_one: "{n} persona confirmó", ackCount_other: "{n} personas confirmaron",
     openLink: "Abrir documento", back: "← {dept}", notFound: "Este playbook ya no existe.", onlyTeam: "Solo el equipo de {dept} puede editar sus playbooks.",
-    titleRequired: "Ponle un título al playbook.", categoryPlaceholder: "p. ej. Onboarding, Campañas, Devoluciones",
+    titleRequired: "Ponle un título al playbook.", categoryPlaceholder: "p. ej. Onboarding, Campañas, Devoluciones", addImage: "Agregar imagen", imageHint: "PNG, JPG, WebP o GIF de hasta 5 MB — también puedes pegar una captura en el paso.", uploading: "Subiendo…", imageTooBig: "Las imágenes deben pesar 5 MB o menos.", removeImage: "Quitar imagen", imageAlt: "Imagen del paso {n}",
   },
   calendar: {
     today: "Hoy", previous: "Mes anterior", next: "Mes siguiente", company: "Empresa", us: "🇺🇸 Feriado EE. UU.",
@@ -491,7 +491,7 @@ const pt: Dict = {
     language: "Escrito em", save: "Salvar playbook", saved: "Playbook salvo", deleted: "Playbook excluído", deleteConfirm: "Excluir este playbook?",
     readIt: "Li e entendi", acked: "Lido ✓ {date}", ackCount_one: "{n} pessoa confirmou", ackCount_other: "{n} pessoas confirmaram",
     openLink: "Abrir documento", back: "← {dept}", notFound: "Este playbook não existe mais.", onlyTeam: "Só o time de {dept} pode editar os playbooks.",
-    titleRequired: "Dê um título ao playbook.", categoryPlaceholder: "ex.: Onboarding, Campanhas, Devoluções",
+    titleRequired: "Dê um título ao playbook.", categoryPlaceholder: "ex.: Onboarding, Campanhas, Devoluções", addImage: "Adicionar imagem", imageHint: "PNG, JPG, WebP ou GIF de até 5 MB — você também pode colar um print no passo.", uploading: "Enviando…", imageTooBig: "As imagens devem ter até 5 MB.", removeImage: "Remover imagem", imageAlt: "Imagem do passo {n}",
   },
   calendar: {
     today: "Hoje", previous: "Mês anterior", next: "Próximo mês", company: "Empresa", us: "🇺🇸 Feriado EUA",

@@ -1,7 +1,11 @@
 /** Department playbooks (SOPs, policies, rules, checklists, guides) — see migration 0010. */
 export const PLAYBOOK_KINDS = ["sop", "policy", "rule", "checklist", "guide"] as const;
 export type PlaybookKind = (typeof PLAYBOOK_KINDS)[number];
-export type PlaybookStep = { title: string; body: string };
+/** `images` are storage paths in the private "playbooks" bucket (see migration 0011). */
+export type PlaybookStep = { title: string; body: string; images?: string[] };
+
+export const PLAYBOOK_BUCKET = "playbooks";
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export type Playbook = {
   id: string;

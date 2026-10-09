@@ -14,6 +14,7 @@ import { plural } from "@/lib/i18n/dictionaries";
 import { fmt } from "@/lib/i18n/locale";
 import type { Playbook } from "@/lib/playbooks";
 import { KIND_ICON } from "@/components/playbooks/PlaybookList";
+import { useSignedUrls } from "@/components/playbooks/useSignedUrls";
 
 /** One playbook: intro text, numbered steps, linked document, and "I've read it" when required. */
 export default function PlaybookDetail({ playbook: p, ownerName, ackCount, myAck, canEdit }: {
@@ -27,6 +28,7 @@ export default function PlaybookDetail({ playbook: p, ownerName, ackCount, myAck
   const me = useMe();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const urls = useSignedUrls(p.steps.flatMap(s => s.images ?? []));
   const Icon = KIND_ICON[p.kind];
   const color = companyColor(p.company_id);
   const date = (iso: string) => new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString(tag, { month: "short", day: "numeric", year: "numeric" });
@@ -105,6 +107,20 @@ export default function PlaybookDetail({ playbook: p, ownerName, ackCount, myAck
                 <div className="min-w-0 pt-1">
                   <p className="font-bold text-gray-900">{s.title}</p>
                   {s.body && <p className="mt-1 whitespace-pre-line text-sm leading-6 text-gray-700">{s.body}</p>}
+                  {(s.images?.length ?? 0) > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      {s.images!.map(path =>
+                        urls[path] ? (
+                          <a key={path} href={urls[path]} target="_blank" rel="noopener noreferrer" className="block">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={urls[path]} alt={fmt(t.playbooks.imageAlt, { n: i + 1 })} className="max-h-80 w-auto max-w-full rounded-lg border border-gray-200" />
+                          </a>
+                        ) : (
+                          <span key={path} className="block h-40 w-60 animate-pulse rounded-lg bg-gray-100" />
+                        ),
+                      )}
+                    </div>
+                  )}
                 </div>
               </li>
             ))}

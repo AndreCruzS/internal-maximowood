@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Loader2, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
@@ -11,7 +11,8 @@ import { useMe } from "@/components/MeProvider";
 import { COMPANIES } from "@/lib/intranet";
 import { deptName } from "@/lib/i18n/text";
 import { fmt } from "@/lib/i18n/locale";
-import { PLAYBOOK_KINDS, type Playbook, type PlaybookKind, type PlaybookStep } from "@/lib/playbooks";
+import { MAX_IMAGE_BYTES, PLAYBOOK_BUCKET, PLAYBOOK_KINDS, type Playbook, type PlaybookKind, type PlaybookStep } from "@/lib/playbooks";
+import { useSignedUrls } from "@/components/playbooks/useSignedUrls";
 
 const field = "h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#009f67]";
 const area = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-[#009f67]";
@@ -45,7 +46,31 @@ export default function PlaybookEditor({ department, playbook, people, categorie
     language: playbook?.language ?? "",
   });
   const [steps, setSteps] = useState<PlaybookStep[]>(playbook?.steps?.length ? playbook.steps : [{ title: "", body: "" }]);
+  const [uploading, setUploading] = useState<number | null>(null);
+  const urls = useSignedUrls(steps.flatMap(s => s.images ?? []));
   const set = (patch: Partial<typeof d>) => setD(x => ({ ...x, ...patch }));
+
+  /** Upload images to "<department>/<random>.<ext>" and attach them to step i. */
+  const addImages = async (i: number, files: File[]) => {
+    const supabase = getSupabase();
+    const images = files.filter(f => f.type.startsWith("image/"));
+    if (!supabase || images.length === 0) return;
+    if (images.some(f => f.size > MAX_IMAGE_BYTES)) return toast.error(t.playbooks.imageTooBig);
+    setUploading(i);
+    const paths: string[] = [];
+    for (const f of images) {
+      const ext = (f.type.split("/")[1] ?? "png").replace("jpeg", "jpg");
+      const path = `${department}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from(PLAYBOOK_BUCKET).upload(path, f, { contentType: f.type });
+      if (error) {
+        toast.error(error.message);
+        break;
+      }
+      paths.push(path);
+    }
+    setUploading(null);
+    if (paths.length) setSteps(s => s.map((x, j) => (j === i ? { ...x, images: [...(x.images ?? []), ...paths] } : x)));
+  };
   const setStep = (i: number, patch: Partial<PlaybookStep>) => setSteps(s => s.map((x, j) => (j === i ? { ...x, ...patch } : x)));
   const move = (i: number, by: number) =>
     setSteps(s => {
@@ -70,7 +95,9 @@ export default function PlaybookEditor({ department, playbook, people, categorie
       category: d.category.trim(),
       company_id: d.company_id || null,
       body: d.body.trim(),
-      steps: steps.map(s => ({ title: s.title.trim(), body: s.body.trim() })).filter(s => s.title || s.body),
+      steps: steps
+        .map(s => ({ title: s.title.trim(), body: s.body.trim(), ...(s.images?.length ? { images: s.images } : {}) }))
+        .filter(s => s.title || s.body || s.images?.length),
       link_url: link || null,
       owner_person_id: d.owner_person_id || null,
       review_by: d.review_by || null,
@@ -147,13 +174,66 @@ export default function PlaybookEditor({ department, playbook, people, categorie
       </section>
 
       <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-black uppercase tracking-widest text-gray-400">{t.playbooks.stepsLabel}</p>
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-gray-400">{t.playbooks.stepsLabel}</p>
+          <p className="mt-1 text-[11px] text-gray-400">{t.playbooks.imageHint}</p>
+        </div>
         {steps.map((s, i) => (
           <div key={i} className="flex gap-3 rounded-xl border border-gray-200 p-3">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#009f67] text-sm font-black text-white">{i + 1}</span>
             <div className="min-w-0 flex-1 space-y-2">
               <input value={s.title} onChange={e => setStep(i, { title: e.target.value })} placeholder={t.playbooks.stepTitle} aria-label={fmt(t.playbooks.step, { n: i + 1 })} className={field} />
-              <textarea rows={2} value={s.body} onChange={e => setStep(i, { body: e.target.value })} placeholder={t.playbooks.stepBody} className={area} />
+              <textarea
+                rows={2}
+                value={s.body}
+                onChange={e => setStep(i, { body: e.target.value })}
+                onPaste={e => {
+                  const files = [...e.clipboardData.files];
+                  if (files.some(f => f.type.startsWith("image/"))) {
+                    e.preventDefault();
+                    addImages(i, files);
+                  }
+                }}
+                placeholder={t.playbooks.stepBody}
+                className={area}
+              />
+              {(s.images?.length ?? 0) > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {s.images!.map(path => (
+                    <span key={path} className="relative">
+                      {urls[path] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={urls[path]} alt={fmt(t.playbooks.imageAlt, { n: i + 1 })} className="h-24 w-auto rounded-lg border border-gray-200 object-cover" />
+                      ) : (
+                        <span className="flex h-24 w-32 items-center justify-center rounded-lg border border-gray-200 bg-gray-50"><Loader2 className="h-4 w-4 animate-spin text-gray-400" /></span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setStep(i, { images: s.images!.filter(x => x !== path) })}
+                        aria-label={t.playbooks.removeImage}
+                        className="absolute -right-2 -top-2 rounded-full bg-white p-0.5 text-gray-500 shadow ring-1 ring-gray-200 hover:text-red-600"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <label className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold text-[#00704a] hover:underline">
+                {uploading === i ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
+                {uploading === i ? t.playbooks.uploading : t.playbooks.addImage}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  multiple
+                  className="sr-only"
+                  disabled={uploading !== null}
+                  onChange={e => {
+                    addImages(i, [...(e.target.files ?? [])]);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
             </div>
             <div className="flex shrink-0 flex-col gap-1">
               <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label={t.playbooks.moveUp} className="rounded p-1.5 text-gray-400 hover:bg-gray-100 disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
@@ -207,7 +287,7 @@ export default function PlaybookEditor({ department, playbook, people, categorie
         <Link href={playbook ? `/playbooks/${playbook.id}` : `/departments/${department}#playbooks`} className="flex h-10 items-center rounded-lg border border-gray-300 px-4 text-sm font-bold text-gray-700">
           {t.common.cancel}
         </Link>
-        <button type="button" onClick={save} disabled={busy} className="flex h-10 items-center gap-2 rounded-lg bg-[#009f67] px-5 text-sm font-bold text-white disabled:opacity-50">
+        <button type="button" onClick={save} disabled={busy || uploading !== null} className="flex h-10 items-center gap-2 rounded-lg bg-[#009f67] px-5 text-sm font-bold text-white disabled:opacity-50">
           {busy && <Loader2 className="h-4 w-4 animate-spin" />} {t.playbooks.save}
         </button>
       </div>
