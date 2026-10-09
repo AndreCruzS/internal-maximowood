@@ -135,7 +135,7 @@ const en = {
     materials: "Sales & marketing materials", materialsEmpty: "No documents tagged with this brand yet.",
     acrossDepartments: "Across departments", acrossEmpty: "No tools or playbooks tagged with this brand yet.",
     latestNews: "Latest news", team: "Brand team", teamEmpty: "No one lists this brand in their profile yet.",
-    channels: "Channels & contact", from: "From {dept}", groupWide: "Group-wide",
+    palette: "Color palette", fonts: "Fonts", guide: "Brand guide (PDF)", logoFile: "Logo file", channels: "Channels & contact", from: "From {dept}", groupWide: "Group-wide",
   },
   news: {
     title: "News", subtitle: "Company and department announcements", newPost: "New post", empty: "No announcements yet.",
@@ -352,7 +352,7 @@ const es: Dict = {
     materials: "Materiales de ventas y marketing", materialsEmpty: "Aún no hay documentos con esta marca.",
     acrossDepartments: "En los departamentos", acrossEmpty: "Aún no hay herramientas ni playbooks con esta marca.",
     latestNews: "Últimas noticias", team: "Equipo de la marca", teamEmpty: "Nadie indica esta marca en su perfil todavía.",
-    channels: "Canales y contacto", from: "De {dept}", groupWide: "Todo el grupo",
+    palette: "Paleta de colores", fonts: "Tipografías", guide: "Guía de marca (PDF)", logoFile: "Archivo del logo", channels: "Canales y contacto", from: "De {dept}", groupWide: "Todo el grupo",
   },
   news: {
     title: "Noticias", subtitle: "Anuncios de la empresa y de los departamentos", newPost: "Nueva publicación", empty: "Aún no hay anuncios.",
@@ -567,7 +567,7 @@ const pt: Dict = {
     materials: "Materiais de vendas e marketing", materialsEmpty: "Ainda não há documentos com esta marca.",
     acrossDepartments: "Nos departamentos", acrossEmpty: "Ainda não há ferramentas ou playbooks com esta marca.",
     latestNews: "Últimas notícias", team: "Time da marca", teamEmpty: "Ninguém indicou esta marca no perfil ainda.",
-    channels: "Canais e contato", from: "De {dept}", groupWide: "Todo o grupo",
+    palette: "Paleta de cores", fonts: "Fontes", guide: "Guia da marca (PDF)", logoFile: "Arquivo do logo", channels: "Canais e contato", from: "De {dept}", groupWide: "Todo o grupo",
   },
   news: {
     title: "Notícias", subtitle: "Comunicados da empresa e dos departamentos", newPost: "Novo comunicado", empty: "Ainda não há comunicados.",

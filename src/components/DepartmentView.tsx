@@ -117,9 +117,9 @@ export default function DepartmentView({ id, links, owners, faqs, playbooks, peo
                   onClick={() => setBrand(on ? "all" : c.id)}
                   aria-pressed={on}
                   className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold"
-                  style={on ? { background: c.color, borderColor: c.color, color: "#fff" } : { borderColor: `${c.color}66`, color: c.color, background: "#fff" }}
+                  style={on ? { background: c.color, borderColor: c.color, color: c.onColor } : { borderColor: `${c.color}99`, color: c.ink, background: "#fff" }}
                 >
-                  <span className="h-2 w-2 rounded-full" style={{ background: on ? "#fff" : c.color }} /> {c.name}
+                  <span className="h-2 w-2 rounded-full" style={{ background: on ? c.onColor : c.color }} /> {c.name}
                 </button>
               );
             })}

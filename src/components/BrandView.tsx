@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { toast } from "sonner";
-import { AppWindow, ArrowUpRight, AtSign, Clock, Copy, Globe, Link2, MapPin, Megaphone, Newspaper, Palette, Phone, Presentation, Rocket, Users } from "lucide-react";
+import { AppWindow, ArrowUpRight, AtSign, Clock, Copy, Download, Globe, Link2, MapPin, Megaphone, Newspaper, Palette, Phone, Presentation, Rocket, Users } from "lucide-react";
 import { useI18n } from "@/components/I18nProvider";
 import { fmt } from "@/lib/i18n/locale";
 import { deptName } from "@/lib/i18n/text";
@@ -11,6 +11,7 @@ import { KIND_ICON as LINK_ICON, type LinkRow } from "@/components/resources/Res
 import { KIND_ICON as PLAYBOOK_ICON } from "@/components/playbooks/PlaybookList";
 import type { Playbook } from "@/lib/playbooks";
 import type { NewsItem } from "@/server/intranet";
+import { BRAND_KITS } from "@/lib/brandKit";
 
 export type BrandLink = {
   id: string;
@@ -94,7 +95,7 @@ function Card({ title, icon, empty, children }: { title: string; icon: React.Rea
  * channels & contact are kept by hand.
  */
 export default function BrandView({ brand, page, links, docs, tools, playbooks, news, people, error }: {
-  brand: { id: CompanyId; name: string; color: string };
+  brand: { id: CompanyId; name: string; color: string; ink: string; onColor: string };
   page: { tagline: string; about: string } | null;
   links: BrandLink[];
   docs: LinkRow[];
@@ -106,6 +107,8 @@ export default function BrandView({ brand, page, links, docs, tools, playbooks, 
 }) {
   const { t, tag } = useI18n();
   const color = brand.color;
+  const ink = brand.ink;
+  const official = BRAND_KITS[brand.id];
   const of = (...kinds: BrandLink["kind"][]) => links.filter(l => kinds.includes(l.kind));
   const CONTACT_ORDER = ["email", "phone", "address", "hours"];
   const contact = of("phone", "email", "address", "hours").sort(
@@ -145,8 +148,8 @@ export default function BrandView({ brand, page, links, docs, tools, playbooks, 
     return (
       <li key={l.id}>
         <a href={l.url} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 py-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: `${color}1a` }}>
-            <Icon className="h-4 w-4" style={{ color }} />
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: `${color}26` }}>
+            <Icon className="h-4 w-4" style={{ color: ink }} />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-bold text-gray-900 group-hover:text-[#00704a]">{l.title}</span>
@@ -173,12 +176,20 @@ export default function BrandView({ brand, page, links, docs, tools, playbooks, 
   return (
     <div className="space-y-8">
       <header className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm" style={{ borderTop: `6px solid ${color}` }}>
-        <div className="p-6">
-          <p className="text-xs font-black uppercase tracking-widest" style={{ color }}>{t.brands.brand}</p>
+        <div className="flex flex-wrap items-start gap-6 p-6">
+          {official.logo && (
+            <span className="flex h-24 w-48 shrink-0 items-center justify-center rounded-xl border border-gray-100 p-3" style={{ background: official.logoBg }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={official.logo} alt={`${brand.name} logo`} className="max-h-full max-w-full object-contain" />
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+          <p className="text-xs font-black uppercase tracking-widest" style={{ color: ink }}>{t.brands.brand}</p>
           <h1 className="text-3xl font-black text-gray-900">{brand.name}</h1>
           {page?.tagline && <p className="mt-1 text-lg text-gray-600">{page.tagline}</p>}
           {page?.about && <p className="mt-3 max-w-3xl whitespace-pre-line text-sm leading-6 text-gray-700">{page.about}</p>}
           <p className="mt-4 text-xs text-gray-400">{fmt(t.brands.autoHint, { brand: brand.name })}</p>
+          </div>
         </div>
         <nav aria-label={t.department.jump} className="flex flex-wrap gap-x-5 gap-y-1 border-t border-gray-100 bg-gray-50 px-6 py-2.5 text-sm font-bold text-gray-500">
           {nav.map(([anchor, label]) => (
@@ -190,18 +201,56 @@ export default function BrandView({ brand, page, links, docs, tools, playbooks, 
 
       <Section id="kit" title={t.brands.kit} icon={<Palette className="h-5 w-5" />}>
         <div className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="mb-3 text-xs font-black uppercase tracking-widest text-gray-400">{t.brands.colors}</p>
-            <button type="button" onClick={() => copy(color)} className="group flex w-full items-center gap-3 text-left" aria-label={`${t.brands.copy} ${color}`}>
-              <span className="h-14 w-14 shrink-0 rounded-xl shadow-inner" style={{ background: color }} />
-              <span>
-                <span className="block font-mono text-sm font-bold text-gray-900">{color.toUpperCase()}</span>
-                <span className="flex items-center gap-1 text-xs text-gray-400 group-hover:text-[#00704a]"><Copy className="h-3 w-3" /> {t.brands.copy}</span>
-              </span>
-            </button>
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
+            <p className="mb-3 text-xs font-black uppercase tracking-widest text-gray-400">{t.brands.palette}</p>
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {official.palette.map(c => (
+                <li key={c.hex + c.name}>
+                  <button type="button" onClick={() => copy(c.hex.toUpperCase())} className="group flex w-full items-center gap-3 text-left" aria-label={`${t.brands.copy} ${c.name} ${c.hex}`}>
+                    <span className="h-12 w-12 shrink-0 rounded-lg border border-gray-200 shadow-inner" style={{ background: c.hex }} />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-bold text-gray-900">{c.name}</span>
+                      <span className="flex items-center gap-1 font-mono text-xs text-gray-500 group-hover:text-[#00704a]"><Copy className="h-3 w-3" /> {c.hex.toUpperCase()}</span>
+                      {c.note && <span className="block truncate text-[11px] text-gray-400">{c.note}</span>}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {official.fonts.length > 0 && (
+              <>
+                <p className="mb-2 mt-5 text-xs font-black uppercase tracking-widest text-gray-400">{t.brands.fonts}</p>
+                <ul className="flex flex-wrap gap-2">
+                  {official.fonts.map(f => (
+                    <li key={f.name} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm">
+                      <span className="font-bold text-gray-900">{f.name}</span> <span className="text-gray-500">· {f.use}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white px-5 py-2 shadow-sm lg:col-span-2">
-            {kit.length ? <ul className="divide-y divide-gray-100">{kit.map(docRow)}</ul> : <p className="py-3 text-sm text-gray-500">{t.brands.kitEmpty}</p>}
+          <div className="rounded-xl border border-gray-200 bg-white px-5 py-2 shadow-sm">
+            {official.files.length + kit.length === 0 ? (
+              <p className="py-3 text-sm text-gray-500">{t.brands.kitEmpty}</p>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {official.files.map(f => (
+                  <li key={f.path}>
+                    <a href={`/brand-kit/${f.path}`} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 py-2.5">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: `${color}26` }}>
+                        <Download className="h-4 w-4" style={{ color: ink }} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-bold text-gray-900 group-hover:text-[#00704a]">{f.title}</span>
+                        <span className="block truncate text-xs text-gray-400">{f.kind === "guide" ? t.brands.guide : t.brands.logoFile} · {f.size}</span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+                {kit.map(docRow)}
+              </ul>
+            )}
           </div>
         </div>
       </Section>
@@ -228,7 +277,7 @@ export default function BrandView({ brand, page, links, docs, tools, playbooks, 
                     return (
                       <li key={x.href}>
                         <a href={x.href} {...(x.external ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="flex items-center gap-2.5 rounded-lg px-1.5 py-1.5 hover:bg-gray-50">
-                          <AppWindow className="h-4 w-4 shrink-0" style={{ color }} />
+                          <AppWindow className="h-4 w-4 shrink-0" style={{ color: ink }} />
                           <span className="min-w-0 truncate text-sm font-bold text-gray-900">{text.name}</span>
                           {x.external && <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-gray-300" />}
                         </a>
@@ -240,7 +289,7 @@ export default function BrandView({ brand, page, links, docs, tools, playbooks, 
                     return (
                       <li key={p.id}>
                         <Link href={`/playbooks/${p.id}`} className="flex items-center gap-2.5 rounded-lg px-1.5 py-1.5 hover:bg-gray-50">
-                          <Icon className="h-4 w-4 shrink-0" style={{ color }} />
+                          <Icon className="h-4 w-4 shrink-0" style={{ color: ink }} />
                           <span className="min-w-0 truncate text-sm font-bold text-gray-900">{p.title}</span>
                           <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-gray-500">{t.playbooks.kinds[p.kind]}</span>
                         </Link>
@@ -330,7 +379,7 @@ export default function BrandView({ brand, page, links, docs, tools, playbooks, 
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={p.photo_url} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
                           ) : (
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-black text-white" style={{ background: color }}>{initials(p.full_name)}</span>
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-black" style={{ background: color, color: brand.onColor }}>{initials(p.full_name)}</span>
                           )}
                           <span className="min-w-0">
                             <span className="block truncate text-sm font-bold text-gray-900">{p.full_name}</span>

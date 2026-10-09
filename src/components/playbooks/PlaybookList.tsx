@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { BookOpen, ClipboardCheck, FileText, ListChecks, Scale, Search, ShieldCheck, type LucideIcon } from "lucide-react";
-import { companyColor, companyName, type CompanyId } from "@/lib/intranet";
+import { companyColor, companyInk, companyName, type CompanyId } from "@/lib/intranet";
 import { useI18n } from "@/components/I18nProvider";
 import { useMounted } from "@/components/CalendarView";
 import { plural } from "@/lib/i18n/dictionaries";
@@ -62,6 +62,7 @@ export default function PlaybookList({ playbooks, peopleNames, canEdit, children
   const card = (p: Playbook) => {
     const Icon = KIND_ICON[p.kind];
     const color = companyColor(p.company_id);
+    const ink = companyInk(p.company_id);
     return (
       <li key={p.id}>
         <Link
@@ -70,12 +71,12 @@ export default function PlaybookList({ playbooks, peopleNames, canEdit, children
           style={{ borderLeft: `4px solid ${color}` }}
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: `${color}1a` }}>
-            <Icon className="h-4 w-4" style={{ color }} />
+            <Icon className="h-4 w-4" style={{ color: ink }} />
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
               <span className="rounded bg-gray-100 px-1.5 py-0.5 uppercase text-gray-600">{t.playbooks.kinds[p.kind]}</span>
-              {p.company_id && <span style={{ color }}>{companyName(p.company_id as CompanyId)}</span>}
+              {p.company_id && <span style={{ color: ink }}>{companyName(p.company_id as CompanyId)}</span>}
               {p.status === "draft" && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800">{t.playbooks.draft}</span>}
               {today && reviewOverdue(p.review_by, today) && <span className="rounded bg-red-50 px-1.5 py-0.5 text-red-700">{t.playbooks.reviewDue}</span>}
             </span>

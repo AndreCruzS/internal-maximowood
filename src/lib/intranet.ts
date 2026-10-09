@@ -33,14 +33,19 @@ export const BRAND = {
 
 export type CompanyId = "gmx" | "maximo" | "lumberplus" | "us4pro" | "builderexpress" | "globallbm";
 
-/** Companies (brands). `color` color-codes tools and playbooks on department pages. */
-export const COMPANIES: { id: CompanyId; name: string; color: string }[] = [
-  { id: "gmx", name: "GMX Group", color: "#009f67" },
-  { id: "maximo", name: "Maximo", color: "#b8901c" },
-  { id: "lumberplus", name: "Lumber Plus", color: "#2f6db5" },
-  { id: "us4pro", name: "US4", color: "#e8590c" },
-  { id: "builderexpress", name: "Builder Express", color: "#c92a2a" },
-  { id: "globallbm", name: "Global LBM", color: "#6741d9" },
+/**
+ * Companies (brands), with their official primary colors (brand guides; Builder
+ * Express and Global LBM sampled from their logos). `color` is for fills and
+ * stripes, `ink` is a shade that stays readable as text on white, and
+ * `onColor` is the text color to use on a `color` fill.
+ */
+export const COMPANIES: { id: CompanyId; name: string; color: string; ink: string; onColor: string }[] = [
+  { id: "gmx", name: "GMX Group", color: "#009f67", ink: "#00704a", onColor: "#ffffff" },
+  { id: "maximo", name: "Maximo", color: "#f6ca21", ink: "#8a6a00", onColor: "#000000" },
+  { id: "lumberplus", name: "Lumber Plus", color: "#f6b015", ink: "#8a5a00", onColor: "#000000" },
+  { id: "us4pro", name: "US4", color: "#2573f2", ink: "#1f5fd0", onColor: "#ffffff" },
+  { id: "builderexpress", name: "Builder Express", color: "#09adbe", ink: "#077f8c", onColor: "#ffffff" },
+  { id: "globallbm", name: "Global LBM", color: "#4bc660", ink: "#1c453a", onColor: "#ffffff" },
 ];
 
 export type DepartmentId = "commercial" | "marketing" | "operations" | "logistics" | "finance" | "hr" | "it";
@@ -97,6 +102,10 @@ export const departmentById = (id: string) => DEPARTMENTS.find(d => d.id === id)
 export const companyName = (id: CompanyId) => COMPANIES.find(c => c.id === id)?.name ?? id;
 /** Brand color; group-wide items (no company) use GMX green. */
 export const companyColor = (id: string | null | undefined) => COMPANIES.find(c => c.id === id)?.color ?? "#009f67";
+/** Brand shade that reads well as text or icons on white. */
+export const companyInk = (id: string | null | undefined) => COMPANIES.find(c => c.id === id)?.ink ?? "#00704a";
+/** Text color on a brand-color fill. */
+export const companyOnColor = (id: string | null | undefined) => COMPANIES.find(c => c.id === id)?.onColor ?? "#ffffff";
 
 export type Tool = {
   name: string;

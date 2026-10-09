@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
 import { useMe } from "@/components/MeProvider";
-import { companyColor, companyName, type CompanyId } from "@/lib/intranet";
+import { companyColor, companyInk, companyName, companyOnColor, type CompanyId } from "@/lib/intranet";
 import { deptName } from "@/lib/i18n/text";
 import { plural } from "@/lib/i18n/dictionaries";
 import { fmt } from "@/lib/i18n/locale";
@@ -31,6 +31,8 @@ export default function PlaybookDetail({ playbook: p, ownerName, ackCount, myAck
   const urls = useSignedUrls(p.steps.flatMap(s => s.images ?? []));
   const Icon = KIND_ICON[p.kind];
   const color = companyColor(p.company_id);
+  const ink = companyInk(p.company_id);
+  const onColor = companyOnColor(p.company_id);
   const date = (iso: string) => new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString(tag, { month: "short", day: "numeric", year: "numeric" });
 
   const ack = async () => {
@@ -63,10 +65,10 @@ export default function PlaybookDetail({ playbook: p, ownerName, ackCount, myAck
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-bold">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: `${color}1a` }}>
-              <Icon className="h-4 w-4" style={{ color }} />
+              <Icon className="h-4 w-4" style={{ color: ink }} />
             </span>
             <span className="rounded bg-gray-100 px-1.5 py-0.5 uppercase text-gray-600">{t.playbooks.kinds[p.kind]}</span>
-            {p.company_id && <span style={{ color }}>{companyName(p.company_id as CompanyId)}</span>}
+            {p.company_id && <span style={{ color: ink }}>{companyName(p.company_id as CompanyId)}</span>}
             {p.category && <span className="text-gray-400">· {p.category}</span>}
             {p.status === "draft" && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800">{t.playbooks.draft}</span>}
           </div>
@@ -103,7 +105,7 @@ export default function PlaybookDetail({ playbook: p, ownerName, ackCount, myAck
           <ol className="space-y-5">
             {p.steps.map((s, i) => (
               <li key={i} className="flex gap-4">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black text-white" style={{ background: color }}>{i + 1}</span>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black" style={{ background: color, color: onColor }}>{i + 1}</span>
                 <div className="min-w-0 pt-1">
                   <p className="font-bold text-gray-900">{s.title}</p>
                   {s.body && <p className="mt-1 whitespace-pre-line text-sm leading-6 text-gray-700">{s.body}</p>}

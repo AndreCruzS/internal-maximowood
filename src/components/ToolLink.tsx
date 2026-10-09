@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowUpRight, ChevronRight } from "lucide-react";
-import { companyColor, companyName, type Tool } from "@/lib/intranet";
+import { companyColor, companyInk, companyName, type Tool } from "@/lib/intranet";
 import { useI18n } from "@/components/I18nProvider";
 import { toolText } from "@/lib/i18n/text";
 import StarButton from "@/components/StarButton";
@@ -18,6 +18,7 @@ export default function ToolLink({ tool, variant = "row" }: { tool: Tool; varian
 
   if (variant === "card") {
     const color = companyColor(tool.company);
+    const ink = companyInk(tool.company);
     return (
       <Link
         href={tool.href}
@@ -27,7 +28,7 @@ export default function ToolLink({ tool, variant = "row" }: { tool: Tool; varian
       >
         <div className="flex items-start justify-between">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ background: `${color}1a` }}>
-            <Icon className="h-5 w-5" style={{ color }} />
+            <Icon className="h-5 w-5" style={{ color: ink }} />
           </span>
           <span className="flex items-center gap-1">
             {star}
@@ -36,7 +37,7 @@ export default function ToolLink({ tool, variant = "row" }: { tool: Tool; varian
         </div>
         <p className="mt-4 font-bold text-gray-900">{text.name}</p>
         <p className="text-sm text-gray-500">{text.description}</p>
-        <p className="mt-3 text-[11px] font-bold uppercase tracking-wider" style={{ color }}>{companyName(tool.company)}</p>
+        <p className="mt-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: ink }}>{companyName(tool.company)}</p>
       </Link>
     );
   }
