@@ -22,12 +22,14 @@ export type Playbook = {
   review_by: string | null;
   status: "draft" | "published";
   ack_required: boolean;
+  /** "department": only people with access to this department see it (migration 0014). */
+  visibility?: "everyone" | "department";
   language: string | null;
   updated_at: string;
 };
 
 export const PLAYBOOK_COLUMNS =
-  "id, department_id, company_id, kind, title, summary, category, body, steps, link_url, owner_person_id, review_by, status, ack_required, language, updated_at";
+  "id, department_id, company_id, kind, title, summary, category, body, steps, link_url, owner_person_id, review_by, status, ack_required, language, updated_at, visibility";
 
 /** Review date passed (YYYY-MM-DD compared with today's local date). */
 export const reviewOverdue = (reviewBy: string | null, today: string) => !!reviewBy && reviewBy < today;

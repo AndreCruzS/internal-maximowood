@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BellRing, ListChecks } from "lucide-react";
+import { BellRing, KeyRound, ListChecks } from "lucide-react";
 import { useI18n } from "@/components/I18nProvider";
 import { plural } from "@/lib/i18n/dictionaries";
 import { fmt } from "@/lib/i18n/locale";
@@ -13,6 +13,19 @@ export function MustReadBanner({ count }: { count: number }) {
     <Link href="/news?filter=must-read" className="flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 hover:bg-amber-100">
       <BellRing className="h-5 w-5 shrink-0" />
       <span className="flex-1">{plural(t.home, "mustRead", count)}</span>
+      <span className="underline">{t.home.open}</span>
+    </Link>
+  );
+}
+
+/** For the IT team: new hires whose accounts still need setting up. */
+export function ItSetupBanner({ count }: { count: number }) {
+  const { t } = useI18n();
+  if (!count) return null;
+  return (
+    <Link href="/onboarding?tab=it" className="flex items-center gap-3 rounded-xl border border-sky-300 bg-sky-50 px-4 py-3 text-sm font-bold text-sky-900 hover:bg-sky-100">
+      <KeyRound className="h-5 w-5 shrink-0" />
+      <span className="flex-1">{plural(t.hires, "itBanner", count)}</span>
       <span className="underline">{t.home.open}</span>
     </Link>
   );

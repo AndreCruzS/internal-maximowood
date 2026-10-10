@@ -43,6 +43,7 @@ export default function PlaybookEditor({ department, playbook, people, categorie
     review_by: playbook?.review_by ?? "",
     status: playbook?.status ?? "published",
     ack_required: playbook?.ack_required ?? false,
+    department_only: playbook?.visibility === "department",
     language: playbook?.language ?? "",
   });
   const [steps, setSteps] = useState<PlaybookStep[]>(playbook?.steps?.length ? playbook.steps : [{ title: "", body: "" }]);
@@ -103,6 +104,7 @@ export default function PlaybookEditor({ department, playbook, people, categorie
       review_by: d.review_by || null,
       status: d.status,
       ack_required: d.ack_required,
+      ...(d.department_only || playbook?.visibility ? { visibility: d.department_only ? "department" : "everyone" } : {}),
       language: d.language || null,
       updated_by: me.userId,
     };
@@ -269,6 +271,10 @@ export default function PlaybookEditor({ department, playbook, people, categorie
         <label className="flex items-center gap-2 text-sm font-bold text-gray-700 sm:col-span-2">
           <input type="checkbox" checked={d.ack_required} onChange={e => set({ ack_required: e.target.checked })} className="h-4 w-4 accent-[#009f67]" />
           {t.playbooks.ackRequired}
+        </label>
+        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 sm:col-span-2">
+          <input type="checkbox" checked={d.department_only} onChange={e => set({ department_only: e.target.checked })} className="h-4 w-4 accent-[#009f67]" />
+          {fmt(t.playbooks.departmentOnly, { dept: deptName(t, department) })}
         </label>
         <div className="sm:col-span-2">
           <span className={label}>{t.playbooks.status}</span>

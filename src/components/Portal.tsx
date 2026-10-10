@@ -10,7 +10,7 @@ import { EventChip, eventDay, formatWhen, useMounted } from "@/components/Calend
 import { CelebrationsList, NewJoinersPanel } from "@/components/Celebrations";
 import WhosOut from "@/components/home/WhosOut";
 import Kudos from "@/components/home/Kudos";
-import { MustReadBanner, OnboardingCard } from "@/components/home/HomeBanners";
+import { ItSetupBanner, MustReadBanner, OnboardingCard } from "@/components/home/HomeBanners";
 import { useI18n } from "@/components/I18nProvider";
 import { useMe } from "@/components/MeProvider";
 import { plural } from "@/lib/i18n/dictionaries";
@@ -135,6 +135,7 @@ export default function Portal({ name, events, home }: { name: string; isAdmin: 
       </div>
 
       <MustReadBanner count={home.unreadMustRead} />
+      <ItSetupBanner count={home.itQueue} />
       {/* Portal onboarding is for new employees only (company onboarding comes later). */}
       {home.isNewEmployee && <OnboardingCard total={home.onboarding.items.length} done={doneItems} />}
 
