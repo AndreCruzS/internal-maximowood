@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Check, HandHeart, Leaf, Lightbulb, Rocket, Send, Users, X, Zap, type LucideIcon } from "lucide-react";
+import { Check, HandHeart, Leaf, Lightbulb, Rocket, Send, Users, Zap, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
@@ -65,6 +65,7 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
     router.refresh();
   };
 
+  const canSend = !!to && (!!message.trim() || gif);
   const thisWeek = mounted ? kudos.filter(k => new Date(k.created_at) >= weekStart()) : [];
   const field = "h-10 rounded-lg border border-gray-300 bg-white px-2.5 text-sm outline-none focus:border-[#009f67]";
 
@@ -99,22 +100,26 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
                 </button>
                 {open && (
                   <div className="space-y-2 border-t border-gray-100 px-3 py-3">
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <select value={to} onChange={e => setTo(e.target.value)} className={`${field} sm:w-48`} aria-label={t.kudos.to}>
+                    <select value={to} onChange={e => setTo(e.target.value)} className={`${field} w-full`} aria-label={t.kudos.to}>
                       <option value="">{t.kudos.chooseColleague}</option>
                       {people.filter(p => p.id !== me.personId).map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
                     </select>
-                    <input value={message} onChange={e => setMessage(e.target.value)} maxLength={500} placeholder={t.kudos.messagePlaceholder} className={`${field} min-w-0 flex-1`} aria-label={t.kudos.message} />
-                    <button type="button" disabled={busy || !to || !message.trim()} onClick={send} className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-[#009f67] px-3 text-sm font-bold text-white disabled:opacity-50">
-                      <Send className="h-4 w-4" /> {t.kudos.send}
-                    </button>
-                    <button type="button" onClick={() => setValue(null)} aria-label={t.common.close} className="hidden rounded p-2 text-gray-400 hover:bg-gray-100 sm:block"><X className="h-4 w-4" /></button>
-                  </div>
-                  <button type="button" role="checkbox" aria-checked={gif} onClick={() => setGif(g => !g)}
-                    className={`flex items-center gap-2.5 rounded-lg border p-1.5 pr-3 text-sm font-bold transition-colors ${gif ? "border-[#009f67] bg-[#f2fbf7] text-[#00704a]" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
-                    <Image src="/kudos/nice.gif" alt="" width={40} height={40} unoptimized className="rounded-md" />
-                    {gif ? <><Check className="h-4 w-4" /> {t.kudos.gifAdded}</> : t.kudos.addGif}
-                  </button>
+                    <input value={message} onChange={e => setMessage(e.target.value)} maxLength={500} placeholder={gif ? t.kudos.messageOptional : t.kudos.messagePlaceholder}
+                      onKeyDown={e => { if (e.key === "Enter" && canSend) send(); }}
+                      className={`${field} w-full`} aria-label={t.kudos.message} />
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <button type="button" role="checkbox" aria-checked={gif} onClick={() => setGif(g => !g)}
+                        className={`flex items-center gap-2.5 rounded-lg border p-1.5 pr-3 text-sm font-bold transition-colors ${gif ? "border-[#009f67] bg-[#f2fbf7] text-[#00704a]" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                        <Image src="/kudos/nice.gif" alt="" width={36} height={36} unoptimized className="rounded-md" />
+                        {gif ? <><Check className="h-4 w-4" /> {t.kudos.gifAdded}</> : t.kudos.addGif}
+                      </button>
+                      <span className="flex items-center gap-1">
+                        <button type="button" onClick={() => setValue(null)} className="h-10 rounded-lg px-3 text-sm font-bold text-gray-500 hover:bg-gray-100">{t.common.cancel}</button>
+                        <button type="button" disabled={busy || !canSend} onClick={send} className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-[#009f67] px-4 text-sm font-bold text-white disabled:opacity-50">
+                          <Send className="h-4 w-4" /> {t.kudos.send}
+                        </button>
+                      </span>
+                    </div>
                   </div>
                 )}
               </li>
@@ -147,7 +152,7 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
                       <span className="font-bold">{names.get(k.to_person_id) ?? "—"}</span>
                       {v && <span className="ml-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ background: `${v.color}1a`, color: v.color }}>{t.kudos.values[v.id].name}</span>}
                     </p>
-                    <p className="text-gray-600">{k.message}</p>
+                    {k.message && <p className="text-gray-600">{k.message}</p>}
                     {k.gif && <Image src={`/kudos/${k.gif}.gif`} alt={t.kudos.gifAlt} width={120} height={120} unoptimized className="mt-2 rounded-xl" />}
                     <p className="mt-0.5 text-xs text-gray-400">
                       {t.kudos.from.replace("{name}", names.get(k.from_person_id) ?? "—")} · {new Date(k.created_at).toLocaleDateString(tag, { weekday: "short", month: "short", day: "numeric" })}

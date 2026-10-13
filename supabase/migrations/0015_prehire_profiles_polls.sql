@@ -48,6 +48,10 @@ create policy "delete own avatar" on storage.objects for delete to authenticated
 -- ── Kudos GIFs ───────────────────────────────────────────────────────────────
 -- Optional GIF sent with a kudo (a file in /public/kudos, e.g. 'nice').
 alter table public.kudos add column if not exists gif text check (gif is null or gif ~ '^[a-z0-9-]{1,40}$');
+-- A kudo can be just the GIF, without a note.
+alter table public.kudos drop constraint if exists kudos_message_check;
+alter table public.kudos add constraint kudos_message_check
+  check (length(btrim(message)) <= 500 and (length(btrim(message)) >= 1 or gif is not null));
 
 -- ── Quick polls ──────────────────────────────────────────────────────────────
 create table public.polls (

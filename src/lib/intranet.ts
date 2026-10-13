@@ -8,6 +8,7 @@ import {
   Megaphone,
   Monitor,
   Package,
+  Ruler,
   Tag,
   Truck,
   Users,
@@ -120,7 +121,8 @@ export type Tool = {
 };
 
 export const TOOLS: Tool[] = [
-  { name: "Quotes", description: "Retail & B2B quotes, and your saved ones", icon: Calculator, href: "/calculator", department: "commercial", company: "maximo", pinned: true },
+  { name: "Quote Builder", description: "Retail & B2B quotes, and your saved ones", icon: Calculator, href: "/calculator", department: "commercial", company: "maximo", pinned: true },
+  { name: "Tally Calculator", description: "Split an Ayous order into packs per length", icon: Ruler, href: "/tally", department: "commercial", company: "maximo", pinned: true },
   { name: "Pricing", description: "Maximo price list", icon: Tag, href: "/pricing", department: "commercial", company: "maximo" },
   { name: "Inventory", description: "Live stock by branch", icon: Package, href: "/inventory", department: "commercial", company: "maximo", pinned: true },
   { name: "Orders", description: "GMX logistics order platform", icon: ClipboardList, href: "https://orders.gmxgroup.com/", department: "logistics", company: "gmx", external: true, pinned: true },

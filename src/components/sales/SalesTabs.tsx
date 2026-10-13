@@ -4,8 +4,28 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Building2, Calculator, FileText } from "lucide-react";
 import { useI18n } from "@/components/I18nProvider";
+import { deptName } from "@/lib/i18n/text";
+import type { Dict } from "@/lib/i18n/dictionaries";
 
-/** One switcher for Maximo's quoting: the retail and B2B calculators and the saved quotes. */
+const TOOL_PAGES: Record<string, keyof Dict["tools"]> = { "/tally": "/tally", "/pricing": "/pricing", "/inventory": "/inventory" };
+
+/** "Commercial / Sales › Maximo › Quote Builder" above Maximo's tools. */
+export function SalesCrumbs() {
+  const { t } = useI18n();
+  const path = usePathname();
+  const page = TOOL_PAGES[path] ? t.tools[TOOL_PAGES[path]]?.name : t.sales.label;
+  return (
+    <p className="text-xs text-gray-500">
+      <Link href="/departments/commercial" className="hover:text-gray-900 hover:underline">{deptName(t, "commercial")}</Link>
+      <span className="mx-1.5">›</span>
+      <span>Maximo</span>
+      <span className="mx-1.5">›</span>
+      <span className="font-bold text-gray-700">{page}</span>
+    </p>
+  );
+}
+
+/** One switcher for the Quote Builder: the retail and B2B calculators and the saved quotes. */
 export default function SalesTabs() {
   const { t } = useI18n();
   const path = usePathname();
