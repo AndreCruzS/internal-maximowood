@@ -50,6 +50,8 @@ const en = {
     "/inventory": { name: "Inventory", description: "Live stock by branch" },
     "https://orders.gmxgroup.com/": { name: "Orders", description: "GMX logistics order platform" },
     "https://maximo-ads-dashboard.vercel.app/login": { name: "Data Center", description: "Ads & campaign dashboard" },
+    "https://media.maximowood.com/": { name: "Online Gallery", description: "Maximo photos and media library" },
+    "https://samples.maximowood.com/samples": { name: "Sample Requester", description: "Request product samples for customers" },
   } as Record<string, { name: string; description: string }>,
   department: {
     tools: "Tools", documents: "Documents & links", faq: "FAQ", news: "News", people: "People",
@@ -388,6 +390,8 @@ const es: Dict = {
     "/inventory": { name: "Inventario", description: "Stock en vivo por sucursal" },
     "https://orders.gmxgroup.com/": { name: "Pedidos", description: "Plataforma de pedidos de logística de GMX" },
     "https://maximo-ads-dashboard.vercel.app/login": { name: "Data Center", description: "Panel de anuncios y campañas" },
+    "https://media.maximowood.com/": { name: "Galería online", description: "Fotos y biblioteca de medios de Maximo" },
+    "https://samples.maximowood.com/samples": { name: "Solicitud de muestras", description: "Pide muestras de producto para clientes" },
   },
   department: {
     tools: "Herramientas", documents: "Documentos y enlaces", faq: "Preguntas frecuentes", news: "Noticias", people: "Personas",
@@ -724,6 +728,8 @@ const pt: Dict = {
     "/inventory": { name: "Estoque", description: "Estoque ao vivo por filial" },
     "https://orders.gmxgroup.com/": { name: "Pedidos", description: "Plataforma de pedidos da logística GMX" },
     "https://maximo-ads-dashboard.vercel.app/login": { name: "Data Center", description: "Painel de anúncios e campanhas" },
+    "https://media.maximowood.com/": { name: "Galeria online", description: "Fotos e biblioteca de mídia da Maximo" },
+    "https://samples.maximowood.com/samples": { name: "Pedido de amostras", description: "Solicite amostras de produto para clientes" },
   },
   department: {
     tools: "Ferramentas", documents: "Documentos e links", faq: "Perguntas frequentes", news: "Notícias", people: "Pessoas",
