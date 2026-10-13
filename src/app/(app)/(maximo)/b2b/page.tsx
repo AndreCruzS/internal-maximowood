@@ -1,5 +1,7 @@
 import B2BCalculator from "@/components/B2BCalculator";
 
+export const metadata = { title: "B2B quote · GMX Group Intranet" };
+
 export default async function B2BPage({
   searchParams,
 }: {

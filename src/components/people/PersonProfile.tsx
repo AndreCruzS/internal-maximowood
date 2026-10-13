@@ -12,7 +12,7 @@ import PersonFacts from "@/components/PersonFacts";
 import { Photo, colorOf, gmailLink, ringCentralLink, slackLink } from "@/components/people/shared";
 import type { Person, Position } from "@/components/PeopleView";
 
-export type ProfileKudo = { id: string; from_person_id: string; message: string; created_at: string; category: string | null };
+export type ProfileKudo = { id: string; from_person_id: string; message: string; created_at: string; category: string | null; gif?: string | null };
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -168,6 +168,10 @@ export default function PersonProfile({ person: p, positions, people, kudos, isM
                     <Heart className="mt-0.5 h-4 w-4 shrink-0 fill-pink-400 text-pink-400" />
                     <span>
                       <span className="text-gray-800">{k.message}</span>{" "}
+                      {k.gif && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={`/kudos/${k.gif}.gif`} alt={t.kudos.gifAlt} width={80} height={80} className="my-1 block rounded-lg" />
+                      )}
                       <span className="text-xs text-gray-400">
                         {t.kudos.from.replace("{name}", byId.get(k.from_person_id)?.full_name ?? "—")} · {new Date(k.created_at).toLocaleDateString(tag, { month: "short", day: "numeric" })}
                       </span>

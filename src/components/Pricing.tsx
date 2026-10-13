@@ -12,12 +12,12 @@ const TIER_LABELS: Record<PriceTier, { label: string; badge: string; color: stri
   distributor_fixed:    { label: "Distributor Fixed (25% margin)", badge: "25% mgn",  color: "#1D4ED8" },
   dealer:               { label: "Dealer RL (23% margin)",         badge: "23% mgn",  color: "#7C3AED" },
   dealer_fixed:         { label: "Dealer Fixed (25% margin)",      badge: "25% mgn",  color: "#6D28D9" },
-  end_customer:         { label: "End Customer RL (40% margin)",   badge: "40% mgn",  color: "#C9A227" },
-  end_customer_fixed:   { label: "End Customer Fixed (25% margin)",badge: "25% mgn",  color: "#B8861A" },
+  end_customer:         { label: "End Customer RL (40% margin)",   badge: "40% mgn",  color: "#009f67" },
+  end_customer_fixed:   { label: "End Customer Fixed (25% margin)",badge: "25% mgn",  color: "#00704a" },
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  THERMO:   "#C9A227",
+  THERMO:   "#009f67",
   HARDWOOD: "#2D6A4F",
   ACCOYA:   "#4A90D9",
 };
@@ -131,7 +131,7 @@ export default function Pricing() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:border-transparent bg-white"
-            style={{ "--tw-ring-color": "#C9A227" } as React.CSSProperties}
+            style={{ "--tw-ring-color": "#009f67" } as React.CSSProperties}
           />
         </div>
 
@@ -161,7 +161,7 @@ export default function Pricing() {
       {/* Loading / Error */}
       {isLoading && (
         <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: "#C9A227" }} />
+          <div className="w-8 h-8 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: "#009f67" }} />
         </div>
       )}
       {error && (

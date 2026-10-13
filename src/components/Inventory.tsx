@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw, Package, Search, AlertCircle, MapPin, Database } from "lucide-react";
 
-const GOLD = "#C9A227";
+const GOLD = "#009f67"; // GMX Forest Green (accent)
 const BLACK = "#1A1A1A";
 
 type LengthEntry = {
@@ -102,7 +102,7 @@ export default function Inventory() {
           <button
             onClick={() => refetch()}
             disabled={isSyncing}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold border-2 border-[#E0DDD4] bg-white text-[#555] hover:border-[#C9A227]/50 transition-all disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold border-2 border-[#E5E7EB] bg-white text-[#555] hover:border-[#009f67]/50 transition-all disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
             Refresh
@@ -119,11 +119,11 @@ export default function Inventory() {
             placeholder="Search by species, model, profile or size..."
             value={filterSearch}
             onChange={e => setFilterSearch(e.target.value)}
-            className="pl-9 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]"
+            className="pl-9 h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]"
           />
         </div>
         <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
@@ -134,7 +134,7 @@ export default function Inventory() {
           </SelectContent>
         </Select>
         <Select value={filterSpecie} onValueChange={setFilterSpecie}>
-          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]">
             <SelectValue placeholder="Species" />
           </SelectTrigger>
           <SelectContent>
@@ -151,7 +151,7 @@ export default function Inventory() {
           </SelectContent>
         </Select>
         <Select value={filterModel} onValueChange={setFilterModel}>
-          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]">
             <SelectValue placeholder="Model" />
           </SelectTrigger>
           <SelectContent>
@@ -170,7 +170,7 @@ export default function Inventory() {
           </SelectContent>
         </Select>
         <Select value={filterProfile} onValueChange={setFilterProfile}>
-          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]">
             <SelectValue placeholder="Profile" />
           </SelectTrigger>
           <SelectContent>
@@ -191,7 +191,7 @@ export default function Inventory() {
           </SelectContent>
         </Select>
         <Select value={filterSize} onValueChange={setFilterSize}>
-          <SelectTrigger className="w-full sm:w-32 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+          <SelectTrigger className="w-full sm:w-32 h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]">
             <SelectValue placeholder="Size" />
           </SelectTrigger>
           <SelectContent>
@@ -212,7 +212,7 @@ export default function Inventory() {
           </SelectContent>
         </Select>
         <Select value={filterBranch} onValueChange={setFilterBranch}>
-          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+          <SelectTrigger className="w-full sm:w-44 h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]">
             <SelectValue placeholder="Location" />
           </SelectTrigger>
           <SelectContent>
@@ -227,7 +227,7 @@ export default function Inventory() {
       {/* Summary stats */}
       {!isLoading && !error && (
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-[#E8E5DC] p-4">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] p-4">
             <p className="text-xs font-black uppercase tracking-widest text-[#888] mb-1">Products</p>
             <p className="text-3xl font-black" style={{ color: BLACK }}>{filtered.length}</p>
           </div>
@@ -240,7 +240,7 @@ export default function Inventory() {
               {totalLF.toLocaleString("en-US", { maximumFractionDigits: 0 })}
             </p>
           </div>
-          <div className="bg-white rounded-xl border border-[#E8E5DC] p-4">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] p-4">
             <p className="text-xs font-black uppercase tracking-widest text-[#888] mb-1">Locations</p>
             <p className="text-3xl font-black" style={{ color: BLACK }}>
               {(data?.branches ?? []).length}
@@ -296,9 +296,9 @@ export default function Inventory() {
             const visibleLF = visibleBranches.reduce((s, b) => s + b.totalLF, 0);
 
             return (
-              <div key={idx} className="bg-white rounded-xl border border-[#E8E5DC] overflow-hidden shadow-sm">
+              <div key={idx} className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden shadow-sm">
                 {/* Product header */}
-                <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-[#E8E5DC] bg-[#FAFAF7]">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-black text-sm text-[#1A1A1A]">{item.specie}</span>
                     {item.isUnmapped && (
@@ -326,7 +326,7 @@ export default function Inventory() {
                         <span className="text-[#ccc]">·</span>
                         <span
                           className="text-xs font-mono font-bold px-2 py-0.5 rounded"
-                          style={{ background: `${GOLD}20`, color: "#8a6d10" }}
+                          style={{ background: `${GOLD}20`, color: "#00704a" }}
                         >
                           {item.size}
                         </span>
@@ -342,7 +342,7 @@ export default function Inventory() {
                 </div>
 
                 {/* Branch rows */}
-                <div className="divide-y divide-[#F5F3EE]">
+                <div className="divide-y divide-[#F9FAFB]">
                   {visibleBranches
                     .sort((a, b) => b.totalLF - a.totalLF)
                     .map((branch, bi) => {

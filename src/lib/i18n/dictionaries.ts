@@ -44,9 +44,7 @@ const en = {
     leadership: "Leadership",
   },
   tools: {
-    "/calculator": { name: "Retail Calculator", description: "Thermowood, hardwood & Accoya quotes" },
-    "/b2b": { name: "B2B Calculator", description: "Distributor & dealer quotes" },
-    "/quotes": { name: "My Quotes", description: "Your saved quotes — reopen, download, edit" },
+    "/calculator": { name: "Quotes", description: "Retail & B2B quotes, and your saved ones" },
     "/pricing": { name: "Pricing", description: "Maximo price list" },
     "/inventory": { name: "Inventory", description: "Live stock by branch" },
     "https://orders.gmxgroup.com/": { name: "Orders", description: "GMX logistics order platform" },
@@ -160,6 +158,7 @@ const en = {
     search: "Search questions…", language: "Written in",
   },
   kudos: {
+    addGif: "Add the Good Job GIF", gifAdded: "Good Job GIF added", gifAlt: "Good job!",
     title: "Kudos", give: "Give kudos", to: "To", message: "Message", messagePlaceholder: "Thanks for…", send: "Send",
     empty: "No kudos yet — be the first to thank a colleague.", sent: "Kudos sent 🎉", chooseColleague: "Choose a colleague…",
     needProfile: "Link yourself in People first.", from: "from {name}",
@@ -253,6 +252,7 @@ const en = {
     addPosition: "Add another position", removePosition: "Remove this position", positionN: "Position {n}",
     showEveryone: "Show everyone", onlyDepartment: "Only my department",
   },
+  sales: { label: "Quotes", retail: "Retail quote", b2b: "B2B quote", saved: "Saved quotes" },
   prehire: {
     title: "Before day one", hint: "Everything the hiring leader and IT get ready before the first day, so nothing gets lost.",
     preview: "Preview as new hire", previewDemo: "Preview new-hire page", leaderSide: "Leader & IT (before day one)", employeeSide: "Employee",
@@ -358,9 +358,7 @@ const es: Dict = {
     leadership: "Dirección",
   },
   tools: {
-    "/calculator": { name: "Calculadora Minorista", description: "Cotizaciones de Thermowood, maderas duras y Accoya" },
-    "/b2b": { name: "Calculadora B2B", description: "Cotizaciones para distribuidores y dealers" },
-    "/quotes": { name: "Mis Cotizaciones", description: "Tus cotizaciones guardadas — abrir, descargar, editar" },
+    "/calculator": { name: "Cotizaciones", description: "Cotizaciones minoristas y B2B, y las guardadas" },
     "/pricing": { name: "Precios", description: "Lista de precios de Maximo" },
     "/inventory": { name: "Inventario", description: "Stock en vivo por sucursal" },
     "https://orders.gmxgroup.com/": { name: "Pedidos", description: "Plataforma de pedidos de logística de GMX" },
@@ -474,6 +472,7 @@ const es: Dict = {
     search: "Buscar preguntas…", language: "Escrito en",
   },
   kudos: {
+    addGif: "Agregar el GIF de Buen trabajo", gifAdded: "GIF de Buen trabajo agregado", gifAlt: "¡Buen trabajo!",
     title: "Reconocimientos", give: "Reconocer", to: "Para", message: "Mensaje", messagePlaceholder: "Gracias por…", send: "Enviar",
     empty: "Aún no hay reconocimientos — sé el primero en agradecer a un colega.", sent: "Reconocimiento enviado 🎉", chooseColleague: "Elige un colega…",
     needProfile: "Primero vincúlate en Personas.", from: "de {name}",
@@ -567,6 +566,7 @@ const es: Dict = {
     addPosition: "Agregar otro cargo", removePosition: "Quitar este cargo", positionN: "Cargo {n}",
     showEveryone: "Mostrar a todos", onlyDepartment: "Solo mi departamento",
   },
+  sales: { label: "Cotizaciones", retail: "Cotización minorista", b2b: "Cotización B2B", saved: "Cotizaciones guardadas" },
   prehire: {
     title: "Antes del primer día", hint: "Todo lo que el líder y TI preparan antes del primer día, para que nada se pierda.",
     preview: "Ver como nuevo empleado", previewDemo: "Ver la página del nuevo empleado", leaderSide: "Líder y TI (antes del primer día)", employeeSide: "Empleado",
@@ -670,9 +670,7 @@ const pt: Dict = {
     leadership: "Liderança",
   },
   tools: {
-    "/calculator": { name: "Calculadora Varejo", description: "Cotações de Thermowood, madeiras nobres e Accoya" },
-    "/b2b": { name: "Calculadora B2B", description: "Cotações para distribuidores e revendas" },
-    "/quotes": { name: "Minhas Cotações", description: "Suas cotações salvas — reabrir, baixar, editar" },
+    "/calculator": { name: "Cotações", description: "Cotações varejo e B2B, e as salvas" },
     "/pricing": { name: "Preços", description: "Tabela de preços da Maximo" },
     "/inventory": { name: "Estoque", description: "Estoque ao vivo por filial" },
     "https://orders.gmxgroup.com/": { name: "Pedidos", description: "Plataforma de pedidos da logística GMX" },
@@ -786,6 +784,7 @@ const pt: Dict = {
     search: "Buscar perguntas…", language: "Escrito em",
   },
   kudos: {
+    addGif: "Adicionar o GIF de Bom trabalho", gifAdded: "GIF de Bom trabalho adicionado", gifAlt: "Bom trabalho!",
     title: "Reconhecimentos", give: "Reconhecer", to: "Para", message: "Mensagem", messagePlaceholder: "Obrigado por…", send: "Enviar",
     empty: "Ainda não há reconhecimentos — seja o primeiro a agradecer um colega.", sent: "Reconhecimento enviado 🎉", chooseColleague: "Escolha um colega…",
     needProfile: "Vincule-se primeiro em Pessoas.", from: "de {name}",
@@ -879,6 +878,7 @@ const pt: Dict = {
     addPosition: "Adicionar outro cargo", removePosition: "Remover este cargo", positionN: "Cargo {n}",
     showEveryone: "Mostrar todos", onlyDepartment: "Só meu departamento",
   },
+  sales: { label: "Cotações", retail: "Cotação varejo", b2b: "Cotação B2B", saved: "Cotações salvas" },
   prehire: {
     title: "Antes do primeiro dia", hint: "Tudo o que o líder e a TI preparam antes do primeiro dia, para nada se perder.",
     preview: "Ver como novo colaborador", previewDemo: "Ver a página do novo colaborador", leaderSide: "Líder e TI (antes do primeiro dia)", employeeSide: "Colaborador",

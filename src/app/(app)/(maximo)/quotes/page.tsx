@@ -4,7 +4,7 @@ import { isAdminUser } from "@/lib/admin";
 import MyQuotes from "@/components/MyQuotes";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "My Quotes · GMX Group Intranet" };
+export const metadata = { title: "Saved quotes · GMX Group Intranet" };
 
 /** Saved calculator quotes — part of the Maximo tools, not the personal profile. */
 export default async function QuotesPage() {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FilePen, FilePlus2, Loader2, AlertTriangle } from "lucide-react";
 import type { SavedQuote } from "@/lib/quotes";
 
-const GOLD = "#C9A227";
+const GOLD = "#009f67"; // GMX Forest Green (accent)
 
 /** Shown above the cart while a calculator is editing a saved quote. */
 export default function SavedQuoteBanner({
@@ -43,14 +43,14 @@ export default function SavedQuoteBanner({
   if (!savedQuote) return null;
 
   return (
-    <div className="rounded-xl border-2 bg-white px-4 py-3" style={{ borderColor: GOLD, background: "#FFFDF5" }}>
+    <div className="rounded-xl border-2 bg-white px-4 py-3" style={{ borderColor: GOLD, background: "#f2fbf7" }}>
       <div className="flex items-start gap-2">
         <FilePen className="w-4 h-4 shrink-0 mt-0.5" style={{ color: GOLD }} />
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[#8a6d1a]">Editing saved quote</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#00704a]">Editing saved quote</p>
           <p className="text-sm font-black text-[#1A1A1A] truncate">{savedQuote.projectName}</p>
           {savedQuote.owner && (
-            <p className="text-xs font-semibold text-[#8a6d1a]">
+            <p className="text-xs font-semibold text-[#00704a]">
               Created by {savedQuote.owner.name || savedQuote.owner.email} — your changes update their quote.
             </p>
           )}
@@ -58,10 +58,10 @@ export default function SavedQuoteBanner({
             Add or remove items, then use <span className="font-semibold">Update quote</span> to save the changes.
           </p>
           <div className="mt-2 flex items-center gap-3 text-xs font-bold">
-            <button type="button" onClick={onStartNew} className="inline-flex items-center gap-1 text-gray-600 hover:text-black">
+            <button type="button" onClick={onStartNew} className="inline-flex items-center gap-1 text-gray-600 hover:text-white">
               <FilePlus2 className="w-3.5 h-3.5" /> Start new quote
             </button>
-            <Link href="/quotes" className="text-gray-600 hover:text-black underline">
+            <Link href="/quotes" className="text-gray-600 hover:text-white underline">
               My quotes
             </Link>
           </div>

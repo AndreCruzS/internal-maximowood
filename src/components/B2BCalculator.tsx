@@ -89,7 +89,7 @@ type Results = {
 type CartItem = QuoteCartItem;
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const GOLD = "#C9A227";
+const GOLD = "#009f67"; // GMX Forest Green (accent)
 const BLACK = "#1A1A1A";
 
 // ── Normalise helpers (match pricing rows to product selections) ──────────────
@@ -202,15 +202,15 @@ function StepCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-[#E8E5DC] shadow-sm overflow-hidden">
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[#E8E5DC] bg-[#FAFAF7]">
+    <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[#E5E7EB] bg-[#F9FAFB]">
         <span
           className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0"
           style={{ background: BLACK }}
         >
           {step}
         </span>
-        {icon && <span className="text-[#C9A227]">{icon}</span>}
+        {icon && <span className="text-[#00704a]">{icon}</span>}
         <span className="font-bold text-sm text-[#1A1A1A] uppercase tracking-wide">{title}</span>
       </div>
       <div className="p-5">{children}</div>
@@ -233,8 +233,8 @@ function ToggleBtn({
       onClick={onClick}
       className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold border-2 transition-all ${
         active
-          ? "text-black border-transparent shadow-md"
-          : "bg-white text-[#555] border-[#E0DDD4] hover:border-[#C9A227]/50"
+          ? "text-white border-transparent shadow-md"
+          : "bg-white text-[#555] border-[#E5E7EB] hover:border-[#009f67]/50"
       }`}
       style={active ? { background: GOLD, borderColor: GOLD } : {}}
     >
@@ -259,7 +259,7 @@ function MetricCard({
   return (
     <div
       className="rounded-xl p-4 border"
-      style={{ borderColor: accent ? `${accent}40` : "#E8E5DC", background: accent ? `${accent}10` : "#FAFAF7" }}
+      style={{ borderColor: accent ? `${accent}40` : "#E5E7EB", background: accent ? `${accent}10` : "#F9FAFB" }}
     >
       <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: accent || "#888" }}>
         {label}
@@ -655,13 +655,13 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-[#888]">Species</Label>
                 <Select value={selectedSpecies} onValueChange={handleSpeciesChange}>
-                  <SelectTrigger className="h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+                  <SelectTrigger className="h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]">
                     <SelectValue placeholder="Select species..." />
                   </SelectTrigger>
                   <SelectContent>
                     {speciesList.map((s) => (
                       <SelectItem key={s} value={s}>
-                        <span className="font-semibold text-[#C9A227]">THERMO®</span>
+                        <span className="font-semibold text-[#00704a]">THERMO®</span>
                         <span className="ml-1 text-[#1A1A1A]">{s}</span>
                       </SelectItem>
                     ))}
@@ -672,7 +672,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-[#888]">Nominal Size</Label>
                 <Select value={selectedSize} onValueChange={handleSizeChange} disabled={!selectedSpecies}>
-                  <SelectTrigger className="h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+                  <SelectTrigger className="h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]">
                     <SelectValue placeholder={selectedSpecies ? "Select size..." : "Select species first"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -686,7 +686,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-[#888]">Profile</Label>
                 <Select value={selectedProfile} onValueChange={setSelectedProfile} disabled={!selectedSize}>
-                  <SelectTrigger className="h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+                  <SelectTrigger className="h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]">
                     <SelectValue placeholder={selectedSize ? "Select profile..." : "Select size first"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -757,8 +757,8 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                   onClick={() => toggleLength(ft)}
                   className={`py-2 px-4 rounded-lg text-sm font-semibold border-2 transition-all ${
                     selectedLengths.includes(ft)
-                      ? "text-black shadow-md"
-                      : "bg-white text-[#555] border-[#E0DDD4] hover:border-[#C9A227]/50"
+                      ? "text-white shadow-md"
+                      : "bg-white text-[#555] border-[#E5E7EB] hover:border-[#009f67]/50"
                   }`}
                   style={selectedLengths.includes(ft) ? { background: tierColor, borderColor: tierColor } : {}}
                 >
@@ -777,12 +777,12 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                 value={customLengthInput}
                 onChange={(e) => setCustomLengthInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomLength(); } }}
-                className="h-10 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]"
+                className="h-10 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]"
               />
               <button
                 type="button"
                 onClick={addCustomLength}
-                className="h-10 px-4 rounded-lg text-sm font-bold border-2 border-[#E0DDD4] bg-white text-[#555] hover:border-[#C9A227]/50 transition-all shrink-0"
+                className="h-10 px-4 rounded-lg text-sm font-bold border-2 border-[#E5E7EB] bg-white text-[#555] hover:border-[#009f67]/50 transition-all shrink-0"
               >
                 + Add
               </button>
@@ -852,7 +852,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                         placeholder="Ex: 120 boards"
                         value={boardCount}
                         onChange={(e) => setBoardCount(e.target.value)}
-                        className="h-12 text-lg font-semibold border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]"
+                        className="h-12 text-lg font-semibold border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -864,7 +864,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                         placeholder="Ex: 8 ft"
                         value={boardLengthFt}
                         onChange={(e) => setBoardLengthFt(e.target.value)}
-                        className="h-12 text-lg font-semibold border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]"
+                        className="h-12 text-lg font-semibold border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]"
                       />
                     </div>
                   </div>
@@ -890,7 +890,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                   placeholder={inputMode === "lf" ? "Ex: 500 LF" : "Ex: 250 sqft"}
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  className="h-12 text-lg font-semibold border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]"
+                  className="h-12 text-lg font-semibold border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]"
                 />
               )}
             </div>
@@ -907,8 +907,8 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                   onClick={() => setWasteId(opt.id)}
                   className={`py-2.5 px-3 rounded-lg text-sm font-semibold border-2 transition-all ${
                     wasteId === opt.id
-                      ? "text-black shadow-md"
-                      : "bg-white text-[#555] border-[#E0DDD4] hover:border-[#C9A227]/50"
+                      ? "text-white shadow-md"
+                      : "bg-white text-[#555] border-[#E5E7EB] hover:border-[#009f67]/50"
                   }`}
                   style={wasteId === opt.id ? { background: GOLD, borderColor: GOLD } : {}}
                 >
@@ -927,7 +927,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
           <StepCard step={6} title="Add-ons" icon={<Wrench className="w-4 h-4" />}>
             <div className="space-y-3">
               {/* Milling */}
-              <div className="flex items-center justify-between p-3 rounded-lg border border-[#E0DDD4] bg-[#FAFAF7]">
+              <div className="flex items-center justify-between p-3 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB]">
                 <div>
                   <p className="font-semibold text-sm text-[#1A1A1A]">Milling</p>
                   <p className="text-xs text-[#888]">+${MILLING_PRICE_PER_LF.toFixed(2)}/LF</p>
@@ -936,12 +936,12 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                   id="b2b-milling-toggle"
                   checked={includeMilling}
                   onCheckedChange={setIncludeMilling}
-                  className="data-[state=checked]:bg-[#C9A227]"
+                  className="data-[state=checked]:bg-[#009f67]"
                 />
               </div>
 
               {/* Pre-Finish: Color */}
-              <div className="flex items-center justify-between p-3 rounded-lg border border-[#E0DDD4] bg-[#FAFAF7]">
+              <div className="flex items-center justify-between p-3 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB]">
                 <div>
                   <p className="font-semibold text-sm text-[#1A1A1A]">Pre-Finished — Color</p>
                   <p className="text-xs text-[#888]">Price varies by type</p>
@@ -950,7 +950,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                   id="b2b-prefinish-color-toggle"
                   checked={includePreFinishColor}
                   onCheckedChange={setIncludePreFinishColor}
-                  className="data-[state=checked]:bg-[#C9A227]"
+                  className="data-[state=checked]:bg-[#009f67]"
                 />
               </div>
               {includePreFinishColor && (
@@ -979,7 +979,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
               )}
 
               {/* Pre-Finish: Texture */}
-              <div className="flex items-center justify-between p-3 rounded-lg border border-[#E0DDD4] bg-[#FAFAF7]">
+              <div className="flex items-center justify-between p-3 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB]">
                 <div>
                   <p className="font-semibold text-sm text-[#1A1A1A]">Pre-Finished — Texture</p>
                   <p className="text-xs text-[#888]">+${PRE_FINISH_TEXTURE_PRICE_PER_LF.toFixed(2)}/LF</p>
@@ -988,7 +988,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                   id="b2b-prefinish-texture-toggle"
                   checked={includePreFinishTexture}
                   onCheckedChange={setIncludePreFinishTexture}
-                  className="data-[state=checked]:bg-[#C9A227]"
+                  className="data-[state=checked]:bg-[#009f67]"
                 />
               </div>
               {includePreFinishTexture && (
@@ -1009,7 +1009,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
           {/* Step 7 – Coating */}
           <StepCard step={7} title="Coating SAICOS" icon={<Droplet className="w-4 h-4" />}>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg border border-[#E0DDD4] bg-[#FAFAF7]">
+              <div className="flex items-center justify-between p-3 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB]">
                 <div>
                   <p className="font-semibold text-sm text-[#1A1A1A]">Include coating estimate</p>
                   <p className="text-xs text-[#888]">Estimated SAICOS cans needed</p>
@@ -1018,14 +1018,14 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                   id="b2b-coating-toggle"
                   checked={includeCoating}
                   onCheckedChange={setIncludeCoating}
-                  className="data-[state=checked]:bg-[#C9A227]"
+                  className="data-[state=checked]:bg-[#009f67]"
                 />
               </div>
               {includeCoating && (
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wider text-[#888]">Can Size</Label>
                   <Select value={selectedCoating} onValueChange={(v) => setSelectedCoating(v as CoatingId)}>
-                    <SelectTrigger className="h-11 border-[#E0DDD4] focus:ring-[#C9A227] focus:border-[#C9A227]">
+                    <SelectTrigger className="h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1048,7 +1048,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
             <button
               onClick={handleCalculate}
               disabled={!selectedSpecies || !selectedSize || !selectedProfile || (inputMode === "boards" ? (!boardCount || !boardLengthFt) : !quantity)}
-              className="flex-1 h-12 rounded-xl font-black text-sm uppercase tracking-widest text-black transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-[0.98]"
+              className="flex-1 h-12 rounded-xl font-black text-sm uppercase tracking-widest text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-[0.98]"
               style={{ background: GOLD }}
             >
               <CalculatorIcon className="w-4 h-4" />
@@ -1057,7 +1057,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
             </button>
             <button
               onClick={handleReset}
-              className="h-12 px-5 rounded-xl font-semibold text-sm border-2 border-[#E0DDD4] bg-white text-[#555] hover:border-[#C9A227]/50 transition-all flex items-center gap-2"
+              className="h-12 px-5 rounded-xl font-semibold text-sm border-2 border-[#E5E7EB] bg-white text-[#555] hover:border-[#009f67]/50 transition-all flex items-center gap-2"
             >
               <RotateCcw className="w-4 h-4" />
               Reset
@@ -1087,14 +1087,14 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                 </div>
                 <button
                   onClick={() => setQuoteOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black text-black transition-all hover:opacity-90"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black text-white transition-all hover:opacity-90"
                   style={{ background: GOLD }}
                 >
                   <FileText className="w-3.5 h-3.5" />
                   {quote.savedQuote ? "Update Quote" : "Generate PDF"}
                 </button>
               </div>
-              <div className="divide-y divide-[#F0EDE4]">
+              <div className="divide-y divide-[#F3F4F6]">
                 {cartItems.map((item, idx) => {
                   const addOnTotal = item.addOns ? item.addOns.reduce((a, ao) => a + ao.amount, 0) : 0;
                   const itemTotal = item.total + addOnTotal;
@@ -1151,7 +1151,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                   </button>
                   <button
                     onClick={() => setQuoteOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-black transition-all hover:shadow-md"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:shadow-md"
                     style={{ background: GOLD }}
                   >
                     <FileText className="w-3.5 h-3.5" />
@@ -1242,8 +1242,8 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
               )}
 
               {/* Price breakdown */}
-              <div className="bg-white rounded-xl border border-[#E8E5DC] overflow-hidden">
-                <div className="px-4 py-3 border-b border-[#E8E5DC] bg-[#FAFAF7]">
+              <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
                   <p className="text-xs font-black uppercase tracking-widest text-[#888]">Price Breakdown</p>
                 </div>
                 <div className="p-4 space-y-2">
@@ -1267,8 +1267,8 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                     className="pt-3 mt-2 flex justify-between items-center rounded-lg px-3 py-2"
                     style={{ background: GOLD }}
                   >
-                    <span className="font-black text-black text-sm uppercase tracking-wide">Total</span>
-                    <span className="font-black text-black text-xl">
+                    <span className="font-black text-white text-sm uppercase tracking-wide">Total</span>
+                    <span className="font-black text-white text-xl">
                       ${results.totalCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
@@ -1279,7 +1279,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
               {results.coatingCans !== null && (
                 <div
                   className="rounded-xl p-4 border"
-                  style={{ borderColor: "#C9A22740", background: "#C9A22710" }}
+                  style={{ borderColor: "#009f6740", background: "#009f6710" }}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <Droplet className="w-4 h-4" style={{ color: GOLD }} />
@@ -1294,7 +1294,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
               )}
             </div>
           ) : (
-            <div className="sticky top-24 bg-white rounded-xl border border-[#E8E5DC] flex flex-col items-center justify-center py-16 text-center">
+            <div className="sticky top-24 bg-white rounded-xl border border-[#E5E7EB] flex flex-col items-center justify-center py-16 text-center">
               <div
                 className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
                 style={{ background: `${GOLD}15` }}

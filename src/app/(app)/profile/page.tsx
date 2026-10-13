@@ -3,6 +3,7 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
 import Profile from "@/components/Profile";
 import { PROFILE_COLUMNS } from "@/lib/profile";
+import { selectCompat } from "@/server/compat";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +18,11 @@ export default async function ProfilePage({
   if (!user) redirect("/login");
 
   const isAdmin = isAdminUser(user);
-  const { data: person } = await supabase!
-    .from("people")
-    .select(`${PROFILE_COLUMNS}, positions(department_id, sort)`)
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { data: person } = await selectCompat(
+    cols => supabase!.from("people").select(`${cols}, positions(department_id, sort)`).eq("user_id", user.id).maybeSingle(),
+    PROFILE_COLUMNS,
+    "id, full_name, photo_url, phone, slack_id, languages, office, birth_month, birth_day, start_date, skills",
+  );
   const positions = ((person as { positions?: { department_id: string | null; sort: number }[] } | null)?.positions ?? []).sort((a, b) => a.sort - b.sort);
 
   return (

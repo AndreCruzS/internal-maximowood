@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { HandHeart, Leaf, Lightbulb, Rocket, Send, Users, X, Zap, type LucideIcon } from "lucide-react";
+import { Check, HandHeart, Leaf, Lightbulb, Rocket, Send, Users, X, Zap, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
@@ -37,6 +37,7 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
   const [value, setValue] = useState<string | null>(null);
   const [to, setTo] = useState("");
   const [message, setMessage] = useState("");
+  const [gif, setGif] = useState(false);
   const [busy, setBusy] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
     if (!supabase) return;
     if (!me.personId) return toast.info(t.kudos.needProfile);
     setBusy(true);
-    const { error } = await supabase.from("kudos").insert({ from_person_id: me.personId, to_person_id: to, message: message.trim(), category: value });
+    const { error } = await supabase.from("kudos").insert({ from_person_id: me.personId, to_person_id: to, message: message.trim(), category: value, ...(gif ? { gif: "nice" } : {}) });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(t.kudos.sent);
@@ -60,6 +61,7 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
     setValue(null);
     setTo("");
     setMessage("");
+    setGif(false);
     router.refresh();
   };
 
@@ -91,12 +93,13 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
                     <span className="block font-bold text-gray-900">{text.name}</span>
                     <span className="block truncate text-xs text-gray-500">{text.desc}</span>
                   </span>
-                  <span className="shrink-0 rounded-full border px-3 py-1 text-xs font-bold" style={{ borderColor: v.color, color: v.color }}>
+                  <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-bold ${open ? "border-[#009f67] bg-[#009f67] text-white" : "border-[#009f67] text-[#00704a]"}`}>
                     {t.kudos.give}
                   </span>
                 </button>
                 {open && (
-                  <div className="flex flex-col gap-2 border-t border-gray-100 px-3 py-3 sm:flex-row">
+                  <div className="space-y-2 border-t border-gray-100 px-3 py-3">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <select value={to} onChange={e => setTo(e.target.value)} className={`${field} sm:w-48`} aria-label={t.kudos.to}>
                       <option value="">{t.kudos.chooseColleague}</option>
                       {people.filter(p => p.id !== me.personId).map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
@@ -106,6 +109,12 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
                       <Send className="h-4 w-4" /> {t.kudos.send}
                     </button>
                     <button type="button" onClick={() => setValue(null)} aria-label={t.common.close} className="hidden rounded p-2 text-gray-400 hover:bg-gray-100 sm:block"><X className="h-4 w-4" /></button>
+                  </div>
+                  <button type="button" role="checkbox" aria-checked={gif} onClick={() => setGif(g => !g)}
+                    className={`flex items-center gap-2.5 rounded-lg border p-1.5 pr-3 text-sm font-bold transition-colors ${gif ? "border-[#009f67] bg-[#f2fbf7] text-[#00704a]" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                    <Image src="/kudos/nice.gif" alt="" width={40} height={40} unoptimized className="rounded-md" />
+                    {gif ? <><Check className="h-4 w-4" /> {t.kudos.gifAdded}</> : t.kudos.addGif}
+                  </button>
                   </div>
                 )}
               </li>
@@ -119,8 +128,8 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
         <p className="text-sm font-bold text-gray-700">{t.kudos.weekTitle}</p>
         <p className="mb-2 text-xs text-gray-400">{t.kudos.weekHint}</p>
         {thisWeek.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-400">
-            <Image src="/kudos/nice.gif" alt="" width={120} height={120} unoptimized className="rounded-2xl" />
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-400">
+            <HandHeart className="h-6 w-6" />
             <p>{t.kudos.empty}</p>
           </div>
         ) : (
@@ -139,6 +148,7 @@ export default function Kudos({ kudos, people }: { kudos: Kudo[]; people: Person
                       {v && <span className="ml-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ background: `${v.color}1a`, color: v.color }}>{t.kudos.values[v.id].name}</span>}
                     </p>
                     <p className="text-gray-600">{k.message}</p>
+                    {k.gif && <Image src={`/kudos/${k.gif}.gif`} alt={t.kudos.gifAlt} width={120} height={120} unoptimized className="mt-2 rounded-xl" />}
                     <p className="mt-0.5 text-xs text-gray-400">
                       {t.kudos.from.replace("{name}", names.get(k.from_person_id) ?? "—")} · {new Date(k.created_at).toLocaleDateString(tag, { weekday: "short", month: "short", day: "numeric" })}
                     </p>

@@ -5,7 +5,7 @@ import { Check, Pencil, Trash2, X } from "lucide-react";
 import type { QuoteCartItem } from "@/components/QuoteModal";
 import { addOnName, addOnRate, editQuoteItem, type QuoteItemEdit } from "@/lib/quoteItems";
 
-const GOLD = "#C9A227";
+const GOLD = "#009f67"; // GMX Forest Green (accent)
 
 const money = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -32,7 +32,7 @@ function NumberField({
   return (
     <label className="block space-y-1">
       <span className="text-[10px] font-bold uppercase tracking-wider text-[#888]">{label}</span>
-      <div className="flex items-center rounded-md border border-slate-300 bg-white focus-within:ring-2 focus-within:ring-[#C9A227]/40">
+      <div className="flex items-center rounded-md border border-slate-300 bg-white focus-within:ring-2 focus-within:ring-[#009f67]/40">
         {prefix && <span className="pl-2 text-xs text-[#888]">{prefix}</span>}
         <input
           type="number"
@@ -72,7 +72,7 @@ export default function QuoteItemRow({
   const apply = (edit: QuoteItemEdit) => onChange?.(editQuoteItem(item, edit));
 
   return (
-    <div className="px-3 py-2.5" style={{ background: editing ? "#FFFDF5" : "#C9A22708" }}>
+    <div className="px-3 py-2.5" style={{ background: editing ? "#f2fbf7" : "#009f6708" }}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <p className="text-xs font-black text-[#1A1A1A]">{item.species}</p>
@@ -101,7 +101,7 @@ export default function QuoteItemRow({
             <button
               type="button"
               onClick={() => setEditing(v => !v)}
-              className="w-6 h-6 rounded-md flex items-center justify-center text-slate-500 hover:text-black hover:bg-slate-100"
+              className="w-6 h-6 rounded-md flex items-center justify-center text-slate-500 hover:text-white hover:bg-slate-100"
               aria-label={editing ? "Done editing" : "Edit line"}
               title={editing ? "Done" : "Edit quantity, price and add-ons"}
             >

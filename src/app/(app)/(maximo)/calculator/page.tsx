@@ -1,5 +1,7 @@
 import Calculator from "@/components/Calculator";
 
+export const metadata = { title: "Retail quote · GMX Group Intranet" };
+
 export default async function CalculatorPage({
   searchParams,
 }: {

@@ -1,4 +1,5 @@
 import { loadPolls } from "@/server/polls";
+import { selectCompat } from "@/server/compat";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type NewsItem = {
@@ -17,7 +18,7 @@ export type NewsItem = {
 };
 export type PersonLite = { id: string; full_name: string; user_id: string | null; photo_url: string | null };
 export type Absence = { id: string; person_id: string; starts_on: string; ends_on: string; kind: string; note: string; covered_by: string[] | null };
-export type Kudo = { id: string; from_person_id: string; to_person_id: string; message: string; created_at: string; category: string | null };
+export type Kudo = { id: string; from_person_id: string; to_person_id: string; message: string; created_at: string; category: string | null; gif?: string | null };
 export type OnboardingItem = { id: string; title: string; description: string; link: string | null; department_id: string | null; sort: number };
 
 export const NEWS_COLUMNS = "id, title, body, image_url, link_url, company_id, department_id, featured, must_read, language, published_at, author_id";
@@ -37,7 +38,11 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
     supabase.from("news_reads").select("news_id").eq("user_id", userId),
     supabase.from("people").select("id, full_name, user_id, photo_url").eq("active", true).order("full_name"),
     supabase.from("absences").select("id, person_id, starts_on, ends_on, kind, note, covered_by").gte("ends_on", from).lte("starts_on", to).order("starts_on"),
-    supabase.from("kudos").select("id, from_person_id, to_person_id, message, created_at, category").gte("created_at", kudosSince).order("created_at", { ascending: false }).limit(50),
+    selectCompat(
+      cols => supabase.from("kudos").select(cols).gte("created_at", kudosSince).order("created_at", { ascending: false }).limit(50),
+      "id, from_person_id, to_person_id, message, created_at, category, gif",
+      "id, from_person_id, to_person_id, message, created_at, category",
+    ),
     supabase.from("onboarding_items").select("id, title, description, link, department_id, sort").order("sort"),
     supabase.from("onboarding_progress").select("item_id").eq("user_id", userId),
     supabase.from("people").select("id, full_name, birth_month, birth_day, start_date").eq("active", true).or("birth_month.not.is.null,start_date.not.is.null"),

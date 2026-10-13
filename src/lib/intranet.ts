@@ -1,9 +1,7 @@
 import {
   BarChart3,
   ClipboardList,
-  FileText,
   Briefcase,
-  Building2,
   Calculator,
   Factory,
   Landmark,
@@ -122,9 +120,7 @@ export type Tool = {
 };
 
 export const TOOLS: Tool[] = [
-  { name: "Retail Calculator", description: "Thermowood, hardwood & Accoya quotes", icon: Calculator, href: "/calculator", department: "commercial", company: "maximo", pinned: true },
-  { name: "B2B Calculator", description: "Distributor & dealer quotes", icon: Building2, href: "/b2b", department: "commercial", company: "maximo", pinned: true },
-  { name: "My Quotes", description: "Your saved quotes — reopen, download, edit", icon: FileText, href: "/quotes", department: "commercial", company: "maximo", pinned: true },
+  { name: "Quotes", description: "Retail & B2B quotes, and your saved ones", icon: Calculator, href: "/calculator", department: "commercial", company: "maximo", pinned: true },
   { name: "Pricing", description: "Maximo price list", icon: Tag, href: "/pricing", department: "commercial", company: "maximo" },
   { name: "Inventory", description: "Live stock by branch", icon: Package, href: "/inventory", department: "commercial", company: "maximo", pinned: true },
   { name: "Orders", description: "GMX logistics order platform", icon: ClipboardList, href: "https://orders.gmxgroup.com/", department: "logistics", company: "gmx", external: true, pinned: true },

@@ -2,6 +2,7 @@
 --  * new_hires: "before you hire" checklist (manual ticks), onboarding buddy,
 --    first-day details and a first day / week / month / quarter plan the new hire sees.
 --  * people: a real profile — headline, bio, pronouns, interests, fun fact, cover, LinkedIn, photo upload.
+--  * kudos.gif: send the "Good job" GIF with a kudo.
 --  * polls: quick polls on the home page; votes are private, only totals are shown.
 --  * training_modules.is_sample: sample modules only training editors see, to preview the flow.
 
@@ -43,6 +44,10 @@ create policy "replace own avatar" on storage.objects for update to authenticate
 drop policy if exists "delete own avatar" on storage.objects;
 create policy "delete own avatar" on storage.objects for delete to authenticated
   using (bucket_id = 'avatars' and ((storage.foldername(name))[1] = public.my_person_id()::text or public.is_admin()));
+
+-- ── Kudos GIFs ───────────────────────────────────────────────────────────────
+-- Optional GIF sent with a kudo (a file in /public/kudos, e.g. 'nice').
+alter table public.kudos add column if not exists gif text check (gif is null or gif ~ '^[a-z0-9-]{1,40}$');
 
 -- ── Quick polls ──────────────────────────────────────────────────────────────
 create table public.polls (

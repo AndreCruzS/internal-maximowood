@@ -262,16 +262,16 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
         </DialogHeader>
 
         {/* Items summary */}
-        <div className="rounded-lg border overflow-hidden" style={{ borderColor: "#C9A22730" }}>
+        <div className="rounded-lg border overflow-hidden" style={{ borderColor: "#009f6730" }}>
           <div className="px-3 py-2" style={{ background: "#1A1A1A" }}>
-            <span className="text-xs font-black uppercase tracking-widest" style={{ color: "#C9A227" }}>
+            <span className="text-xs font-black uppercase tracking-widest" style={{ color: "#009f67" }}>
               Quote Items
             </span>
             {onItemsChange && (
               <span className="ml-2 text-[10px] font-semibold text-white/50">Use ✎ to change quantity, price or add-ons</span>
             )}
           </div>
-          <div className="divide-y divide-[#F0EDE4]">
+          <div className="divide-y divide-[#F3F4F6]">
             {items.map((item, idx) => (
               <QuoteItemRow
                 key={idx}
@@ -282,9 +282,9 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
             ))}
           </div>
           {/* Grand total */}
-          <div className="px-3 py-2.5 flex justify-between items-center" style={{ background: "#C9A227" }}>
-            <span className="text-xs font-black uppercase tracking-wider text-black">Total</span>
-            <span className="text-base font-black text-black">
+          <div className="px-3 py-2.5 flex justify-between items-center" style={{ background: "#009f67" }}>
+            <span className="text-xs font-black uppercase tracking-wider text-white">Total</span>
+            <span className="text-base font-black text-white">
               ${grandTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
@@ -293,8 +293,8 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
         {/* ── Inventory Availability ── */}
         <div className="rounded-lg border overflow-hidden">
           <div className="px-3 py-2 flex items-center gap-2" style={{ background: "#1A1A1A" }}>
-            <Package className="w-4 h-4" style={{ color: "#C9A227" }} />
-            <span className="text-xs font-black uppercase tracking-widest" style={{ color: "#C9A227" }}>Stock Availability</span>
+            <Package className="w-4 h-4" style={{ color: "#009f67" }} />
+            <span className="text-xs font-black uppercase tracking-widest" style={{ color: "#009f67" }}>Stock Availability</span>
           </div>
           <div className="p-3 space-y-2">
             {inventoryError && (
@@ -416,8 +416,8 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
                     size="sm"
                     onClick={() => void save(conflict.download, conflict.existingId)}
                     disabled={busy !== null}
-                    className="font-bold text-black"
-                    style={{ background: "#C9A227" }}
+                    className="font-bold text-white"
+                    style={{ background: "#009f67" }}
                   >
                     Replace existing quote
                   </Button>
@@ -457,8 +457,8 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
           <Button
             onClick={() => void save(true)}
             disabled={busy !== null}
-            className="flex-[1.4] font-bold gap-2 text-black"
-            style={{ background: "#C9A227" }}
+            className="flex-[1.4] font-bold gap-2 text-white"
+            style={{ background: "#009f67" }}
           >
             {busy === "download" ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
