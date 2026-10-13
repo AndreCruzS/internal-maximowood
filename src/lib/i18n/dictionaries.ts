@@ -179,7 +179,7 @@ const en = {
     link: "Link (optional)", open: "Open",
   },
   hires: {
-    tabs: { mine: "My onboarding", hires: "New hires", it: "IT setup", courses: "Training courses" },
+    tabs: { mine: "My onboarding", hires: "New hires", it: "IT setup", offboarding: "Offboarding", courses: "Training courses" },
     add: "Add a new employee", addTitle: "Add a new employee", addHint: "They appear in the org chart right away, and IT gets a setup request.",
     fullName: "Full name", personalEmail: "Personal email", personalEmailHint: "IT sends their logins here before day one.",
     position: "Position", reportsTo: "Reports to", startDate: "Start date", brand: "Brand", department: "Department",
@@ -252,6 +252,13 @@ const en = {
     country: "Country", city: "City", chooseCountry: "Choose a country…", chooseCity: "Choose a city…", otherCity: "Other city…", cityPlaceholder: "Type your city",
     addPosition: "Add another position", removePosition: "Remove this position", positionN: "Position {n}",
     showEveryone: "Show everyone", onlyDepartment: "Only my department",
+  },
+  offboarding: {
+    start: "Start offboarding", title: "Offboard {name}", hint: "IT gets an email and turns off their accounts and access. When IT marks it done, they leave People and the org chart.",
+    lastDay: "Last day", notes: "Notes for IT (optional)", notesPlaceholder: "e.g. forward email to their manager", submit: "Send to IT", needLastDay: "Pick the last day.",
+    sent: "Sent to IT — they'll take it from here.", saved: "Saved — IT will see it in Offboarding.", inProgress: "Offboarding in progress", lastDayOn: "Last day {date}",
+    cancel: "Cancel offboarding", cancelConfirm: "Cancel the offboarding of {name}?", listHint: "People leaving the company. IT gets an email for each one and marks it done when their accounts are off.",
+    empty: "Nobody is being offboarded.", markDone: "Mark done", doneConfirm: "Mark {name} as offboarded? They'll be removed from People and the org chart.", completed: "Done — removed from People.", finished: "Finished ({n})",
   },
   tally: {
     title: "Tally Calculator", subtitle: "Split a customer order into whole packs per length, using live stock.", realLengths: "Billed at real length (1 ft = 300 mm)", trueFeet: "Billed in true feet",
@@ -510,7 +517,7 @@ const es: Dict = {
     link: "Enlace (opcional)", open: "Abrir",
   },
   hires: {
-    tabs: { mine: "Mi bienvenida", hires: "Nuevos ingresos", it: "Configuración TI", courses: "Cursos de capacitación" },
+    tabs: { mine: "Mi bienvenida", hires: "Nuevos ingresos", it: "Configuración TI", offboarding: "Salidas", courses: "Cursos de capacitación" },
     add: "Agregar un nuevo empleado", addTitle: "Agregar un nuevo empleado", addHint: "Aparece en el organigrama de inmediato y TI recibe una solicitud de configuración.",
     fullName: "Nombre completo", personalEmail: "Correo personal", personalEmailHint: "TI envía aquí sus accesos antes del primer día.",
     position: "Cargo", reportsTo: "Reporta a", startDate: "Fecha de inicio", brand: "Marca", department: "Departamento",
@@ -583,6 +590,13 @@ const es: Dict = {
     country: "País", city: "Ciudad", chooseCountry: "Elige un país…", chooseCity: "Elige una ciudad…", otherCity: "Otra ciudad…", cityPlaceholder: "Escribe tu ciudad",
     addPosition: "Agregar otro cargo", removePosition: "Quitar este cargo", positionN: "Cargo {n}",
     showEveryone: "Mostrar a todos", onlyDepartment: "Solo mi departamento",
+  },
+  offboarding: {
+    start: "Iniciar salida", title: "Salida de {name}", hint: "TI recibe un email y desactiva sus cuentas y accesos. Cuando TI lo marque como hecho, sale de Personas y del organigrama.",
+    lastDay: "Último día", notes: "Notas para TI (opcional)", notesPlaceholder: "ej. reenviar el email a su jefe", submit: "Enviar a TI", needLastDay: "Elige el último día.",
+    sent: "Enviado a TI — ellos se encargan.", saved: "Guardado — TI lo verá en Salidas.", inProgress: "Salida en curso", lastDayOn: "Último día {date}",
+    cancel: "Cancelar salida", cancelConfirm: "¿Cancelar la salida de {name}?", listHint: "Personas que dejan la empresa. TI recibe un email por cada una y la marca como hecha cuando sus cuentas están desactivadas.",
+    empty: "No hay salidas en curso.", markDone: "Marcar hecho", doneConfirm: "¿Marcar la salida de {name} como hecha? Saldrá de Personas y del organigrama.", completed: "Hecho — quitado de Personas.", finished: "Terminadas ({n})",
   },
   tally: {
     title: "Calculadora de tally", subtitle: "Divide un pedido en paquetes enteros por largo, con el stock en vivo.", realLengths: "Se factura el largo real (1 ft = 300 mm)", trueFeet: "Se factura en pies reales",
@@ -839,7 +853,7 @@ const pt: Dict = {
     link: "Link (opcional)", open: "Abrir",
   },
   hires: {
-    tabs: { mine: "Minha integração", hires: "Novas contratações", it: "Configuração de TI", courses: "Cursos de treinamento" },
+    tabs: { mine: "Minha integração", hires: "Novas contratações", it: "Configuração de TI", offboarding: "Desligamentos", courses: "Cursos de treinamento" },
     add: "Adicionar novo colaborador", addTitle: "Adicionar novo colaborador", addHint: "Ele aparece no organograma na hora e a TI recebe uma solicitação de configuração.",
     fullName: "Nome completo", personalEmail: "E-mail pessoal", personalEmailHint: "A TI envia os acessos para cá antes do primeiro dia.",
     position: "Cargo", reportsTo: "Reporta-se a", startDate: "Data de início", brand: "Marca", department: "Departamento",
@@ -912,6 +926,13 @@ const pt: Dict = {
     country: "País", city: "Cidade", chooseCountry: "Escolha um país…", chooseCity: "Escolha uma cidade…", otherCity: "Outra cidade…", cityPlaceholder: "Digite sua cidade",
     addPosition: "Adicionar outro cargo", removePosition: "Remover este cargo", positionN: "Cargo {n}",
     showEveryone: "Mostrar todos", onlyDepartment: "Só meu departamento",
+  },
+  offboarding: {
+    start: "Iniciar desligamento", title: "Desligamento de {name}", hint: "A TI recebe um email e desativa as contas e acessos. Quando a TI marcar como feito, a pessoa sai de Pessoas e do organograma.",
+    lastDay: "Último dia", notes: "Notas para a TI (opcional)", notesPlaceholder: "ex. encaminhar o email para o gestor", submit: "Enviar para a TI", needLastDay: "Escolha o último dia.",
+    sent: "Enviado para a TI — eles cuidam do resto.", saved: "Salvo — a TI vai ver em Desligamentos.", inProgress: "Desligamento em andamento", lastDayOn: "Último dia {date}",
+    cancel: "Cancelar desligamento", cancelConfirm: "Cancelar o desligamento de {name}?", listHint: "Pessoas saindo da empresa. A TI recebe um email para cada uma e marca como feito quando as contas forem desativadas.",
+    empty: "Nenhum desligamento em andamento.", markDone: "Marcar feito", doneConfirm: "Marcar o desligamento de {name} como feito? A pessoa sai de Pessoas e do organograma.", completed: "Feito — removido de Pessoas.", finished: "Concluídos ({n})",
   },
   tally: {
     title: "Calculadora de tally", subtitle: "Divide um pedido em pacotes inteiros por comprimento, com o estoque ao vivo.", realLengths: "Cobrado pelo comprimento real (1 ft = 300 mm)", trueFeet: "Cobrado em pés reais",

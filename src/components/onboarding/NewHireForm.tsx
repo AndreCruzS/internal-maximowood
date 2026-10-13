@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { notifyIt } from "@/lib/notify";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
 import { COMPANIES, DEPARTMENTS } from "@/lib/intranet";
@@ -53,8 +54,13 @@ export default function NewHireForm({ managers }: { managers: { id: string; labe
         access_departments: d.access_departments.filter(x => x !== d.department_id),
       },
     });
+    if (error) {
+      setBusy(false);
+      return toast.error(error.message);
+    }
+    // Email IT (Brian) about the new hire; the page works the same if email isn't set up yet.
+    await notifyIt("new_hire", data as string);
     setBusy(false);
-    if (error) return toast.error(error.message);
     toast.success(t.hires.created);
     router.push(`/onboarding/hires/${data}`);
     router.refresh();

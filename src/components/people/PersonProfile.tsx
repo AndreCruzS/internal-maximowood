@@ -9,6 +9,7 @@ import { deptName } from "@/lib/i18n/text";
 import { fmt } from "@/lib/i18n/locale";
 import { coverOf } from "@/lib/profile";
 import PersonFacts from "@/components/PersonFacts";
+import OffboardPanel, { type OpenOffboarding } from "@/components/onboarding/OffboardPanel";
 import { Photo, colorOf, gmailLink, ringCentralLink, slackLink } from "@/components/people/shared";
 import type { Person, Position } from "@/components/PeopleView";
 
@@ -30,12 +31,14 @@ const Chips = ({ items, className }: { items: string[]; className: string }) => 
 );
 
 /** A person's full profile: cover, photo, headline, contact, about, ask me about, interests, team and kudos. */
-export default function PersonProfile({ person: p, positions, people, kudos, isMe }: {
+export default function PersonProfile({ person: p, positions, people, kudos, isMe, offboard = null }: {
   person: Person;
   positions: Position[];
   people: Pick<Person, "id" | "full_name" | "photo_url">[];
   kudos: ProfileKudo[];
   isMe: boolean;
+  /** Set for leaders, HR and admins viewing someone else. */
+  offboard?: { open: OpenOffboarding } | null;
 }) {
   const { t, tag } = useI18n();
   const byId = useMemo(() => new Map(people.map(x => [x.id, x])), [people]);
@@ -206,6 +209,8 @@ export default function PersonProfile({ person: p, positions, people, kudos, isM
           )}
         </aside>
       </div>
+
+      {offboard && <OffboardPanel personId={p.id} name={p.full_name} open={offboard.open} />}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import Checklist from "@/components/onboarding/Checklist";
 import TrainingPath from "@/components/onboarding/TrainingPath";
 import HireList from "@/components/onboarding/HireList";
 import NewHireHome from "@/components/onboarding/NewHireHome";
+import OffboardingList, { type OffboardingRow } from "@/components/onboarding/OffboardingList";
 import type { OnboardingItem } from "@/server/intranet";
 import { loadHireContacts, loadHires, loadMyTraining, onboardingPermissions } from "@/server/onboarding";
 
@@ -16,7 +17,7 @@ export async function generateMetadata() {
   return { title: `${t.onboarding.title} · GMX Group Intranet` };
 }
 
-type Tab = "mine" | "hires" | "it";
+type Tab = "mine" | "hires" | "it" | "offboarding";
 
 /**
  * Onboarding, both ways: "My onboarding" (training path + first-steps checklist)
@@ -29,7 +30,8 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   const { tab: raw } = await searchParams;
   const [{ t }, perms] = await Promise.all([getDict(), onboardingPermissions(supabase)]);
 
-  const tabs: Tab[] = ["mine", ...(perms.canAddHires ? (["hires"] as const) : []), ...(perms.isIt ? (["it"] as const) : [])];
+  const tabs: Tab[] = ["mine", ...(perms.canAddHires ? (["hires"] as const) : []), ...(perms.isIt ? (["it"] as const) : []),
+    ...(perms.canAddHires || perms.isIt ? (["offboarding"] as const) : [])];
   const tab: Tab = tabs.includes(raw as Tab) ? (raw as Tab) : "mine";
 
   let body: React.ReactNode;
@@ -61,6 +63,20 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
         <TrainingPath path={training.path} attempts={training.attempts} />
         {checklist}
       </div>
+    );
+  } else if (tab === "offboarding") {
+    const [rows, people] = await Promise.all([
+      supabase.from("offboardings").select("id, person_id, last_day, notes, status, created_by, created_at, done_at").neq("status", "cancelled").order("last_day", { ascending: false }).limit(100),
+      supabase.from("people").select("id, full_name, user_id"),
+    ]);
+    const list = (people.data as { id: string; full_name: string; user_id: string | null }[] | null) ?? [];
+    body = (
+      <OffboardingList
+        rows={(rows.data as OffboardingRow[] | null) ?? []}
+        names={Object.fromEntries(list.map(p => [p.id, p.full_name]))}
+        userNames={Object.fromEntries(list.filter(p => p.user_id).map(p => [p.user_id!, p.full_name]))}
+        isIt={perms.isIt}
+      />
     );
   } else {
     const { hires, progress, names, userNames } = await loadHires(supabase);

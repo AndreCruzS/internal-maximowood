@@ -3,6 +3,7 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 import PersonProfile, { type ProfileKudo } from "@/components/people/PersonProfile";
 import type { Person, Position } from "@/components/PeopleView";
 import { PROFILE_COLUMNS } from "@/lib/profile";
+import type { OpenOffboarding } from "@/components/onboarding/OffboardPanel";
 import { selectCompat } from "@/server/compat";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,10 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   ]);
   if (!person.data) notFound();
   const p = person.data as Person;
+  const [canOffboard, offboarding] = await Promise.all([
+    supabase.rpc("can_add_hires"),
+    supabase.from("offboardings").select("id, last_day, notes").eq("person_id", id).eq("status", "requested").maybeSingle(),
+  ]);
   return (
     <PersonProfile
       person={p}
@@ -40,6 +45,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
       people={(people.data as Pick<Person, "id" | "full_name" | "photo_url">[] | null) ?? []}
       kudos={(kudos.data as ProfileKudo[] | null) ?? []}
       isMe={p.user_id === user.id}
+      offboard={canOffboard.data === true && p.user_id !== user.id ? { open: (offboarding.data as OpenOffboarding) ?? null } : null}
     />
   );
 }
