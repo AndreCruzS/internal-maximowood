@@ -45,7 +45,7 @@ const en = {
   },
   tools: {
     "/calculator": { name: "Quote Builder", description: "Retail & B2B quotes, and your saved ones" },
-    "/tally": { name: "Tally Calculator", description: "Split an Ayous order into packs per length" },
+    "/tally": { name: "Tally Calculator", description: "Split an order into packs per length, from live stock" },
     "/pricing": { name: "Pricing", description: "Maximo price list" },
     "/inventory": { name: "Inventory", description: "Live stock by branch" },
     "https://orders.gmxgroup.com/": { name: "Orders", description: "GMX logistics order platform" },
@@ -254,7 +254,10 @@ const en = {
     showEveryone: "Show everyone", onlyDepartment: "Only my department",
   },
   tally: {
-    title: "Tally Calculator", subtitle: "Ayous Thermowood · split a customer order into whole packs per length.", realLengths: "Billed at real length (1 ft = 300 mm)",
+    title: "Tally Calculator", subtitle: "Split a customer order into whole packs per length, using live stock.", realLengths: "Billed at real length (1 ft = 300 mm)", trueFeet: "Billed in true feet",
+    product: "Product", fromInventory: "Product from the inventory", manualProduct: "Not in the inventory — enter stock by hand", branch: "Branch", allBranches: "All branches",
+    species: "Species", shortest: "Shortest length (ft)", longest: "Longest length (ft)", loadingStock: "Loading live stock…", stockUnavailable: "Live stock isn't available right now — enter the pieces by hand.",
+    stockLoaded: "Stock loaded from the inventory · {branch}", pickToLoad: "Pick a product to load its stock per length.", updated: "updated {date}", refresh: "Reload stock",
     inventory: "Inventory", inventoryNote: "(pieces on hand per length)", useStock: "Use stock limits", clear: "Clear", piecesOf: "Pieces of {ft} ft",
     order: "Order", orderLF: "Order in linear feet", pack: "Pieces per pack", packHint: "Rounded down to whole packs",
     distribution: "Distribution", modes: { stock: "Follow stock", standard: "Standard", manual: "Manual", custom: "Custom" },
@@ -373,7 +376,7 @@ const es: Dict = {
   },
   tools: {
     "/calculator": { name: "Creador de cotizaciones", description: "Cotizaciones minoristas y B2B, y las guardadas" },
-    "/tally": { name: "Calculadora de tally", description: "Divide un pedido de Ayous en paquetes por largo" },
+    "/tally": { name: "Calculadora de tally", description: "Divide un pedido en paquetes por largo, con el stock en vivo" },
     "/pricing": { name: "Precios", description: "Lista de precios de Maximo" },
     "/inventory": { name: "Inventario", description: "Stock en vivo por sucursal" },
     "https://orders.gmxgroup.com/": { name: "Pedidos", description: "Plataforma de pedidos de logística de GMX" },
@@ -582,7 +585,10 @@ const es: Dict = {
     showEveryone: "Mostrar a todos", onlyDepartment: "Solo mi departamento",
   },
   tally: {
-    title: "Calculadora de tally", subtitle: "Ayous Thermowood · divide un pedido en paquetes enteros por largo.", realLengths: "Se factura el largo real (1 ft = 300 mm)",
+    title: "Calculadora de tally", subtitle: "Divide un pedido en paquetes enteros por largo, con el stock en vivo.", realLengths: "Se factura el largo real (1 ft = 300 mm)", trueFeet: "Se factura en pies reales",
+    product: "Producto", fromInventory: "Producto del inventario", manualProduct: "No está en el inventario — cargar stock a mano", branch: "Sucursal", allBranches: "Todas las sucursales",
+    species: "Especie", shortest: "Largo más corto (ft)", longest: "Largo más largo (ft)", loadingStock: "Cargando stock en vivo…", stockUnavailable: "El stock en vivo no está disponible ahora — carga las piezas a mano.",
+    stockLoaded: "Stock cargado del inventario · {branch}", pickToLoad: "Elige un producto para cargar su stock por largo.", updated: "actualizado {date}", refresh: "Recargar stock",
     inventory: "Inventario", inventoryNote: "(piezas disponibles por largo)", useStock: "Usar límites de stock", clear: "Limpiar", piecesOf: "Piezas de {ft} ft",
     order: "Pedido", orderLF: "Pedido en pies lineales", pack: "Piezas por paquete", packHint: "Se redondea a paquetes enteros",
     distribution: "Distribución", modes: { stock: "Según stock", standard: "Estándar", manual: "Manual", custom: "Personalizada" },
@@ -699,7 +705,7 @@ const pt: Dict = {
   },
   tools: {
     "/calculator": { name: "Criador de cotações", description: "Cotações varejo e B2B, e as salvas" },
-    "/tally": { name: "Calculadora de tally", description: "Divide um pedido de Ayous em pacotes por comprimento" },
+    "/tally": { name: "Calculadora de tally", description: "Divide um pedido em pacotes por comprimento, com o estoque ao vivo" },
     "/pricing": { name: "Preços", description: "Tabela de preços da Maximo" },
     "/inventory": { name: "Estoque", description: "Estoque ao vivo por filial" },
     "https://orders.gmxgroup.com/": { name: "Pedidos", description: "Plataforma de pedidos da logística GMX" },
@@ -908,7 +914,10 @@ const pt: Dict = {
     showEveryone: "Mostrar todos", onlyDepartment: "Só meu departamento",
   },
   tally: {
-    title: "Calculadora de tally", subtitle: "Ayous Thermowood · divide um pedido em pacotes inteiros por comprimento.", realLengths: "Cobrado pelo comprimento real (1 ft = 300 mm)",
+    title: "Calculadora de tally", subtitle: "Divide um pedido em pacotes inteiros por comprimento, com o estoque ao vivo.", realLengths: "Cobrado pelo comprimento real (1 ft = 300 mm)", trueFeet: "Cobrado em pés reais",
+    product: "Produto", fromInventory: "Produto do estoque", manualProduct: "Não está no estoque — informar à mão", branch: "Filial", allBranches: "Todas as filiais",
+    species: "Espécie", shortest: "Menor comprimento (ft)", longest: "Maior comprimento (ft)", loadingStock: "Carregando estoque ao vivo…", stockUnavailable: "O estoque ao vivo não está disponível agora — informe as peças à mão.",
+    stockLoaded: "Estoque carregado · {branch}", pickToLoad: "Escolha um produto para carregar o estoque por comprimento.", updated: "atualizado {date}", refresh: "Recarregar estoque",
     inventory: "Estoque", inventoryNote: "(peças disponíveis por comprimento)", useStock: "Usar limites de estoque", clear: "Limpar", piecesOf: "Peças de {ft} ft",
     order: "Pedido", orderLF: "Pedido em pés lineares", pack: "Peças por pacote", packHint: "Arredondado para pacotes inteiros",
     distribution: "Distribuição", modes: { stock: "Seguir estoque", standard: "Padrão", manual: "Manual", custom: "Personalizada" },

@@ -1,15 +1,33 @@
 /**
- * Ayous tally: split a customer order (in real LF) into whole packs per length,
+ * Tally: split a customer order (in real LF) into whole packs per length,
  * following stock, the standard 5/45/50 mix, or a manual mix.
- * Ported from the "Maximo Thermo Ayous tally calculator" sheet. Pieces are billed
- * at their real length (each nominal foot is 300 mm — see realLengths.ts).
+ * Ported from the "Maximo Thermo Ayous tally calculator" sheet and opened up to
+ * any product: lengths come from the product's stock. Pieces are billed at their
+ * real length (Ayous, Ash and Scandinavian Pine: each nominal foot is 300 mm —
+ * see realLengths.ts; everything else is cut in true feet).
  */
-import { realFt } from "@/lib/realLengths";
+import { isMetricLength, realFt } from "@/lib/realLengths";
 
-export const TALLY_LENGTHS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] as const;
+/** The Ayous sheet's lengths (the default when no product is chosen). */
+export const TALLY_LENGTHS = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 export type TallyGroup = "4-5" | "6-11" | "12+";
-export const TALLY_GROUPS: Record<TallyGroup, number[]> = { "4-5": [4, 5], "6-11": [6, 7, 8, 9, 10, 11], "12+": [12, 13, 14, 15, 16] };
-export const GROUP_IDS = Object.keys(TALLY_GROUPS) as TallyGroup[];
+export const GROUP_IDS: TallyGroup[] = ["4-5", "6-11", "12+"];
+/** Short (up to 5 ft), medium (6–11 ft) and long (12 ft and up) lengths. */
+export const groupOf = (ft: number): TallyGroup => (ft <= 5 ? "4-5" : ft <= 11 ? "6-11" : "12+");
+export function groupsFor(lengths: number[]): Record<TallyGroup, number[]> {
+  const sorted = [...new Set(lengths)].filter(ft => ft > 0).sort((a, b) => a - b);
+  return Object.fromEntries(GROUP_IDS.map(g => [g, sorted.filter(ft => groupOf(ft) === g)])) as Record<TallyGroup, number[]>;
+}
+export const TALLY_GROUPS = groupsFor(TALLY_LENGTHS);
+/** "4–5 ft", "6–11 ft", "12+ ft" — or the product's own range when it differs. */
+export function groupLabel(g: TallyGroup, lengths: number[]): string {
+  const fts = groupsFor(lengths)[g];
+  if (g === "12+") return fts.length && fts[0] !== 12 ? `${fts[0]}+ ft` : "12+ ft";
+  const [lo, hi] = g === "4-5" ? [4, 5] : [6, 11];
+  if (!fts.length) return `${lo}–${hi} ft`;
+  const a = fts[0], b = fts[fts.length - 1];
+  return a === b ? `${a} ft` : `${a}–${b} ft`;
+}
 export const STANDARD_MIX: Record<TallyGroup, number> = { "4-5": 0.05, "6-11": 0.45, "12+": 0.5 };
 
 /** Real piece lengths in inches, as on the tally sheet (= realInches(ft, "AYOUS") to 6 decimals). */
@@ -17,9 +35,9 @@ const LEN_IN: Record<number, number> = {
   4: 47.244094, 5: 59.055118, 6: 70.866142, 7: 82.677165, 8: 94.488189, 9: 106.299213, 10: 118.110236,
   11: 129.92126, 12: 141.732283, 13: 153.543307, 14: 165.354331, 15: 177.165354, 16: 188.976378,
 };
-/** Real LF of one Ayous piece sold as `ft`. */
-export const pieceLF = (ft: number) => (LEN_IN[ft] ?? realFt(ft, "AYOUS") * 12) / 12;
-export const groupOf = (ft: number): TallyGroup => GROUP_IDS.find(g => TALLY_GROUPS[g].includes(ft))!;
+/** Real LF of one piece of `species` sold as `ft` (default Ayous, as on the sheet). */
+export const pieceLF = (ft: number, species = "AYOUS") =>
+  isMetricLength(species) ? (LEN_IN[ft] ?? realFt(ft, species) * 12) / 12 : realFt(ft, species);
 
 export type TallyMode = "stock" | "standard" | "manual" | "custom";
 export type TallyRow = { ft: number; g: TallyGroup; pcs: number; lf: number; stockPcs: number };
@@ -35,6 +53,10 @@ export type TallyInput = {
   manual?: Record<TallyGroup, number>;
   /** For "custom": the lengths that may be used. */
   allowed?: number[];
+  /** The product's lengths in nominal feet (default: the Ayous sheet's 4–16 ft). */
+  lengths?: number[];
+  /** Species, for real vs. true-feet lengths (default Ayous). */
+  species?: string;
 };
 export type TallyError = "order" | "mix" | "lengths" | "noStock" | "noUsable";
 
@@ -50,20 +72,22 @@ export function allocateTally(input: TallyInput): { rows: TallyRow[]; target: Re
     if (Math.abs(m["4-5"] + m["6-11"] + m["12+"] - 1) > 0.01) return { error: "mix" };
     mix = { ...m };
   }
-  const allowed = new Set<number>(input.mode === "custom" ? input.allowed ?? [] : TALLY_LENGTHS);
+  const groups = groupsFor(input.lengths?.length ? input.lengths : TALLY_LENGTHS);
+  const LENGTHS = GROUP_IDS.flatMap(g => groups[g]);
+  const allowed = new Set<number>(input.mode === "custom" ? (input.allowed ?? []).filter(ft => LENGTHS.includes(ft)) : LENGTHS);
   if (allowed.size === 0) return { error: "lengths" };
 
-  const lf = pieceLF;
+  const lf = (ft: number) => pieceLF(ft, input.species ?? "AYOUS");
   const have = (ft: number) => stock[ft] ?? 0;
   const maxPcs: Record<number, number> = {};
   const stockLF: Record<number, number> = {};
   let totalStockLF = 0;
-  for (const ft of TALLY_LENGTHS) {
+  for (const ft of LENGTHS) {
     maxPcs[ft] = !allowed.has(ft) ? 0 : useStock ? have(ft) : Infinity;
     stockLF[ft] = allowed.has(ft) ? have(ft) * lf(ft) : 0;
     totalStockLF += stockLF[ft];
   }
-  const groupStockLF = (g: TallyGroup) => TALLY_GROUPS[g].reduce((s, ft) => s + stockLF[ft], 0);
+  const groupStockLF = (g: TallyGroup) => groups[g].reduce((s, ft) => s + stockLF[ft], 0);
   const weightOf = (ft: number) => (!allowed.has(ft) ? 0 : useStock ? stockLF[ft] : lf(ft));
 
   const target = {} as Record<TallyGroup, number>;
@@ -73,7 +97,7 @@ export function allocateTally(input: TallyInput): { rows: TallyRow[]; target: Re
   } else Object.assign(target, mix);
   let shareSum = 0;
   for (const g of GROUP_IDS) {
-    const usable = TALLY_GROUPS[g].some(ft => allowed.has(ft) && (!useStock || have(ft) > 0));
+    const usable = groups[g].some(ft => allowed.has(ft) && (!useStock || have(ft) > 0));
     if (!usable) target[g] = 0;
     shareSum += target[g];
   }
@@ -84,7 +108,7 @@ export function allocateTally(input: TallyInput): { rows: TallyRow[]; target: Re
   const rows: TallyRow[] = [];
   let carry = 0;
   for (const g of GROUP_IDS) {
-    const fts = TALLY_GROUPS[g];
+    const fts = groups[g];
     const groupTarget = orderLF * target[g] + carry;
     let alloc = 0;
     fts.forEach((ft, idx) => {
@@ -168,11 +192,39 @@ export function allocateTally(input: TallyInput): { rows: TallyRow[]; target: Re
 export type FillStatus = { kind: "exact" | "close" | "short" | "over"; gap: number; pct: number };
 
 /** How close the allocation is to the order; within one pack of the smallest piece counts as "close". */
-export function fillStatus(rows: TallyRow[], orderLF: number, pack: number): FillStatus {
+export function fillStatus(rows: TallyRow[], orderLF: number, pack: number, species = "AYOUS"): FillStatus {
   const total = rows.reduce((s, r) => s + r.lf, 0);
   const gap = orderLF - total;
   const pct = orderLF > 0 ? (total / orderLF) * 100 : 0;
   if (Math.abs(gap) < 0.5) return { kind: "exact", gap, pct };
-  if (Math.abs(gap) < pack * pieceLF(4)) return { kind: "close", gap, pct };
+  const shortest = rows.length ? Math.min(...rows.map(r => r.ft)) : 4;
+  if (Math.abs(gap) < pack * pieceLF(shortest, species)) return { kind: "close", gap, pct };
   return { kind: gap > 0 ? "short" : "over", gap, pct };
+}
+
+// ── Linked to the inventory ──────────────────────────────────────────────────
+
+type StockItem = { specie: string; branches: { branch: string; lengths: { lengthFt: number | null; pieces: number | null }[] }[] };
+
+/**
+ * Nominal length of an inventory row. The view may give the nominal length (9) or
+ * the real one (8.86 ft for an Ayous "9 ft"); both map back to 9. Half feet are kept.
+ */
+export function nominalFt(lengthFt: number, species: string): number {
+  const ft = isMetricLength(species) ? lengthFt / realFt(1, species) : lengthFt;
+  return Math.round(ft * 2) / 2;
+}
+
+/** Pieces on hand per nominal length for one product, in one branch or all of them. */
+export function stockFromInventory(item: StockItem, branch: string | null): Record<number, number> {
+  const out: Record<number, number> = {};
+  for (const b of item.branches) {
+    if (branch && b.branch !== branch) continue;
+    for (const l of b.lengths) {
+      if (!l.lengthFt || !(l.pieces && l.pieces > 0)) continue;
+      const ft = nominalFt(l.lengthFt, item.specie);
+      out[ft] = (out[ft] ?? 0) + l.pieces;
+    }
+  }
+  return out;
 }
