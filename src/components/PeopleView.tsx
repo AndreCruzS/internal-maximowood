@@ -31,6 +31,13 @@ export type Person = {
   nationality?: string | null;
   companies?: string[] | null;
   slack_id?: string | null;
+  headline?: string | null;
+  bio?: string | null;
+  pronouns?: string | null;
+  interests?: string[] | null;
+  fun_fact?: string | null;
+  cover?: string | null;
+  linkedin?: string | null;
 };
 
 export type Position = {

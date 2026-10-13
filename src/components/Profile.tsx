@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import AdminUsers from "@/components/AdminUsers";
 import AboutMeCard, { type MyPerson } from "@/components/AboutMeCard";
+import ProfileEditor from "@/components/ProfileEditor";
+import type { Person } from "@/components/PeopleView";
 import { useI18n } from "@/components/I18nProvider";
 import { sendJson } from "@/lib/api";
 
@@ -178,11 +180,7 @@ function PasswordCard() {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        <KeyRound className="w-4 h-4 text-gray-500" />
-        <span className="text-sm font-bold text-gray-700">{t.profile.changePassword}</span>
-      </div>
+    <div className="p-4">
       <form onSubmit={submit} className="space-y-3">
         <div className="space-y-1.5">
           <label htmlFor="pw-current" className={sectionLabel}>{t.profile.currentPassword}</label>
@@ -215,7 +213,12 @@ function PasswordCard() {
 // ── Quotes ───────────────────────────────────────────────────────────────────
 export type ProfileTab = "profile" | "admin";
 
-export default function Profile({ account, initialTab, person }: { account: ProfileAccount; initialTab: ProfileTab; person: MyPerson | null }) {
+export default function Profile({ account, initialTab, person, department }: {
+  account: ProfileAccount;
+  initialTab: ProfileTab;
+  person: (MyPerson & Person) | null;
+  department: string | null;
+}) {
   const { t } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
@@ -270,12 +273,19 @@ export default function Profile({ account, initialTab, person }: { account: Prof
         <AdminUsers />
       ) : (
         <>
-          <div className="grid gap-6 lg:grid-cols-2">
-            <AccountCard account={account} />
-            <PasswordCard />
-          </div>
-
+          {person && <ProfileEditor person={person} department={department} />}
           <AboutMeCard person={person} />
+          <AccountCard account={account} />
+          {/* Sign-in moves to Google; the password stays available but out of the way. */}
+          <details className="group rounded-xl border border-gray-200 bg-white shadow-sm">
+            <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-sm font-bold text-gray-600">
+              <KeyRound className="h-4 w-4" /> {t.profile.changePassword}
+              <span className="ml-auto text-xs font-normal text-gray-400 group-open:hidden">{t.me.passwordHint}</span>
+            </summary>
+            <div className="border-t border-gray-100 p-1">
+              <PasswordCard />
+            </div>
+          </details>
         </>
       )}
     </div>

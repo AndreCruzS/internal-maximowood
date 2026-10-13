@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
 import Profile from "@/components/Profile";
+import { PROFILE_COLUMNS } from "@/lib/profile";
 
 export const dynamic = "force-dynamic";
 
@@ -18,14 +19,16 @@ export default async function ProfilePage({
   const isAdmin = isAdminUser(user);
   const { data: person } = await supabase!
     .from("people")
-    .select("id, full_name, phone, slack_id, languages, office, birth_month, birth_day, start_date, skills")
+    .select(`${PROFILE_COLUMNS}, positions(department_id, sort)`)
     .eq("user_id", user.id)
     .maybeSingle();
+  const positions = ((person as { positions?: { department_id: string | null; sort: number }[] } | null)?.positions ?? []).sort((a, b) => a.sort - b.sort);
 
   return (
     <Profile
       initialTab={isAdmin && tab === "admin" ? "admin" : "profile"}
       person={person ?? null}
+      department={positions[0]?.department_id ?? null}
       account={{
         id: user.id,
         email: user.email ?? "",

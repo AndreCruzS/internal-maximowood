@@ -5,8 +5,9 @@ import { getDict } from "@/lib/i18n/server";
 import Checklist from "@/components/onboarding/Checklist";
 import TrainingPath from "@/components/onboarding/TrainingPath";
 import HireList from "@/components/onboarding/HireList";
+import NewHireHome from "@/components/onboarding/NewHireHome";
 import type { OnboardingItem } from "@/server/intranet";
-import { loadHires, loadMyTraining, onboardingPermissions } from "@/server/onboarding";
+import { loadHireContacts, loadHires, loadMyTraining, onboardingPermissions } from "@/server/onboarding";
 
 export const dynamic = "force-dynamic";
 
@@ -38,19 +39,33 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
       supabase.from("onboarding_items").select("id, title, description, link, department_id, sort").order("sort"),
       supabase.from("onboarding_progress").select("item_id").eq("user_id", user.id),
     ]);
+    const checklist = (
+      <Checklist
+        items={(items.data as OnboardingItem[] | null) ?? []}
+        done={((progress.data as { item_id: string }[] | null) ?? []).map(p => p.item_id)}
+      />
+    );
+    // New hires get their full onboarding page; everyone else their training and the first-steps checklist.
+    if (training.hire) {
+      const contacts = await loadHireContacts(supabase, training.hire);
+      return (
+        <div className="mx-auto max-w-5xl space-y-8">
+          <NewHireHome hire={training.hire} firstName={training.hire.full_name.split(" ")[0]} contacts={contacts}
+            path={training.path} attempts={training.attempts} welcomeDone={training.welcomeDone} />
+          {checklist}
+        </div>
+      );
+    }
     body = (
       <div className="space-y-8">
         <TrainingPath path={training.path} attempts={training.attempts} />
-        <Checklist
-          items={(items.data as OnboardingItem[] | null) ?? []}
-          done={((progress.data as { item_id: string }[] | null) ?? []).map(p => p.item_id)}
-        />
+        {checklist}
       </div>
     );
   } else {
-    const { hires, names, userNames } = await loadHires(supabase);
+    const { hires, progress, names, userNames } = await loadHires(supabase);
     const list = tab === "it" ? hires.filter(h => h.status === "it_setup") : hires;
-    body = <HireList hires={list} names={names} userNames={userNames} mode={tab} canAdd={perms.canAddHires} />;
+    body = <HireList hires={list} progress={progress} names={names} userNames={userNames} mode={tab} canAdd={perms.canAddHires} />;
   }
 
   return (
@@ -60,11 +75,18 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           <h1 className="text-2xl font-black text-gray-900">{t.onboarding.title}</h1>
           <p className="text-gray-500">{t.onboarding.subtitle}</p>
         </div>
-        {perms.canEditTraining && (
-          <Link href="/onboarding/courses" className="flex h-9 items-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-bold text-gray-800 hover:bg-gray-50">
-            {t.hires.tabs.courses}
-          </Link>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {(perms.canAddHires || perms.canEditTraining) && (
+            <Link href="/onboarding/preview" className="flex h-9 items-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-bold text-gray-800 hover:bg-gray-50">
+              {t.prehire.previewDemo}
+            </Link>
+          )}
+          {perms.canEditTraining && (
+            <Link href="/onboarding/courses" className="flex h-9 items-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-bold text-gray-800 hover:bg-gray-50">
+              {t.hires.tabs.courses}
+            </Link>
+          )}
+        </div>
       </div>
       {tabs.length > 1 && (
         <nav className="flex rounded-lg border border-gray-200 bg-white p-0.5 text-sm font-bold" aria-label={t.onboarding.title}>

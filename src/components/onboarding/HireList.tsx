@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ChevronRight, Mail, Phone, UserPlus } from "lucide-react";
+import { AlertTriangle, ChevronRight, Mail, Phone, Search, UserPlus } from "lucide-react";
 import { useI18n } from "@/components/I18nProvider";
 import { useMounted } from "@/components/CalendarView";
 import { companyInk, companyName, type CompanyId } from "@/lib/intranet";
 import { deptName } from "@/lib/i18n/text";
 import { fmt } from "@/lib/i18n/locale";
-import type { HireStatus, NewHire } from "@/lib/onboarding";
+import { isComplete, type HireProgress, type HireStatus, type NewHire } from "@/lib/onboarding";
 
 export const STATUS_STYLE: Record<HireStatus, string> = {
   it_setup: "bg-amber-100 text-amber-800",
@@ -20,9 +20,26 @@ export const STATUS_STYLE: Record<HireStatus, string> = {
 
 const DAY = 86_400_000;
 
+/** "Leader & IT 4/9" with a bar. */
+export function ProgressBar({ label, value: [done, total], compact }: { label: string; value: [number, number]; compact?: boolean }) {
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  return (
+    <div className={compact ? "w-36" : ""}>
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span className="font-bold text-gray-500">{label}</span>
+        <span className="font-bold text-gray-400">{done}/{total}</span>
+      </div>
+      <div className={`mt-1 overflow-hidden rounded-full bg-gray-100 ${compact ? "h-1.5" : "h-2"}`}>
+        <div className={`h-full rounded-full transition-all ${pct === 100 ? "bg-[#009f67]" : "bg-sky-500"}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 /** New hires, soonest start first; "it" mode is IT's queue of setups to do. */
-export default function HireList({ hires, names, userNames, mode, canAdd }: {
+export default function HireList({ hires, progress, names, userNames, mode, canAdd }: {
   hires: NewHire[];
+  progress: Record<string, HireProgress>;
   names: Record<string, string>;
   userNames: Record<string, string>;
   mode: "hires" | "it";
@@ -32,6 +49,9 @@ export default function HireList({ hires, names, userNames, mode, canAdd }: {
   const mounted = useMounted();
   const [now] = useState(() => Date.now());
   const date = (ymd: string) => new Date(`${ymd}T12:00:00`).toLocaleDateString(tag, { weekday: "short", month: "short", day: "numeric" });
+  const [q, setQ] = useState("");
+  const [incomplete, setIncomplete] = useState(true);
+  const shown = hires.filter(h => (!q.trim() || h.full_name.toLowerCase().includes(q.trim().toLowerCase())) && (!incomplete || !progress[h.id] || !isComplete(progress[h.id])));
   const soon = (h: NewHire) => mounted && h.status === "it_setup" && !!h.start_date && new Date(`${h.start_date}T12:00:00`).getTime() - now < 7 * DAY;
 
   return (
@@ -43,13 +63,30 @@ export default function HireList({ hires, names, userNames, mode, canAdd }: {
       )}
       {mode === "it" && <p className="text-sm text-gray-500">{t.hires.itHint}</p>}
 
-      {hires.length === 0 ? (
+      {hires.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="relative w-full max-w-xs">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder={t.prehire.search} aria-label={t.prehire.search}
+              className="h-10 w-full rounded-lg border border-gray-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-[#009f67]" />
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-gray-700">
+            {t.prehire.incompleteOnly}
+            <button type="button" role="switch" aria-checked={incomplete} onClick={() => setIncomplete(v => !v)}
+              className={`relative h-6 w-11 rounded-full transition-colors ${incomplete ? "bg-[#009f67]" : "bg-gray-300"}`}>
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${incomplete ? "left-[22px]" : "left-0.5"}`} />
+            </button>
+          </label>
+        </div>
+      )}
+
+      {shown.length === 0 ? (
         <p className="rounded-xl border border-dashed border-gray-300 bg-white px-5 py-8 text-center text-sm text-gray-500">
-          {mode === "it" ? t.hires.itEmpty : t.hires.empty}
+          {hires.length > 0 ? t.prehire.noMatch : mode === "it" ? t.hires.itEmpty : t.hires.empty}
         </p>
       ) : (
         <ul className="space-y-2">
-          {hires.map(h => (
+          {shown.map(h => (
             <li key={h.id}>
               <Link href={`/onboarding/hires/${h.id}`} className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-[#009f67] hover:shadow-md">
                 <span className="min-w-0 flex-1">
@@ -81,6 +118,12 @@ export default function HireList({ hires, names, userNames, mode, canAdd }: {
                     {h.created_by && userNames[h.created_by] && <span>{fmt(t.hires.addedBy, { name: userNames[h.created_by] })}</span>}
                   </span>
                 </span>
+                {progress[h.id] && (
+                  <span className="hidden shrink-0 space-y-2 sm:block">
+                    <ProgressBar compact label={t.prehire.leaderShort} value={progress[h.id].leader} />
+                    <ProgressBar compact label={t.prehire.employeeShort} value={progress[h.id].employee} />
+                  </span>
+                )}
                 <ChevronRight className="h-4 w-4 shrink-0 text-gray-300" />
               </Link>
             </li>

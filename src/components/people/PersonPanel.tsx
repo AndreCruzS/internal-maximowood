@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Heart, Mail, MessageSquare, Phone, X } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Heart, Mail, MessageSquare, Phone, X } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
 import { companyName, type CompanyId } from "@/lib/intranet";
@@ -100,6 +101,10 @@ export default function PersonPanel({ position, people, positions, onSelect, onC
             {person.nickname ? <span className="font-normal text-white/80"> “{person.nickname}”</span> : null}
           </p>
           <p className="text-sm text-white/90">{mine.map(x => x.title).join(" · ")}</p>
+          {person.headline && <p className="mt-2 text-sm italic text-white/90">“{person.headline}”</p>}
+          <Link href={`/people/${person.id}`} className="mt-4 inline-flex items-center gap-1 rounded-lg bg-white/20 px-3 py-1.5 text-sm font-bold hover:bg-white/30">
+            {t.me.viewProfile} <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
 
         <div className="space-y-6 p-6 text-sm">

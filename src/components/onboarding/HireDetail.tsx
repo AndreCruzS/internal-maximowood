@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Circle, KeyRound, Loader2, Plus, ShieldAlert, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, Eye, KeyRound, Loader2, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
@@ -11,8 +11,10 @@ import { useMe } from "@/components/MeProvider";
 import { companyInk, companyName, type CompanyId } from "@/lib/intranet";
 import { deptName } from "@/lib/i18n/text";
 import { fmt } from "@/lib/i18n/locale";
-import type { AttemptSummary, HireAccount, NewHire, TrainingModule } from "@/lib/onboarding";
-import { STATUS_STYLE } from "@/components/onboarding/HireList";
+import { hireProgress, type AttemptSummary, type HireAccount, type NewHire, type TrainingModule } from "@/lib/onboarding";
+import { ProgressBar, STATUS_STYLE } from "@/components/onboarding/HireList";
+import PrehireChecklist from "@/components/onboarding/PrehireChecklist";
+import WelcomePlan from "@/components/onboarding/WelcomePlan";
 
 const field = "h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#009f67]";
 const label = "mb-1 block text-xs font-bold text-gray-500";
@@ -27,14 +29,17 @@ function Row({ k, children }: { k: string; children: React.ReactNode }) {
 }
 
 /** One new hire: what the leader asked for, IT's setup (company email, phone, accounts), and training progress. */
-export default function HireDetail({ hire: h, names, creator, canEditIt, canCancel, path, attempts }: {
+export default function HireDetail({ hire: h, people, names, creator, canEditIt, canEditPlan, canCancel, path, attempts, welcomeDone }: {
   hire: NewHire;
+  people: { id: string; full_name: string }[];
   names: Record<string, string>;
   creator: string | null;
   canEditIt: boolean;
+  canEditPlan: boolean;
   canCancel: boolean;
   path: TrainingModule[];
   attempts: Record<string, AttemptSummary>;
+  welcomeDone: boolean;
 }) {
   const { t, tag } = useI18n();
   const me = useMe();
@@ -74,6 +79,7 @@ export default function HireDetail({ hire: h, names, creator, canEditIt, canCanc
     router.refresh();
   };
 
+  const progress = hireProgress(h, welcomeDone, path, attempts);
   const setAccount = (i: number, patch: Partial<HireAccount>) => setAccounts(a => a.map((x, j) => (j === i ? { ...x, ...patch } : x)));
 
   return (
@@ -87,8 +93,20 @@ export default function HireDetail({ hire: h, names, creator, canEditIt, canCanc
             {h.company_id && <span style={{ color: companyInk(h.company_id) }}> · {companyName(h.company_id as CompanyId)}</span>}
           </p>
         </div>
-        <span className={`rounded-full px-3 py-1 text-sm font-bold ${STATUS_STYLE[h.status]}`}>{t.hires.status[h.status]}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`rounded-full px-3 py-1 text-sm font-bold ${STATUS_STYLE[h.status]}`}>{t.hires.status[h.status]}</span>
+          <Link href={`/onboarding/preview?hire=${h.id}`} className="flex h-8 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 text-sm font-bold text-gray-800 hover:bg-gray-50">
+            <Eye className="h-4 w-4" /> {t.prehire.preview}
+          </Link>
+        </div>
       </div>
+
+      <section className="grid gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:grid-cols-2">
+        <ProgressBar label={t.prehire.leaderSide} value={progress.leader} />
+        <ProgressBar label={t.prehire.employeeSide} value={progress.employee} />
+      </section>
+
+      <PrehireChecklist hire={h} canTick={canEditPlan || canEditIt} canTickIt={canEditIt} />
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <dl className="divide-y divide-gray-100">
@@ -105,7 +123,9 @@ export default function HireDetail({ hire: h, names, creator, canEditIt, canCanc
         </dl>
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <WelcomePlan hire={h} people={people} names={names} canEdit={canEditPlan} />
+
+      <section id="it" className="scroll-mt-24 space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div>
           <h2 className="flex items-center gap-2 font-black text-gray-900"><KeyRound className="h-5 w-5 text-gray-400" /> {t.hires.itTitle}</h2>
           <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-amber-700"><ShieldAlert className="h-3.5 w-3.5" /> {t.hires.noPasswords}</p>
@@ -159,7 +179,19 @@ export default function HireDetail({ hire: h, names, creator, canEditIt, canCanc
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-3 font-black text-gray-900">{t.hires.progress}</h2>
+        <h2 className="mb-3 font-black text-gray-900">{t.prehire.employeeSide}</h2>
+        <ul className="mb-2 space-y-2">
+          {[
+            { on: !!h.linked_at, text: t.prehire.signedIn },
+            { on: welcomeDone, text: t.prehire.welcomeForm },
+          ].map(x => (
+            <li key={x.text} className="flex items-center gap-3 text-sm">
+              {x.on ? <CheckCircle2 className="h-4 w-4 text-[#009f67]" /> : <Circle className="h-4 w-4 text-gray-300" />}
+              <span className="flex-1 font-bold text-gray-900">{x.text}</span>
+              <span className={x.on ? "text-[#00704a]" : "text-gray-400"}>{x.on ? t.training.done : t.hires.notStarted}</span>
+            </li>
+          ))}
+        </ul>
         {path.length === 0 ? (
           <p className="text-sm text-gray-500">{t.training.noPath}</p>
         ) : (

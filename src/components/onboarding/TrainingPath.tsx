@@ -9,7 +9,7 @@ import { fmt } from "@/lib/i18n/locale";
 import { firstOpenStep, type AttemptSummary, type TrainingModule } from "@/lib/onboarding";
 
 /** The employee's training: GMX → brand → department, unlocked one step at a time. */
-export default function TrainingPath({ path, attempts }: { path: TrainingModule[]; attempts: Record<string, AttemptSummary> }) {
+export default function TrainingPath({ path, attempts, links = true }: { path: TrainingModule[]; attempts: Record<string, AttemptSummary>; links?: boolean }) {
   const { t } = useI18n();
   const open = firstOpenStep(path, attempts);
   const done = path.filter(m => attempts[m.id]?.passed).length;
@@ -36,6 +36,7 @@ export default function TrainingPath({ path, attempts }: { path: TrainingModule[
           {path.map((m, i) => {
             const a = attempts[m.id];
             const locked = i > open;
+            const clickable = links && !locked;
             const color = m.scope === "brand" ? companyColor(m.company_id) : companyColor(null);
             const ink = m.scope === "brand" ? companyInk(m.company_id) : companyInk(null);
             const label =
@@ -50,7 +51,10 @@ export default function TrainingPath({ path, attempts }: { path: TrainingModule[
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[11px] font-black uppercase tracking-widest" style={{ color: locked ? "#9ca3af" : ink }}>{label}</span>
-                  <span className={`block font-bold ${locked ? "text-gray-400" : "text-gray-900"}`}>{m.title}</span>
+                  <span className={`block font-bold ${locked ? "text-gray-400" : "text-gray-900"}`}>
+                    {m.title}
+                    {m.is_sample && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[10px] font-black uppercase text-amber-800">{t.roadmap.sample}</span>}
+                  </span>
                   {m.summary && <span className="block truncate text-sm text-gray-500">{m.summary}</span>}
                 </span>
                 <span className="shrink-0 text-xs font-bold">
@@ -64,13 +68,13 @@ export default function TrainingPath({ path, attempts }: { path: TrainingModule[
                     </span>
                   )}
                 </span>
-                {!locked && <ChevronRight className="h-4 w-4 shrink-0 text-gray-300" />}
+                {clickable && <ChevronRight className="h-4 w-4 shrink-0 text-gray-300" />}
               </>
             );
             return (
               <li key={m.id}>
-                {locked ? (
-                  <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3">{inner}</div>
+                {!clickable ? (
+                  <div className={`flex items-center gap-3 rounded-xl border p-3 ${locked ? "border-gray-100 bg-gray-50" : "border-gray-200"}`}>{inner}</div>
                 ) : (
                   <Link href={`/onboarding/learn/${m.id}`} className="flex items-center gap-3 rounded-xl border border-gray-200 p-3 transition-all hover:border-[#009f67] hover:shadow-sm">
                     {inner}

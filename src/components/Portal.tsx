@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
-import { ArrowRight, ArrowUpRight, CalendarDays, ChevronRight, LifeBuoy, Newspaper, Star } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CalendarDays, ChevronRight, LifeBuoy, Newspaper, Star, Vote } from "lucide-react";
 import { BRAND, DEPARTMENTS, TOOLS, toolsFor } from "@/lib/intranet";
 import ToolLink from "@/components/ToolLink";
 import StarButton from "@/components/StarButton";
@@ -10,6 +10,7 @@ import { EventChip, eventDay, formatWhen, useMounted } from "@/components/Calend
 import { CelebrationsList, NewJoinersPanel } from "@/components/Celebrations";
 import WhosOut from "@/components/home/WhosOut";
 import Kudos from "@/components/home/Kudos";
+import PollCard from "@/components/polls/PollCard";
 import { ItSetupBanner, MustReadBanner, OnboardingCard } from "@/components/home/HomeBanners";
 import { useI18n } from "@/components/I18nProvider";
 import { useMe } from "@/components/MeProvider";
@@ -217,9 +218,18 @@ export default function Portal({ name, events, home }: { name: string; isAdmin: 
         <NewJoinersPanel people={home.celebrations} />
       </div>
 
-      <Panel title={t.kudos.title}>
-        <Kudos kudos={home.kudos} people={home.people} />
-      </Panel>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Panel title={t.kudos.title} className="lg:col-span-2">
+          <Kudos kudos={home.kudos} people={home.people} />
+        </Panel>
+        <Panel title={t.poll.quick} action={<Link href="/polls" className="text-sm font-bold text-[#00704a] hover:underline">{t.common.seeAll}</Link>}>
+          {home.poll ? (
+            <div className="-mx-5 -mb-5"><PollCard flat poll={home.poll} /></div>
+          ) : (
+            <EmptyState icon={<Vote className="h-6 w-6" />} text={home.canCreatePolls ? t.poll.emptyCreate : t.poll.emptyHome} />
+          )}
+        </Panel>
+      </div>
 
       {/* Departments */}
       <section id="departments" className="scroll-mt-24">
