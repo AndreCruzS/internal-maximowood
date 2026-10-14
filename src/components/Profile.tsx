@@ -4,7 +4,6 @@ import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Check,
-  KeyRound,
   Loader2,
   Pencil,
   ShieldCheck,
@@ -43,8 +42,6 @@ function initials(name: string, email: string) {
   const parts = src.split(/[\s._-]+/).filter(Boolean);
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
 }
-
-const sectionLabel = "text-xs font-semibold text-gray-500 uppercase tracking-wider";
 
 // ── Account ──────────────────────────────────────────────────────────────────
 function AccountCard({ account }: { account: ProfileAccount }) {
@@ -151,65 +148,6 @@ function AccountCard({ account }: { account: ProfileAccount }) {
   );
 }
 
-// ── Password ─────────────────────────────────────────────────────────────────
-function PasswordCard() {
-  const { t } = useI18n();
-  const [current, setCurrent] = useState("");
-  const [next, setNext] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    if (next.length < 8) return setError("New password must be at least 8 characters");
-    if (next !== confirm) return setError("The new passwords don't match");
-    setSaving(true);
-    try {
-      await sendJson("/api/profile/password", "POST", { currentPassword: current, newPassword: next });
-      toast.success("Password changed");
-      setCurrent("");
-      setNext("");
-      setConfirm("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't change your password");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="p-4">
-      <form onSubmit={submit} className="space-y-3">
-        <div className="space-y-1.5">
-          <label htmlFor="pw-current" className={sectionLabel}>{t.profile.currentPassword}</label>
-          <Input id="pw-current" type="password" autoComplete="current-password" required value={current} onChange={e => setCurrent(e.target.value)} disabled={saving} />
-        </div>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label htmlFor="pw-new" className={sectionLabel}>{t.profile.newPassword}</label>
-            <Input id="pw-new" type="password" autoComplete="new-password" required minLength={8} value={next} onChange={e => setNext(e.target.value)} disabled={saving} />
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="pw-confirm" className={sectionLabel}>{t.profile.confirm}</label>
-            <Input id="pw-confirm" type="password" autoComplete="new-password" required value={confirm} onChange={e => setConfirm(e.target.value)} disabled={saving} />
-          </div>
-        </div>
-        {error && <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">{error}</div>}
-        <button
-          type="submit"
-          disabled={saving || !current || !next || !confirm}
-          className="h-9 px-5 rounded-md text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-50"
-          style={{ background: DARK }}
-        >
-          {saving ? t.common.loading : t.profile.updatePassword}
-        </button>
-      </form>
-    </div>
-  );
-}
-
 // ── Quotes ───────────────────────────────────────────────────────────────────
 export type ProfileTab = "profile" | "admin";
 
@@ -276,16 +214,6 @@ export default function Profile({ account, initialTab, person, department }: {
           {person && <ProfileEditor person={person} department={department} />}
           <AboutMeCard person={person} />
           <AccountCard account={account} />
-          {/* Sign-in moves to Google; the password stays available but out of the way. */}
-          <details className="group rounded-xl border border-gray-200 bg-white shadow-sm">
-            <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-sm font-bold text-gray-600">
-              <KeyRound className="h-4 w-4" /> {t.profile.changePassword}
-              <span className="ml-auto text-xs font-normal text-gray-400 group-open:hidden">{t.me.passwordHint}</span>
-            </summary>
-            <div className="border-t border-gray-100 p-1">
-              <PasswordCard />
-            </div>
-          </details>
         </>
       )}
     </div>

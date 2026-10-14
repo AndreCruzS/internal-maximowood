@@ -233,8 +233,6 @@ const en = {
   profile: {
     title: "My Profile", subtitle: "Your account and how colleagues see you", adminSubtitle: "Manage who can sign in to the GMX Group Intranet",
     tabProfile: "My profile", tabAdmin: "Admin · Team logins", memberSince: "Member since", lastSignIn: "Last sign-in",
-    changePassword: "Change password", currentPassword: "Current password", newPassword: "New password", confirm: "Confirm",
-    updatePassword: "Update password",
   },
   welcome: {
     title: "Welcome", heading: "Welcome to the GMX Group Intranet",
@@ -325,7 +323,7 @@ const en = {
     photoType: "Use a PNG, JPG or WebP image.", photoSize: "The photo must be under 3 MB.", photoSaved: "Photo updated", linkedinInvalid: "That isn't a LinkedIn link.",
     cover: "Cover", changePhoto: "Change photo", removePhoto: "Remove photo", headline: "Headline", headlinePlaceholder: "A line about you, e.g. Helping builders find the right wood",
     pronouns: "Pronouns (optional)", pronounsPlaceholder: "e.g. she/her", bioPlaceholder: "What you do, what you've worked on, what you enjoy…", chars: "{n} / {max}",
-    interestsPlaceholder: "Surfing, cooking, photography…", funFactPlaceholder: "Something colleagues might not guess", passwordHint: "You'll soon sign in with Google",
+    interestsPlaceholder: "Surfing, cooking, photography…", funFactPlaceholder: "Something colleagues might not guess",
   },
   poll: {
     title: "Polls", subtitle: "Quick questions about the intranet and the company. Votes are anonymous.", quick: "Quick poll", new: "New poll",
@@ -336,10 +334,9 @@ const en = {
     emptyHome: "No open poll right now.", emptyCreate: "No open poll — start one from Polls.",
   },
   login: {
-    welcome: "Welcome back", subtitle: "Sign in to the GMX Group Intranet with your company email.", email: "Email",
-    password: "Password", signIn: "Sign in", signingIn: "Signing in…", footer: "For GMX Group employees · Ask your admin for an account",
-    intranet: "Intranet", tagline: "Making sustainability our business.", wrong: "Incorrect email or password. Please try again.",
-    unreachable: "Could not reach the server. Please try again.",
+    welcome: "Welcome back", subtitle: "Sign in to the GMX Group Intranet with your company Google account.", signIn: "Sign in with Google", signingIn: "Opening Google…",
+    footer: "For GMX Group employees · Use your company email", intranet: "Intranet", tagline: "Making sustainability our business.",
+    notCompany: "That isn't a GMX Group company account. Sign in with your company email.", failed: "Google sign-in didn't finish. Please try again.", unreachable: "Could not reach the server. Please try again.",
   },
 };
 
@@ -573,8 +570,6 @@ const es: Dict = {
   profile: {
     title: "Mi Perfil", subtitle: "Tu cuenta y cómo te ven tus colegas", adminSubtitle: "Gestiona quién puede ingresar a la Intranet de GMX Group",
     tabProfile: "Mi perfil", tabAdmin: "Admin · Accesos del equipo", memberSince: "Miembro desde", lastSignIn: "Último ingreso",
-    changePassword: "Cambiar contraseña", currentPassword: "Contraseña actual", newPassword: "Nueva contraseña", confirm: "Confirmar",
-    updatePassword: "Actualizar contraseña",
   },
   welcome: {
     title: "Bienvenida", heading: "Bienvenido a la Intranet de GMX Group",
@@ -665,7 +660,7 @@ const es: Dict = {
     photoType: "Usa una imagen PNG, JPG o WebP.", photoSize: "La foto debe pesar menos de 3 MB.", photoSaved: "Foto actualizada", linkedinInvalid: "Ese no es un enlace de LinkedIn.",
     cover: "Portada", changePhoto: "Cambiar foto", removePhoto: "Quitar foto", headline: "Titular", headlinePlaceholder: "Una frase sobre ti, ej. Ayudo a constructores a encontrar la madera correcta",
     pronouns: "Pronombres (opcional)", pronounsPlaceholder: "ej. ella", bioPlaceholder: "Qué haces, en qué has trabajado, qué disfrutas…", chars: "{n} / {max}",
-    interestsPlaceholder: "Surf, cocina, fotografía…", funFactPlaceholder: "Algo que tus colegas no adivinarían", passwordHint: "Pronto entrarás con Google",
+    interestsPlaceholder: "Surf, cocina, fotografía…", funFactPlaceholder: "Algo que tus colegas no adivinarían",
   },
   poll: {
     title: "Encuestas", subtitle: "Preguntas rápidas sobre la intranet y la empresa. Los votos son anónimos.", quick: "Encuesta rápida", new: "Nueva encuesta",
@@ -676,10 +671,9 @@ const es: Dict = {
     emptyHome: "No hay encuestas abiertas ahora.", emptyCreate: "No hay encuestas abiertas — crea una en Encuestas.",
   },
   login: {
-    welcome: "Bienvenido de nuevo", subtitle: "Ingresa a la Intranet de GMX Group con tu correo de la empresa.", email: "Correo",
-    password: "Contraseña", signIn: "Ingresar", signingIn: "Ingresando…", footer: "Para empleados de GMX Group · Pide una cuenta a tu administrador",
-    intranet: "Intranet", tagline: "La sostenibilidad es nuestro negocio.", wrong: "Correo o contraseña incorrectos. Inténtalo de nuevo.",
-    unreachable: "No se pudo conectar con el servidor. Inténtalo de nuevo.",
+    welcome: "Bienvenido de nuevo", subtitle: "Ingresa a la Intranet de GMX Group con tu cuenta de Google de la empresa.", signIn: "Ingresar con Google", signingIn: "Abriendo Google…",
+    footer: "Para empleados de GMX Group · Usa tu correo de la empresa", intranet: "Intranet", tagline: "La sostenibilidad es nuestro negocio.",
+    notCompany: "Esa cuenta no es de GMX Group. Ingresa con tu correo de la empresa.", failed: "No se completó el ingreso con Google. Inténtalo de nuevo.", unreachable: "No se pudo conectar con el servidor. Inténtalo de nuevo.",
   },
 };
 
@@ -911,8 +905,6 @@ const pt: Dict = {
   profile: {
     title: "Meu Perfil", subtitle: "Sua conta e como os colegas te veem", adminSubtitle: "Gerencie quem pode entrar na Intranet da GMX Group",
     tabProfile: "Meu perfil", tabAdmin: "Admin · Acessos da equipe", memberSince: "Membro desde", lastSignIn: "Último acesso",
-    changePassword: "Alterar senha", currentPassword: "Senha atual", newPassword: "Nova senha", confirm: "Confirmar",
-    updatePassword: "Atualizar senha",
   },
   welcome: {
     title: "Boas-vindas", heading: "Bem-vindo à Intranet da GMX Group",
@@ -1003,7 +995,7 @@ const pt: Dict = {
     photoType: "Use uma imagem PNG, JPG ou WebP.", photoSize: "A foto precisa ter menos de 3 MB.", photoSaved: "Foto atualizada", linkedinInvalid: "Esse não é um link do LinkedIn.",
     cover: "Capa", changePhoto: "Trocar foto", removePhoto: "Remover foto", headline: "Frase de destaque", headlinePlaceholder: "Uma frase sobre você, ex. Ajudo construtores a encontrar a madeira certa",
     pronouns: "Pronomes (opcional)", pronounsPlaceholder: "ex. ela/dela", bioPlaceholder: "O que você faz, em que já trabalhou, do que gosta…", chars: "{n} / {max}",
-    interestsPlaceholder: "Surfe, culinária, fotografia…", funFactPlaceholder: "Algo que os colegas não imaginam", passwordHint: "Em breve você vai entrar com o Google",
+    interestsPlaceholder: "Surfe, culinária, fotografia…", funFactPlaceholder: "Algo que os colegas não imaginam",
   },
   poll: {
     title: "Enquetes", subtitle: "Perguntas rápidas sobre a intranet e a empresa. Os votos são anônimos.", quick: "Enquete rápida", new: "Nova enquete",
@@ -1014,10 +1006,9 @@ const pt: Dict = {
     emptyHome: "Nenhuma enquete aberta agora.", emptyCreate: "Nenhuma enquete aberta — crie uma em Enquetes.",
   },
   login: {
-    welcome: "Bem-vindo de volta", subtitle: "Entre na Intranet da GMX Group com seu e-mail corporativo.", email: "E-mail",
-    password: "Senha", signIn: "Entrar", signingIn: "Entrando…", footer: "Para colaboradores da GMX Group · Peça uma conta ao administrador",
-    intranet: "Intranet", tagline: "Sustentabilidade é o nosso negócio.", wrong: "E-mail ou senha incorretos. Tente novamente.",
-    unreachable: "Não foi possível conectar ao servidor. Tente novamente.",
+    welcome: "Bem-vindo de volta", subtitle: "Entre na Intranet do GMX Group com sua conta Google da empresa.", signIn: "Entrar com o Google", signingIn: "Abrindo o Google…",
+    footer: "Para colaboradores do GMX Group · Use seu e-mail da empresa", intranet: "Intranet", tagline: "Sustentabilidade é o nosso negócio.",
+    notCompany: "Essa conta não é do GMX Group. Entre com seu e-mail da empresa.", failed: "O login com o Google não terminou. Tente novamente.", unreachable: "Não foi possível conectar ao servidor. Tente novamente.",
   },
 };
 
