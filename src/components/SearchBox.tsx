@@ -36,6 +36,7 @@ export default function SearchBox() {
       { label: t.nav.news, hint: t.nav.page, href: "/news", extra: "news announcements" },
       { label: t.nav.calendar, hint: t.nav.calendarHint, href: "/calendar", extra: "calendar holidays events" },
       { label: t.nav.people, hint: t.nav.page, href: "/people", extra: "people org chart directory" },
+      { label: t.nav.expenses, hint: t.nav.page, href: "/expenses", extra: "expenses ramp receipts card reimbursement funds limit" },
       { label: t.nav.knowledge, hint: t.nav.page, href: "/knowledge", extra: "knowledge pills pk sessions videos studies insights training learn" },
       { label: t.nav.resources, hint: t.nav.page, href: "/resources", extra: "resources documents links" },
       { label: t.nav.help, hint: t.nav.page, href: "/help", extra: "help faq" },

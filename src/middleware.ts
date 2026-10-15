@@ -2,8 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // /auth/callback finishes Google sign-in (there is no session yet).
+// /api/ramp/webhook is called by Ramp and checks its own signature.
 // /api/cron carries its own CRON_SECRET guard — Vercel Cron has no session.
-const PUBLIC_PREFIXES = ["/login", "/auth/callback", "/api/cron"];
+const PUBLIC_PREFIXES = ["/login", "/auth/callback", "/api/cron", "/api/ramp/webhook"];
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
