@@ -46,6 +46,7 @@ const en = {
   tools: {
     "/calculator": { name: "Quote Builder", description: "Retail & B2B quotes, and your saved ones" },
     "/tally": { name: "Tally Calculator", description: "Split an order into packs per length, from live stock" },
+    "/expenses": { name: "Expenses", description: "Receipts, reimbursements, cards and fund requests, connected to Ramp" },
     "/pricing": { name: "Pricing", description: "Maximo price list" },
     "/inventory": { name: "Inventory", description: "Live stock by branch" },
     "https://orders.gmxgroup.com/": { name: "Orders", description: "GMX logistics order platform" },
@@ -637,6 +638,7 @@ const es: Dict = {
   tools: {
     "/calculator": { name: "Creador de cotizaciones", description: "Cotizaciones minoristas y B2B, y las guardadas" },
     "/tally": { name: "Calculadora de tally", description: "Divide un pedido en paquetes por largo, con el stock en vivo" },
+    "/expenses": { name: "Gastos", description: "Recibos, reembolsos, tarjetas y pedidos de fondos, conectados a Ramp" },
     "/pricing": { name: "Precios", description: "Lista de precios de Maximo" },
     "/inventory": { name: "Inventario", description: "Stock en vivo por sucursal" },
     "https://orders.gmxgroup.com/": { name: "Pedidos", description: "Plataforma de pedidos de logística de GMX" },
@@ -1226,6 +1228,7 @@ const pt: Dict = {
   tools: {
     "/calculator": { name: "Criador de cotações", description: "Cotações varejo e B2B, e as salvas" },
     "/tally": { name: "Calculadora de tally", description: "Divide um pedido em pacotes por comprimento, com o estoque ao vivo" },
+    "/expenses": { name: "Despesas", description: "Recibos, reembolsos, cartões e pedidos de verba, conectados ao Ramp" },
     "/pricing": { name: "Preços", description: "Tabela de preços da Maximo" },
     "/inventory": { name: "Estoque", description: "Estoque ao vivo por filial" },
     "https://orders.gmxgroup.com/": { name: "Pedidos", description: "Plataforma de pedidos da logística GMX" },

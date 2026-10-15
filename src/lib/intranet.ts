@@ -10,6 +10,7 @@ import {
   Package,
   PackageOpen,
   Images,
+  Receipt,
   Ruler,
   Tag,
   Truck,
@@ -130,6 +131,7 @@ export const TOOLS: Tool[] = [
   { name: "Inventory", description: "Live stock by branch", icon: Package, href: "/inventory", department: "commercial", company: "maximo", pinned: true },
   { name: "Orders", description: "GMX logistics order platform", icon: ClipboardList, href: "https://orders.gmxgroup.com/", department: "logistics", company: "gmx", external: true, pinned: true },
   { name: "Data Center", description: "Ads & campaign dashboard", icon: BarChart3, href: "https://maximo-ads-dashboard.vercel.app/login", department: "marketing", company: "maximo", external: true, pinned: true },
+  { name: "Expenses", description: "Receipts, reimbursements, cards and fund requests, connected to Ramp", icon: Receipt, href: "/expenses", department: "finance", company: "gmx" },
   { name: "Online Gallery", description: "Maximo photos and media library", icon: Images, href: "https://media.maximowood.com/", department: "marketing", company: "maximo", external: true },
 ];
 
