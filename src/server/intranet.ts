@@ -32,7 +32,7 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
   const to = iso(new Date(today.getTime() + 14 * 86_400_000));
   // Kudos are public for the week they're given (the client trims to the viewer's week).
   const kudosSince = new Date(today.getTime() - 8 * 86_400_000).toISOString();
-  const [news, mustRead, reads, people, absences, kudos, items, progress, celebrations, mine, isIt, itQueue, polls, canPoll] = await Promise.all([
+  const [news, mustRead, reads, people, absences, kudos, items, progress, celebrations, mine, isIt, itQueue, polls, canPoll, handovers] = await Promise.all([
     supabase.from("news").select(NEWS_COLUMNS).order("published_at", { ascending: false }).limit(6),
     supabase.from("news").select("id").eq("must_read", true).limit(200),
     supabase.from("news_reads").select("news_id").eq("user_id", userId),
@@ -51,6 +51,7 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
     supabase.from("new_hires").select("id", { count: "exact", head: true }).eq("status", "it_setup"),
     loadPolls(supabase, userId, { openOnly: true, limit: 1 }),
     supabase.rpc("can_create_polls"),
+    supabase.rpc("my_handovers"), // errors (→ no banner) until migration 0017
   ]);
   // New employee = started in the last 90 days (or, with only a year, this year).
   const me = mine.data as { start_date: string | null; start_year: number | null } | null;
@@ -73,6 +74,8 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
     itQueue: isIt.data === true ? itQueue.count ?? 0 : 0,
     poll: polls[0] ?? null,
     canCreatePolls: canPoll.data === true,
+    /** The viewer's own open offboarding: they're asked to fill their handover. */
+    handoverDue: ((handovers.data as { id: string; last_day: string; mine: boolean; handover_at: string | null }[] | null) ?? []).find(h => h.mine) ?? null,
     celebrations: (celebrations.data as { id: string; full_name: string; birth_month: number | null; birth_day: number | null; start_date: string | null }[] | null) ?? [],
   };
 }

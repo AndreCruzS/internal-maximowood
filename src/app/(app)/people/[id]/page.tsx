@@ -36,7 +36,11 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   const p = person.data as Person;
   const [canOffboard, offboarding] = await Promise.all([
     supabase.rpc("can_add_hires"),
-    supabase.from("offboardings").select("id, last_day, notes").eq("person_id", id).eq("status", "requested").maybeSingle(),
+    selectCompat(
+      cols => supabase.from("offboardings").select(cols).eq("person_id", id).eq("status", "requested").maybeSingle(),
+      "id, last_day, notes, handover_at",
+      "id, last_day, notes",
+    ),
   ]);
   return (
     <PersonProfile

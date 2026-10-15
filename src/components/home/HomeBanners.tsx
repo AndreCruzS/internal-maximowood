@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BellRing, KeyRound, ListChecks } from "lucide-react";
+import { BellRing, ClipboardList, KeyRound, ListChecks } from "lucide-react";
 import { useI18n } from "@/components/I18nProvider";
 import { plural } from "@/lib/i18n/dictionaries";
 import { fmt } from "@/lib/i18n/locale";
@@ -27,6 +27,20 @@ export function ItSetupBanner({ count }: { count: number }) {
       <KeyRound className="h-5 w-5 shrink-0" />
       <span className="flex-1">{plural(t.hires, "itBanner", count)}</span>
       <span className="underline">{t.home.open}</span>
+    </Link>
+  );
+}
+
+/** For someone who is leaving: fill in the handover before the last day. */
+export function HandoverBanner({ due }: { due: { last_day: string; handover_at: string | null } | null }) {
+  const { t, tag } = useI18n();
+  if (!due) return null;
+  const date = new Date(`${due.last_day}T12:00:00`).toLocaleDateString(tag, { weekday: "long", month: "long", day: "numeric" });
+  return (
+    <Link href="/handover" className="flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900 hover:bg-amber-100">
+      <ClipboardList className="h-5 w-5 shrink-0" />
+      <span className="flex-1">{fmt(due.handover_at ? t.handover.bannerDone : t.handover.banner, { date })}</span>
+      <span className="underline">{due.handover_at ? t.handover.edit : t.handover.fill}</span>
     </Link>
   );
 }

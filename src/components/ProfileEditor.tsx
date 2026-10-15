@@ -50,10 +50,11 @@ export default function ProfileEditor({ person: p, department }: { person: Perso
     bio: p.bio ?? "",
     interests: p.interests ?? [],
     fun_fact: p.fun_fact ?? "",
-    cover: p.cover ?? "forest",
+    cover: p.cover ?? "brands",
     linkedin: p.linkedin ?? "",
   });
   const [photo, setPhoto] = useState(p.photo_url);
+  const brands = [p.company_id, ...(p.companies ?? [])];
   const [busy, setBusy] = useState<"save" | "photo" | null>(null);
   const set = <K extends keyof typeof d>(k: K, v: (typeof d)[K]) => setD(x => ({ ...x, [k]: v }));
 
@@ -109,11 +110,11 @@ export default function ProfileEditor({ person: p, department }: { person: Perso
   return (
     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       {/* Live preview */}
-      <div className="relative h-32 sm:h-40" style={{ background: coverOf(d.cover) }}>
+      <div className="relative h-32 sm:h-40" style={{ background: coverOf(d.cover, brands) }}>
         <div className="absolute bottom-3 right-3 flex gap-1.5 rounded-full bg-black/25 p-1.5" role="radiogroup" aria-label={t.me.cover}>
           {COVER_IDS.map(c => (
             <button key={c} type="button" role="radio" aria-checked={d.cover === c} aria-label={c} onClick={() => set("cover", c)}
-              className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white" style={{ background: coverOf(c) }}>
+              className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white" style={{ background: coverOf(c, brands) }}>
               {d.cover === c && <Check className="h-3.5 w-3.5 text-white" />}
             </button>
           ))}
@@ -121,7 +122,7 @@ export default function ProfileEditor({ person: p, department }: { person: Perso
       </div>
       <div className="px-6 pb-6">
         <div className="-mt-12 flex flex-wrap items-end justify-between gap-3">
-          <div className="relative">
+          <div className="relative z-10">
             <Photo person={{ full_name: p.full_name, photo_url: photo }} size={96} color={colorOf(department)} />
             <button type="button" onClick={() => fileRef.current?.click()} disabled={busy === "photo"} aria-label={t.me.changePhoto}
               className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-gray-900 text-white shadow hover:bg-gray-700">

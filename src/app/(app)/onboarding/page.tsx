@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { selectCompat } from "@/server/compat";
+import { HANDOVER_COLUMNS } from "@/lib/handover";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { getDict } from "@/lib/i18n/server";
 import Checklist from "@/components/onboarding/Checklist";
@@ -66,7 +68,11 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
     );
   } else if (tab === "offboarding") {
     const [rows, people] = await Promise.all([
-      supabase.from("offboardings").select("id, person_id, last_day, notes, status, created_by, created_at, done_at").neq("status", "cancelled").order("last_day", { ascending: false }).limit(100),
+      selectCompat(
+        cols => supabase.from("offboardings").select(cols).neq("status", "cancelled").order("last_day", { ascending: false }).limit(100),
+        `id, person_id, last_day, notes, status, created_by, created_at, done_at, ${HANDOVER_COLUMNS}`,
+        "id, person_id, last_day, notes, status, created_by, created_at, done_at",
+      ),
       supabase.from("people").select("id, full_name, user_id"),
     ]);
     const list = (people.data as { id: string; full_name: string; user_id: string | null }[] | null) ?? [];

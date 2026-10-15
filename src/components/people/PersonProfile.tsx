@@ -80,13 +80,14 @@ export default function PersonProfile({ person: p, positions, people, kudos, isM
       </Link>
 
       <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div className="relative h-36 sm:h-44" style={{ background: coverOf(p.cover) }}>
+        <div className="relative h-36 sm:h-44" style={{ background: coverOf(p.cover, brands) }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/gmx-symbol.png" alt="" aria-hidden className="pointer-events-none absolute -right-6 -top-10 h-56 w-56 opacity-15 brightness-0 invert" />
         </div>
         <div className="px-6 pb-6">
           <div className="-mt-14 flex flex-wrap items-end justify-between gap-3">
-            <Photo person={p} size={112} color={color} />
+            {/* Above the cover, which is positioned and would otherwise paint over it. */}
+            <div className="relative z-10"><Photo person={p} size={112} color={color} /></div>
             {isMe && (
               <Link href="/profile" className="flex h-9 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 text-sm font-bold text-gray-800 hover:bg-gray-50">
                 <Pencil className="h-4 w-4" /> {t.me.edit}

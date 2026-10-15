@@ -1,15 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, LogOut } from "lucide-react";
+import { ClipboardList, Loader2, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
 import { fmt } from "@/lib/i18n/locale";
 import { notifyIt } from "@/lib/notify";
 
-export type OpenOffboarding = { id: string; last_day: string; notes: string } | null;
+export type OpenOffboarding = { id: string; last_day: string; notes: string; handover_at?: string | null } | null;
 
 /** On a profile: start an offboarding (last day + notes → IT gets an email), or see / cancel the open one. */
 export default function OffboardPanel({ personId, name, open }: { personId: string; name: string; open: OpenOffboarding }) {
@@ -51,6 +52,9 @@ export default function OffboardPanel({ personId, name, open }: { personId: stri
         <span className="min-w-0 flex-1 text-amber-900">
           <b>{t.offboarding.inProgress}</b> · {fmt(t.offboarding.lastDayOn, { date: date(open.last_day) })}
           {open.notes && <span className="block text-amber-800">{open.notes}</span>}
+          <Link href={`/handover?id=${open.id}`} className="mt-1 inline-flex items-center gap-1 font-bold text-amber-900 underline">
+            <ClipboardList className="h-4 w-4" /> {open.handover_at ? t.handover.view : t.handover.notFilled}
+          </Link>
         </span>
         <button type="button" onClick={cancel} className="text-sm font-bold text-amber-900 hover:underline">{t.offboarding.cancel}</button>
       </section>

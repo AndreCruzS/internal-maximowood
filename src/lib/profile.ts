@@ -1,3 +1,5 @@
+import { COMPANIES } from "@/lib/intranet";
+
 /** Profile covers people pick for their page (migration 0015: people.cover). */
 export const COVERS: Record<string, string> = {
   forest: "linear-gradient(135deg, #00704a 0%, #009f67 100%)",
@@ -9,8 +11,20 @@ export const COVERS: Record<string, string> = {
   violet: "linear-gradient(135deg, #4c2a99 0%, #7b4fd6 100%)",
   night: "linear-gradient(135deg, #111827 0%, #374151 100%)",
 };
-export const COVER_IDS = Object.keys(COVERS);
-export const coverOf = (id: string | null | undefined) => COVERS[id ?? ""] ?? COVERS.forest;
+/** "brands" (the default, migration 0017) paints the cover in the colors of the brands the person works for. */
+export const COVER_IDS = ["brands", ...Object.keys(COVERS)];
+
+/** One brand: its dark-to-bright gradient. Several: a blend through each brand color, in the usual brand order. */
+export function brandCover(brandIds: (string | null | undefined)[]): string {
+  const brands = COMPANIES.filter(c => brandIds.includes(c.id));
+  if (!brands.length) return COVERS.forest;
+  if (brands.length === 1) return `linear-gradient(135deg, ${brands[0].ink} 0%, ${brands[0].color} 100%)`;
+  const stops = brands.map((b, i) => `${b.color} ${Math.round((i / (brands.length - 1)) * 100)}%`);
+  return `linear-gradient(110deg, ${stops.join(", ")})`;
+}
+
+export const coverOf = (id: string | null | undefined, brandIds: (string | null | undefined)[] = []) =>
+  COVERS[id ?? ""] ?? brandCover(brandIds);
 
 export const AVATAR_BUCKET = "avatars";
 export const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
