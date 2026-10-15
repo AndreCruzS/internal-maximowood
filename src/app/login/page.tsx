@@ -1,9 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
 
@@ -11,36 +10,40 @@ const LOGO_WHITE = "/brand/gmx-logo-white.png";
 const LOGO_COLOR = "/brand/gmx-logo-color.png";
 const GREEN = "#009f67";
 
-export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+const GoogleMark = () => (
+  <svg viewBox="0 0 48 48" aria-hidden className="h-5 w-5">
+    <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
+    <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+    <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" />
+    <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" />
+  </svg>
+);
+
+/** Company Google accounts only: Google sends people to /auth/callback, which checks the domain. */
+function Login() {
   const { t } = useI18n();
+  const reason = useSearchParams().get("error");
+  const [error, setError] = useState(reason === "domain" ? t.login.notCompany : reason ? t.login.failed : "");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const signIn = async () => {
     setError("");
+    const supabase = getSupabase();
+    if (!supabase) {
+      setError("Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+      return;
+    }
     setIsLoading(true);
-
-    try {
-      const supabase = getSupabase();
-      if (!supabase) {
-        setError("Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
-        return;
-      }
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      if (signInError) {
-        setError(t.login.wrong);
-        setPassword("");
-        return;
-      }
-      router.push("/");
-      router.refresh();
-    } catch {
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: { prompt: "select_account" },
+      },
+    });
+    // On success the browser is already on its way to Google.
+    if (oauthError) {
       setError(t.login.unreachable);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -74,53 +77,21 @@ export default function Login() {
           <h1 className="text-gray-900 text-3xl font-black mb-1">{t.login.welcome}</h1>
           <p className="text-gray-500 text-sm mb-8">{t.login.subtitle}</p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-bold text-gray-700">
-                {t.login.email}
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@gmxgroup.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-                className="h-12 text-base focus-visible:border-[#009f67] focus-visible:ring-[#009f67]/30"
-                autoFocus
-              />
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+              {error}
             </div>
+          )}
 
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-bold text-gray-700">
-                {t.login.password}
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                className="h-12 text-base focus-visible:border-[#009f67] focus-visible:ring-[#009f67]/30"
-              />
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
-                {error}
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              disabled={isLoading || !email || !password}
-              className="w-full h-12 text-white font-bold text-base transition-all hover:opacity-90"
-              style={{ background: GREEN }}
-            >
-              {isLoading ? t.login.signingIn : t.login.signIn}
-            </Button>
-          </form>
+          <Button
+            type="button"
+            onClick={signIn}
+            disabled={isLoading}
+            className="w-full h-12 gap-3 border border-gray-300 bg-white text-gray-800 font-bold text-base shadow-sm transition-all hover:bg-gray-50 hover:border-[#009f67]"
+          >
+            <GoogleMark />
+            {isLoading ? t.login.signingIn : t.login.signIn}
+          </Button>
 
           <p className="mt-8 pt-6 border-t border-gray-100 text-xs text-gray-400 text-center">
             {t.login.footer}
@@ -128,5 +99,14 @@ export default function Login() {
         </div>
       </div>
     </div>
+  );
+}
+
+// useSearchParams needs a Suspense boundary for the static build.
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <Login />
+    </Suspense>
   );
 }
