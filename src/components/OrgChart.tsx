@@ -138,7 +138,7 @@ export default function OrgChart({ people, positions, dept, isAdmin = false }: {
           <button
             type="button"
             onClick={() => !drag.current?.moved && setSelected(p)}
-            className="relative block h-[156px] w-56 overflow-hidden rounded-xl border-2 bg-white px-4 pb-4 pt-10 text-center shadow-sm transition-shadow hover:shadow-md"
+            className="relative block h-[156px] w-56 rounded-xl border-2 bg-white px-4 pb-4 pt-10 text-center shadow-sm transition-shadow hover:shadow-md"
             style={{ borderColor: `${color}55` }}
           >
             <span className="absolute -top-8 left-1/2 -translate-x-1/2">
