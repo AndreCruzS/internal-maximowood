@@ -111,6 +111,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {nav("/news", Newspaper, t.nav.news)}
       {nav("/calendar", CalendarDays, t.nav.calendar)}
       {nav("/people", Users, t.nav.people)}
+      {nav("/knowledge", GraduationCap, t.nav.knowledge)}
 
       <button
         type="button"
@@ -149,7 +150,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       ))}
 
       <div className="mt-3" />
-      {nav("/knowledge", GraduationCap, t.nav.knowledge)}
       {nav("/resources", FolderOpen, t.nav.resources)}
       {nav("/help", LifeBuoy, t.nav.help)}
       {nav("/onboarding", ListChecks, t.nav.onboarding)}
