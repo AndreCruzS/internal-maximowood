@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  BadgeCheck, CalendarDays, ChevronDown, FolderOpen, Globe, GraduationCap, Receipt, Home, LifeBuoy, ListChecks, LogOut, Menu, Newspaper,
+  BadgeCheck, CalendarDays, ChevronDown, FolderOpen, Globe, GraduationCap, Home, LifeBuoy, ListChecks, LogOut, Menu, Newspaper,
   ShieldCheck, UserCircle, Users, X,
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
@@ -150,8 +150,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="mt-3" />
       {nav("/knowledge", GraduationCap, t.nav.knowledge)}
-      {/* Expenses (Ramp) opens to everyone once NEXT_PUBLIC_RAMP_ENABLED=1; admins preview it before. */}
-      {(session.isAdmin || process.env.NEXT_PUBLIC_RAMP_ENABLED === "1") && nav("/expenses", Receipt, t.nav.expenses)}
       {nav("/resources", FolderOpen, t.nav.resources)}
       {nav("/help", LifeBuoy, t.nav.help)}
       {nav("/onboarding", ListChecks, t.nav.onboarding)}
