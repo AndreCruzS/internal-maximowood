@@ -4,7 +4,7 @@ import { COMPANIES, TOOLS } from "@/lib/intranet";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { LINK_COLUMNS } from "@/server/links";
 import { NEWS_COLUMNS, type NewsItem } from "@/server/intranet";
-import { PLAYBOOK_COLUMNS, type Playbook } from "@/server/playbooks";
+import { selectPlaybooks, type Playbook } from "@/server/playbooks";
 import BrandView, { type BrandLink, type BrandPerson } from "@/components/BrandView";
 import type { LinkRow } from "@/components/resources/ResourceList";
 
@@ -34,7 +34,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
     supabase.from("brand_links").select("id, kind, platform, label, value, sort").eq("company_id", id).order("sort"),
     supabase.from("brand_pages").select("tagline, about").eq("company_id", id).maybeSingle(),
     supabase.from("links").select(LINK_COLUMNS).eq("company_id", id).order("title"),
-    supabase.from("playbooks").select(PLAYBOOK_COLUMNS).eq("company_id", id).eq("status", "published").order("title"),
+    selectPlaybooks(cols => supabase.from("playbooks").select(cols).eq("company_id", id).eq("status", "published").order("title")),
     supabase.from("news").select(NEWS_COLUMNS).eq("company_id", id).order("published_at", { ascending: false }).limit(4),
     supabase
       .from("people")

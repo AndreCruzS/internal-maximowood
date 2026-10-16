@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, ImagePlus, Loader2, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ClipboardList, FileText, ImagePlus, ListChecks, Loader2, Plus, ShieldCheck, Trash2, Video, X, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
@@ -11,14 +11,28 @@ import { useMe } from "@/components/MeProvider";
 import { COMPANIES } from "@/lib/intranet";
 import { deptName } from "@/lib/i18n/text";
 import { fmt } from "@/lib/i18n/locale";
-import { MAX_IMAGE_BYTES, PLAYBOOK_BUCKET, PLAYBOOK_KINDS, type Playbook, type PlaybookKind, type PlaybookStep } from "@/lib/playbooks";
+import {
+  ALL_BLOCKS, MAX_IMAGE_BYTES, PLAYBOOK_BUCKET, PLAYBOOK_KINDS, PLAYBOOK_TEMPLATES, SECTION_KEYS, TEMPLATE_SPEC, activeBlocks,
+  type BlockKey, type Playbook, type PlaybookDefinition, type PlaybookKind, type PlaybookResource, type PlaybookRole,
+  type PlaybookStep, type PlaybookTemplate, type SectionKey,
+} from "@/lib/playbooks";
+import { QualityList } from "@/components/playbooks/Quality";
 import { useSignedUrls } from "@/components/playbooks/useSignedUrls";
 
 const field = "h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#009f67]";
 const area = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-[#009f67]";
 const label = "mb-1 block text-xs font-bold text-gray-500";
+const card = "space-y-3 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm";
+const isUrl = (u: string) => /^https?:\/\//i.test(u);
 
-/** Create or edit a playbook: type, brand, category, owner, review date, intro text and ordered steps. */
+const TEMPLATE_ICON: Record<PlaybookTemplate | "blank", LucideIcon> = {
+  blank: FileText, sop_detailed: ClipboardList, sop_simple: ListChecks, policy: ShieldCheck, video: Video,
+};
+
+/**
+ * Create or edit a playbook: pick a template (new only), then type, brand, category, owner, review date,
+ * purpose, template sections, roles, steps, definitions, video and resources. The score updates as you type.
+ */
 export default function PlaybookEditor({ department, playbook, people, categories }: {
   department: string;
   playbook: Playbook | null;
@@ -47,6 +61,39 @@ export default function PlaybookEditor({ department, playbook, people, categorie
     language: playbook?.language ?? "",
   });
   const [steps, setSteps] = useState<PlaybookStep[]>(playbook?.steps?.length ? playbook.steps : [{ title: "", body: "" }]);
+  const [picked, setPicked] = useState(Boolean(playbook));
+  const [template, setTemplate] = useState<PlaybookTemplate | null>(playbook?.template ?? null);
+  const [blocks, setBlocks] = useState<BlockKey[]>(playbook ? activeBlocks(playbook) : []);
+  const [sections, setSections] = useState<Partial<Record<SectionKey, string>>>(playbook?.sections ?? {});
+  const [roles, setRoles] = useState<PlaybookRole[]>(playbook?.roles ?? []);
+  const [definitions, setDefinitions] = useState<PlaybookDefinition[]>(playbook?.definitions ?? []);
+  const [resources, setResources] = useState<PlaybookResource[]>(playbook?.resources ?? []);
+  const [videoUrl, setVideoUrl] = useState(playbook?.video_url ?? "");
+  const [reconfirm, setReconfirm] = useState(false);
+  const s = t.sop;
+  const names = Object.fromEntries(people.map(p => [p.id, p.full_name]));
+  const on = (b: BlockKey) => blocks.includes(b);
+  const addBlock = (b: BlockKey) => {
+    setBlocks(x => ALL_BLOCKS.filter(k => k === b || x.includes(k)));
+    if (b === "roles" && !roles.length) setRoles([{ role: "", people: [], responsibility: "" }]);
+    if (b === "definitions" && !definitions.length) setDefinitions([{ term: "", definition: "" }]);
+    if (b === "resources" && !resources.length) setResources([{ label: "", url: "" }]);
+  };
+  const removeBlock = (b: BlockKey) => setBlocks(x => x.filter(k => k !== b));
+
+  /** Start from a template: its type, sections and empty rows to fill. */
+  const pick = (tpl: PlaybookTemplate | null) => {
+    setTemplate(tpl);
+    setPicked(true);
+    if (!tpl) return;
+    const spec = TEMPLATE_SPEC[tpl];
+    set({ kind: spec.kind, ack_required: spec.ack });
+    setBlocks(spec.blocks);
+    setSteps(spec.steps ? Array.from({ length: spec.steps }, () => ({ title: "", body: "" })) : []);
+    if (spec.blocks.includes("roles")) setRoles([{ role: "", people: [], responsibility: "" }, { role: "", people: [], responsibility: "" }]);
+    if (spec.blocks.includes("definitions")) setDefinitions([{ term: "", definition: "" }]);
+    if (spec.blocks.includes("resources")) setResources([{ label: "", url: "" }]);
+  };
   const [uploading, setUploading] = useState<number | null>(null);
   const urls = useSignedUrls(steps.flatMap(s => s.images ?? []));
   const set = (patch: Partial<typeof d>) => setD(x => ({ ...x, ...patch }));
@@ -88,6 +135,9 @@ export default function PlaybookEditor({ department, playbook, people, categorie
     if (!d.title.trim()) return toast.error(t.playbooks.titleRequired);
     const link = d.link_url.trim();
     if (link && !/^https?:\/\//i.test(link)) return toast.error(t.playbooks.linkHint);
+    const video = on("video") ? videoUrl.trim() : "";
+    const links = on("resources") ? resources.map(r => ({ label: r.label.trim(), url: r.url.trim() })).filter(r => r.url) : [];
+    if ((video && !isUrl(video)) || links.some(r => !isUrl(r.url))) return toast.error(s.badUrl);
     const row = {
       department_id: department,
       kind: d.kind,
@@ -107,6 +157,14 @@ export default function PlaybookEditor({ department, playbook, people, categorie
       ...(d.department_only || playbook?.visibility ? { visibility: d.department_only ? "department" : "everyone" } : {}),
       language: d.language || null,
       updated_by: me.userId,
+      template,
+      sections: Object.fromEntries(SECTION_KEYS.filter(k => on(k) && sections[k]?.trim()).map(k => [k, sections[k]!.trim()])),
+      roles: on("roles") ? roles.map(r => ({ role: r.role.trim(), people: r.people, responsibility: r.responsibility.trim() })).filter(r => r.role || r.people.length || r.responsibility) : [],
+      definitions: on("definitions") ? definitions.map(x => ({ term: x.term.trim(), definition: x.definition.trim() })).filter(x => x.term || x.definition) : [],
+      resources: links,
+      video_url: video || null,
+      // A significant change: confirmations of earlier versions stop counting (the trigger caps this at the new version).
+      ...(playbook && reconfirm ? { ack_version: (playbook.version ?? 1) + 1 } : {}),
     };
     setBusy(true);
     const res = playbook
@@ -119,12 +177,54 @@ export default function PlaybookEditor({ department, playbook, people, categorie
     router.refresh();
   };
 
+  const backHref = playbook ? `/playbooks/${playbook.id}` : `/departments/${department}#playbooks`;
+
+  if (!picked) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <Link href={backHref} className="text-sm font-bold text-[#00704a] hover:underline">{fmt(t.playbooks.back, { dept: deptName(t, department) })}</Link>
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">{t.playbooks.newPlaybook} · {deptName(t, department)}</h1>
+          <p className="mt-1 text-sm text-gray-500">{s.chooseHint}</p>
+        </div>
+        <p className="text-xs font-black uppercase tracking-widest text-gray-400">{s.chooseTemplate}</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {([...PLAYBOOK_TEMPLATES, "blank"] as const).map(tpl => {
+            const Icon = TEMPLATE_ICON[tpl];
+            return (
+              <button key={tpl} type="button" onClick={() => pick(tpl === "blank" ? null : tpl)}
+                className="flex items-start gap-3 rounded-2xl border-2 border-gray-200 bg-white p-4 text-left shadow-sm hover:border-[#009f67] hover:bg-[#f2fbf7]">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e6f6f0]"><Icon className="h-5 w-5 text-[#00704a]" /></span>
+                <span>
+                  <span className="block font-black text-gray-900">{s.templates[tpl]}</span>
+                  <span className="mt-0.5 block text-sm text-gray-500">{s.templateHints[tpl]}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  /** A text section from the template (scope, escalation…). */
+  const textBlock = (k: SectionKey) =>
+    on(k) && (
+      <section key={k} className={card}>
+        <BlockHeader title={s.blocks[k]} hint={s.blockHints[k]} onRemove={() => removeBlock(k)} removeLabel={s.removeSection} />
+        <textarea rows={3} value={sections[k] ?? ""} onChange={e => setSections(x => ({ ...x, [k]: e.target.value }))} aria-label={s.blocks[k]} className={area} />
+      </section>
+    );
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Link href={playbook ? `/playbooks/${playbook.id}` : `/departments/${department}#playbooks`} className="text-sm font-bold text-[#00704a] hover:underline">
+      <Link href={backHref} className="text-sm font-bold text-[#00704a] hover:underline">
         {fmt(t.playbooks.back, { dept: playbook ? playbook.title : deptName(t, department) })}
       </Link>
-      <h1 className="text-2xl font-black text-gray-900">{playbook ? t.common.edit : t.playbooks.newPlaybook} · {deptName(t, department)}</h1>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <h1 className="text-2xl font-black text-gray-900">{playbook ? t.common.edit : t.playbooks.newPlaybook} · {deptName(t, department)}</h1>
+        {template && <span className="rounded-full bg-[#e6f6f0] px-3 py-1 text-xs font-bold text-[#00704a]">{s.templates[template]}</span>}
+      </div>
 
       <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div>
@@ -170,14 +270,54 @@ export default function PlaybookEditor({ department, playbook, people, categorie
         </div>
       </section>
 
-      <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <label className={label} htmlFor="pb-body">{t.playbooks.body}</label>
-        <textarea id="pb-body" rows={5} value={d.body} onChange={e => set({ body: e.target.value })} className={area} />
+      <section className={card}>
+        <label className={label} htmlFor="pb-body">{template === "policy" ? s.policyPurpose : template || blocks.length ? s.purpose : t.playbooks.body}</label>
+        <textarea id="pb-body" rows={5} value={d.body} onChange={e => set({ body: e.target.value })} placeholder={template ? s.purposeHint : undefined} className={area} />
       </section>
+
+      {on("video") && (
+        <section className={card}>
+          <BlockHeader title={s.blocks.video} hint={s.blockHints.video} onRemove={() => removeBlock("video")} removeLabel={s.removeSection} />
+          <input type="url" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" aria-label={s.videoUrl} className={field} />
+        </section>
+      )}
+      {textBlock("scope")}
+      {textBlock("prerequisites")}
+      {on("roles") && (
+        <section className={card}>
+          <BlockHeader title={s.blocks.roles} hint={s.blockHints.roles} onRemove={() => removeBlock("roles")} removeLabel={s.removeSection} />
+          {roles.map((r, i) => (
+            <div key={i} className="grid gap-2 rounded-xl border border-gray-200 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto]">
+              <input value={r.role} onChange={e => setRoles(x => x.map((y, j) => (j === i ? { ...y, role: e.target.value } : y)))} placeholder={s.role} aria-label={s.role} maxLength={120} className={field} />
+              <div className="space-y-1.5">
+                {r.people.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {r.people.map(id => (
+                      <span key={id} className="flex items-center gap-1 rounded-full bg-[#e6f6f0] py-0.5 pl-2 pr-1 text-xs font-bold text-[#00704a]">
+                        {names[id] ?? s.unknown}
+                        <button type="button" onClick={() => setRoles(x => x.map((y, j) => (j === i ? { ...y, people: y.people.filter(z => z !== id) } : y)))} aria-label={s.removeRow} className="rounded-full p-0.5 hover:bg-white"><X className="h-3 w-3" /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <select value="" onChange={e => { const id = e.target.value; if (id) setRoles(x => x.map((y, j) => (j === i && !y.people.includes(id) ? { ...y, people: [...y.people, id] } : y))); }} aria-label={s.addPerson} className={field}>
+                  <option value="">{s.addPerson}</option>
+                  {people.filter(p => !r.people.includes(p.id)).map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+                </select>
+              </div>
+              <button type="button" onClick={() => setRoles(x => x.filter((_, j) => j !== i))} aria-label={s.removeRow} className="self-start rounded p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+              <textarea rows={2} value={r.responsibility} onChange={e => setRoles(x => x.map((y, j) => (j === i ? { ...y, responsibility: e.target.value } : y)))} placeholder={s.responsibility} aria-label={s.responsibility} className={`${area} sm:col-span-3`} />
+            </div>
+          ))}
+          <button type="button" onClick={() => setRoles(x => [...x, { role: "", people: [], responsibility: "" }])} className="flex items-center gap-1.5 text-sm font-bold text-[#00704a] hover:underline">
+            <Plus className="h-4 w-4" /> {s.addRole}
+          </button>
+        </section>
+      )}
 
       <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400">{t.playbooks.stepsLabel}</p>
+          <p className="text-xs font-black uppercase tracking-widest text-gray-400">{template === "policy" ? s.policyElements : template || blocks.length ? s.procedure : t.playbooks.stepsLabel}</p>
           <p className="mt-1 text-[11px] text-gray-400">{t.playbooks.imageHint}</p>
         </div>
         {steps.map((s, i) => (
@@ -249,6 +389,51 @@ export default function PlaybookEditor({ department, playbook, people, categorie
         </button>
       </section>
 
+      {textBlock("escalation")}
+      {textBlock("controls")}
+      {textBlock("completion")}
+      {on("definitions") && (
+        <section className={card}>
+          <BlockHeader title={s.blocks.definitions} hint={s.blockHints.definitions} onRemove={() => removeBlock("definitions")} removeLabel={s.removeSection} />
+          {definitions.map((x, i) => (
+            <div key={i} className="flex gap-2">
+              <input value={x.term} onChange={e => setDefinitions(v => v.map((y, j) => (j === i ? { ...y, term: e.target.value } : y)))} placeholder={s.term} aria-label={s.term} maxLength={120} className={`${field} w-1/3`} />
+              <input value={x.definition} onChange={e => setDefinitions(v => v.map((y, j) => (j === i ? { ...y, definition: e.target.value } : y)))} placeholder={s.definition} aria-label={s.definition} maxLength={600} className={field} />
+              <button type="button" onClick={() => setDefinitions(v => v.filter((_, j) => j !== i))} aria-label={s.removeRow} className="rounded p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+            </div>
+          ))}
+          <button type="button" onClick={() => setDefinitions(v => [...v, { term: "", definition: "" }])} className="flex items-center gap-1.5 text-sm font-bold text-[#00704a] hover:underline">
+            <Plus className="h-4 w-4" /> {s.addTerm}
+          </button>
+        </section>
+      )}
+      {on("resources") && (
+        <section className={card}>
+          <BlockHeader title={s.blocks.resources} hint={s.blockHints.resources} onRemove={() => removeBlock("resources")} removeLabel={s.removeSection} />
+          {resources.map((x, i) => (
+            <div key={i} className="flex gap-2">
+              <input value={x.label} onChange={e => setResources(v => v.map((y, j) => (j === i ? { ...y, label: e.target.value } : y)))} placeholder={s.resourceLabel} aria-label={s.resourceLabel} maxLength={120} className={`${field} w-1/3`} />
+              <input type="url" value={x.url} onChange={e => setResources(v => v.map((y, j) => (j === i ? { ...y, url: e.target.value } : y)))} placeholder={s.resourceUrl} aria-label={s.resourceUrl} className={field} />
+              <button type="button" onClick={() => setResources(v => v.filter((_, j) => j !== i))} aria-label={s.removeRow} className="rounded p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+            </div>
+          ))}
+          <button type="button" onClick={() => setResources(v => [...v, { label: "", url: "" }])} className="flex items-center gap-1.5 text-sm font-bold text-[#00704a] hover:underline">
+            <Plus className="h-4 w-4" /> {s.addResource}
+          </button>
+        </section>
+      )}
+
+      {ALL_BLOCKS.some(b => !on(b)) && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-gray-500">{s.addSection}:</span>
+          {ALL_BLOCKS.filter(b => !on(b)).map(b => (
+            <button key={b} type="button" onClick={() => addBlock(b)} className="flex items-center gap-1 rounded-full border border-dashed border-gray-300 px-3 py-1 text-xs font-bold text-gray-600 hover:border-[#009f67] hover:text-[#00704a]">
+              <Plus className="h-3 w-3" /> {s.blocks[b]}
+            </button>
+          ))}
+        </div>
+      )}
+
       <section className="grid gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label className={label} htmlFor="pb-link">{t.playbooks.link}</label>
@@ -272,6 +457,12 @@ export default function PlaybookEditor({ department, playbook, people, categorie
           <input type="checkbox" checked={d.ack_required} onChange={e => set({ ack_required: e.target.checked })} className="h-4 w-4 accent-[#009f67]" />
           {t.playbooks.ackRequired}
         </label>
+        {playbook && d.ack_required && playbook.status === "published" && (
+          <label className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2">
+            <input type="checkbox" checked={reconfirm} onChange={e => setReconfirm(e.target.checked)} className="mt-0.5 h-4 w-4 accent-amber-600" />
+            <span><b>{s.reconfirm}</b><span className="block text-xs">{s.reconfirmHint}</span></span>
+          </label>
+        )}
         <label className="flex items-center gap-2 text-sm font-bold text-gray-700 sm:col-span-2">
           <input type="checkbox" checked={d.department_only} onChange={e => set({ department_only: e.target.checked })} className="h-4 w-4 accent-[#009f67]" />
           {fmt(t.playbooks.departmentOnly, { dept: deptName(t, department) })}
@@ -289,14 +480,30 @@ export default function PlaybookEditor({ department, playbook, people, categorie
         </div>
       </section>
 
+      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <QualityList p={{ ...d, steps, template, sections: Object.fromEntries(SECTION_KEYS.filter(on).map(k => [k, sections[k] ?? ""])), roles: on("roles") ? roles : [], resources: on("resources") ? resources.filter(r => r.url.trim()) : [], video_url: on("video") ? videoUrl.trim() : null, link_url: d.link_url.trim() || null, owner_person_id: d.owner_person_id || null, review_by: d.review_by || null }} />
+      </section>
+
       <div className="flex justify-end gap-2">
-        <Link href={playbook ? `/playbooks/${playbook.id}` : `/departments/${department}#playbooks`} className="flex h-10 items-center rounded-lg border border-gray-300 px-4 text-sm font-bold text-gray-700">
+        <Link href={backHref} className="flex h-10 items-center rounded-lg border border-gray-300 px-4 text-sm font-bold text-gray-700">
           {t.common.cancel}
         </Link>
         <button type="button" onClick={save} disabled={busy || uploading !== null} className="flex h-10 items-center gap-2 rounded-lg bg-[#009f67] px-5 text-sm font-bold text-white disabled:opacity-50">
           {busy && <Loader2 className="h-4 w-4 animate-spin" />} {t.playbooks.save}
         </button>
       </div>
+    </div>
+  );
+}
+
+function BlockHeader({ title, hint, onRemove, removeLabel }: { title: string; hint: string; onRemove: () => void; removeLabel: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <p className="text-xs font-black uppercase tracking-widest text-gray-400">{title}</p>
+        <p className="mt-1 text-[11px] text-gray-400">{hint}</p>
+      </div>
+      <button type="button" onClick={onRemove} aria-label={`${removeLabel}: ${title}`} title={removeLabel} className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600"><X className="h-4 w-4" /></button>
     </div>
   );
 }

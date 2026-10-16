@@ -25,6 +25,8 @@ export const NEWS_COLUMNS = "id, title, body, image_url, link_url, company_id, d
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
+export type PlaybookTodo = { playbook_id: string; title: string; kind: string; due_on: string | null; note: string; since: string; reason: "assigned" | "reconfirm" };
+
 /** Everything the home dashboard shows, in parallel. Missing tables (before 0007) just come back empty. */
 export async function loadHome(supabase: SupabaseClient, userId: string) {
   const today = new Date();
@@ -32,7 +34,7 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
   const to = iso(new Date(today.getTime() + 14 * 86_400_000));
   // Kudos are public for the week they're given (the client trims to the viewer's week).
   const kudosSince = new Date(today.getTime() - 8 * 86_400_000).toISOString();
-  const [news, mustRead, reads, people, absences, kudos, items, progress, celebrations, mine, isIt, itQueue, polls, canPoll, handovers, receiptAsks] = await Promise.all([
+  const [news, mustRead, reads, people, absences, kudos, items, progress, celebrations, mine, isIt, itQueue, polls, canPoll, handovers, receiptAsks, todos] = await Promise.all([
     supabase.from("news").select(NEWS_COLUMNS).order("published_at", { ascending: false }).limit(6),
     supabase.from("news").select("id").eq("must_read", true).limit(200),
     supabase.from("news_reads").select("news_id").eq("user_id", userId),
@@ -53,6 +55,7 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
     supabase.rpc("can_create_polls"),
     supabase.rpc("my_handovers"), // errors (→ no banner) until migration 0017
     supabase.from("receipt_requests").select("asked_person_id").eq("status", "open").limit(200), // 0018
+    supabase.rpc("my_playbook_todos"), // 0019
   ]);
   // New employee = started in the last 90 days (or, with only a year, this year).
   const me = mine.data as { id: string; start_date: string | null; start_year: number | null } | null;
@@ -79,6 +82,8 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
     /** Colleagues waiting on the viewer for a receipt from their card. */
     receiptAsks: ((receiptAsks.data as { asked_person_id: string }[] | null) ?? []).filter(r => r.asked_person_id === me?.id).length,
     handoverDue: ((handovers.data as { id: string; last_day: string; mine: boolean; handover_at: string | null }[] | null) ?? []).find(h => h.mine) ?? null,
+    /** Playbooks sent to the viewer to read, and must-reads changed since they confirmed. */
+    playbookTodos: (todos.data as PlaybookTodo[] | null) ?? [],
     celebrations: (celebrations.data as { id: string; full_name: string; birth_month: number | null; birth_day: number | null; start_date: string | null }[] | null) ?? [],
   };
 }

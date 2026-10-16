@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { BookOpen, ClipboardCheck, FileText, ListChecks, Scale, Search, ShieldCheck, type LucideIcon } from "lucide-react";
+import { QualityChip } from "@/components/playbooks/Quality";
 import { companyColor, companyInk, companyName, type CompanyId } from "@/lib/intranet";
 import { useI18n } from "@/components/I18nProvider";
 import { useMounted } from "@/components/CalendarView";
@@ -21,8 +22,10 @@ export const KIND_ICON: Record<PlaybookKind, LucideIcon> = {
 const localYmd = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 /** Playbooks by type (tabs) and category, plus the department's linked documents (`children`). */
-export default function PlaybookList({ playbooks, peopleNames, canEdit, children }: {
+export default function PlaybookList({ playbooks, peopleNames, canEdit, department, children }: {
   playbooks: Playbook[];
+  /** For the "Assignments" link (the department page). */
+  department?: string;
   peopleNames: Record<string, string>;
   canEdit: boolean;
   /** The documents & links list, shown under "Documents". */
@@ -37,10 +40,14 @@ export default function PlaybookList({ playbooks, peopleNames, canEdit, children
     const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
     return playbooks.filter(p => {
       if (tab !== "all" && tab !== "documents" && p.kind !== tab) return false;
-      const hay = `${p.title} ${p.summary} ${p.category} ${p.body} ${p.steps.map(s => `${s.title} ${s.body}`).join(" ")}`.toLowerCase();
+      const hay = [
+        p.title, p.summary, p.category, p.body, ...p.steps.map(s => `${s.title} ${s.body}`), ...Object.values(p.sections ?? {}),
+        ...(p.roles ?? []).map(r => `${r.role} ${r.responsibility} ${r.people.map(id => peopleNames[id] ?? "").join(" ")}`),
+        ...(p.definitions ?? []).map(d => `${d.term} ${d.definition}`), ...(p.resources ?? []).map(r => r.label),
+      ].join(" ").toLowerCase();
       return terms.every(x => hay.includes(x));
     });
-  }, [playbooks, tab, q]);
+  }, [playbooks, tab, q, peopleNames]);
 
   const groups = useMemo(() => {
     const m = new Map<string, Playbook[]>();
@@ -79,6 +86,7 @@ export default function PlaybookList({ playbooks, peopleNames, canEdit, children
               {p.company_id && <span style={{ color: ink }}>{companyName(p.company_id as CompanyId)}</span>}
               {p.status === "draft" && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800">{t.playbooks.draft}</span>}
               {today && reviewOverdue(p.review_by, today) && <span className="rounded bg-red-50 px-1.5 py-0.5 text-red-700">{t.playbooks.reviewDue}</span>}
+              {canEdit && <span className="ml-auto"><QualityChip p={p} compact /></span>}
             </span>
             <span className="mt-1 block font-bold text-gray-900">{p.title}</span>
             {p.summary && <span className="block text-sm text-gray-500">{p.summary}</span>}
@@ -116,6 +124,11 @@ export default function PlaybookList({ playbooks, peopleNames, canEdit, children
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input value={q} onChange={e => setQ(e.target.value)} placeholder={t.playbooks.search} className="h-9 w-56 rounded-lg border border-gray-300 bg-white pl-8 pr-2 text-sm outline-none focus:border-[#009f67]" />
           </div>
+        )}
+        {canEdit && department && playbooks.some(p => p.status === "published") && (
+          <Link href={`/playbooks/assignments?dept=${department}`} className="ml-auto flex h-9 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 text-sm font-bold text-gray-700 hover:border-[#009f67] hover:text-[#00704a]">
+            <ClipboardCheck className="h-4 w-4" /> {t.sop.assignments}
+          </Link>
         )}
       </div>
 

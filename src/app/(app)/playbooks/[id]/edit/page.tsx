@@ -4,7 +4,7 @@ import { isAdminUser } from "@/lib/admin";
 import { getDict } from "@/lib/i18n/server";
 import { deptName } from "@/lib/i18n/text";
 import { fmt } from "@/lib/i18n/locale";
-import { PLAYBOOK_COLUMNS, canEditDepartment, type Playbook } from "@/server/playbooks";
+import { selectPlaybooks, canEditDepartment, type Playbook } from "@/server/playbooks";
 import { loadEditorData } from "@/server/playbookEditor";
 import PlaybookEditor from "@/components/playbooks/PlaybookEditor";
 
@@ -16,7 +16,7 @@ export default async function EditPlaybookPage({ params }: { params: Promise<{ i
   const supabase = await getSupabaseServer();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
   if (!supabase || !user) redirect("/login");
-  const { data } = await supabase.from("playbooks").select(PLAYBOOK_COLUMNS).eq("id", id).maybeSingle();
+  const { data } = await selectPlaybooks(cols => supabase.from("playbooks").select(cols).eq("id", id).maybeSingle());
   if (!data) notFound();
   const playbook = data as Playbook;
   if (!(await canEditDepartment(supabase, playbook.department_id, isAdminUser(user)))) {

@@ -6,7 +6,7 @@ import { isAdminUser } from "@/lib/admin";
 import { getDict } from "@/lib/i18n/server";
 import { deptName } from "@/lib/i18n/text";
 import { loadLinks } from "@/server/links";
-import { PLAYBOOK_COLUMNS, canEditDepartment, type Playbook } from "@/server/playbooks";
+import { selectPlaybooks, canEditDepartment, type Playbook } from "@/server/playbooks";
 import DepartmentView, { type TeamMember } from "@/components/DepartmentView";
 import type { Faq } from "@/components/help/FaqList";
 
@@ -34,7 +34,7 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
   const [{ links, owners }, faqs, playbooks, positions, names, canEdit] = await Promise.all([
     loadLinks(supabase, id),
     supabase.from("faqs").select("id, department_id, question, answer, language, sort").eq("department_id", id),
-    supabase.from("playbooks").select(PLAYBOOK_COLUMNS).eq("department_id", id).order("updated_at", { ascending: false }),
+    selectPlaybooks(cols => supabase.from("playbooks").select(cols).eq("department_id", id).order("updated_at", { ascending: false })),
     supabase.from("positions").select("id, title, team, sort, people(id, full_name, photo_url, active)").eq("department_id", id).order("sort"),
     supabase.from("people").select("id, full_name"),
     canEditDepartment(supabase, id, isAdminUser(user)),

@@ -146,7 +146,7 @@ export default function DepartmentView({ id, links, owners, faqs, playbooks, peo
           </Link>
         )}
       >
-        <PlaybookList playbooks={books} peopleNames={peopleNames} canEdit={canEdit}>
+        <PlaybookList playbooks={books} peopleNames={peopleNames} canEdit={canEdit} department={id}>
           <ResourceList links={docs} owners={owners} department={id} compact />
         </PlaybookList>
       </Section>
