@@ -11,6 +11,8 @@ import { useMe } from "@/components/MeProvider";
 import { COMPANIES, DEPARTMENTS } from "@/lib/intranet";
 import { LOCALES, LOCALE_NAMES } from "@/lib/i18n/locale";
 import { deptName } from "@/lib/i18n/text";
+import { priorityOf, type Priority } from "@/lib/news";
+import { PhotoField, PriorityPicker, saveNews } from "@/components/news/newsShared";
 import type { NewsItem } from "@/server/intranet";
 
 const field = "h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-[#009f67]";
@@ -30,7 +32,7 @@ export default function NewsEditor({ post }: { post: NewsItem | null }) {
     company_id: post?.company_id ?? "",
     department_id: post?.department_id ?? (me.isAdmin ? "" : me.departmentId ?? ""),
     featured: post?.featured ?? false,
-    must_read: post?.must_read ?? false,
+    priority: (post ? priorityOf(post) : "update") as Priority,
     language: post?.language ?? locale,
   });
   const set = (patch: Partial<typeof d>) => setD(x => ({ ...x, ...patch }));
@@ -40,7 +42,7 @@ export default function NewsEditor({ post }: { post: NewsItem | null }) {
     const supabase = getSupabase();
     if (!supabase || !d.title.trim()) return;
     setBusy(true);
-    const row = {
+    const res = await saveNews(supabase, {
       title: d.title.trim(),
       body: d.body.trim(),
       image_url: d.image_url.trim() || null,
@@ -49,12 +51,9 @@ export default function NewsEditor({ post }: { post: NewsItem | null }) {
       // Leaders always post for their own department (their profile may load after the form).
       department_id: d.department_id || (me.isAdmin ? null : me.departmentId),
       featured: d.featured,
-      must_read: d.must_read,
+      priority: d.priority,
       language: d.language || null,
-    };
-    const res = post
-      ? await supabase.from("news").update(row).eq("id", post.id).select("id").single()
-      : await supabase.from("news").insert({ ...row, author_id: me.userId }).select("id").single();
+    }, { id: post?.id, authorId: me.userId });
     setBusy(false);
     if (res.error) return toast.error(res.error.message);
     toast.success(post ? t.news.updated : t.news.posted);
@@ -73,13 +72,18 @@ export default function NewsEditor({ post }: { post: NewsItem | null }) {
         </div>
         <div>
           <label className={label} htmlFor="n-body">{t.news.body}</label>
-          <textarea id="n-body" value={d.body} onChange={e => set({ body: e.target.value })} rows={10} className="w-full rounded-lg border border-gray-300 p-3 text-sm outline-none focus:border-[#009f67]" />
+          <textarea id="n-body" placeholder={t.news.hints[(d.department_id || "company") as keyof typeof t.news.hints]} value={d.body} onChange={e => set({ body: e.target.value })} rows={10} className="w-full rounded-lg border border-gray-300 p-3 text-sm outline-none focus:border-[#009f67]" />
+        </div>
+        <div>
+          <p className={label}>{t.news.howImportant}</p>
+          <PriorityPicker value={d.priority} onChange={priority => set({ priority })} />
+        </div>
+        <div className="space-y-2">
+          <p className={label}>{t.news.image}</p>
+          <PhotoField value={d.image_url} onChange={image_url => set({ image_url })} userId={me.userId} />
+          {!d.image_url && <input id="n-img" value={d.image_url} onChange={e => set({ image_url: e.target.value })} placeholder="https://…" aria-label={t.news.image} className={field} />}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className={label} htmlFor="n-img">{t.news.image}</label>
-            <input id="n-img" value={d.image_url} onChange={e => set({ image_url: e.target.value })} placeholder="https://…" className={field} />
-          </div>
           <div>
             <label className={label} htmlFor="n-link">{t.news.link}</label>
             <input id="n-link" value={d.link_url} onChange={e => set({ link_url: e.target.value })} placeholder="https://…" className={field} />
@@ -107,9 +111,6 @@ export default function NewsEditor({ post }: { post: NewsItem | null }) {
         </div>
         <label className="flex items-center gap-2 text-sm font-bold text-gray-700">
           <input type="checkbox" checked={d.featured} onChange={e => set({ featured: e.target.checked })} className="h-4 w-4 accent-[#009f67]" /> {t.news.featuredLabel}
-        </label>
-        <label className="flex items-center gap-2 text-sm font-bold text-gray-700">
-          <input type="checkbox" checked={d.must_read} onChange={e => set({ must_read: e.target.checked })} className="h-4 w-4 accent-[#009f67]" /> {t.news.mustReadLabel}
         </label>
         <div className="flex justify-end">
           <button type="button" onClick={save} disabled={busy || !d.title.trim()} className="flex h-10 items-center gap-2 rounded-lg bg-[#009f67] px-5 text-sm font-bold text-white disabled:opacity-50">

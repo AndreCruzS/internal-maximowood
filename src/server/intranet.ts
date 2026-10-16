@@ -13,6 +13,8 @@ export type NewsItem = {
   department_id: string | null;
   featured: boolean;
   must_read: boolean;
+  /** After migration 0023; older rows/databases fall back to must_read. */
+  priority?: "update" | "important" | "critical";
   language: string | null;
   published_at: string;
   author_id: string | null;
@@ -23,6 +25,8 @@ export type Kudo = { id: string; from_person_id: string; to_person_id: string; m
 export type OnboardingItem = { id: string; title: string; description: string; link: string | null; department_id: string | null; sort: number };
 
 export const NEWS_COLUMNS = "id, title, body, image_url, link_url, company_id, department_id, featured, must_read, language, published_at, author_id";
+/** The feed also reads the importance level (migration 0023); use with selectCompat and NEWS_COLUMNS as the fallback. */
+export const NEWS_FEED_COLUMNS = `${NEWS_COLUMNS}, priority`;
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
