@@ -48,6 +48,8 @@ export type Position = {
   team: string | null;
   reports_to: string | null;
   sort: number;
+  /** 1 partner/C-level … 6 intern; null = from the title (migration 0020). */
+  level?: number | null;
 };
 
 const initials = (name: string) =>
@@ -70,7 +72,7 @@ export function Avatar({ person, size = 40 }: { person: Person; size?: number })
 
 
 /** Directory + org chart of everyone in GMX Group, plus the signed-in person's own entry. */
-export default function PeopleView({ people, positions, me, error, initialPerson = null, initialDept = null }: {
+export default function PeopleView({ people, positions, me, isAdmin, error, initialPerson = null, initialDept = null }: {
   people: Person[];
   positions: Position[];
   me: string | null;
@@ -155,10 +157,10 @@ export default function PeopleView({ people, positions, me, error, initialPerson
         )}
       </div>
 
-      {openPos && <PersonPanel position={openPos} people={people} positions={positions} onSelect={setOpenPos} onClose={() => setOpenPos(null)} />}
+      {openPos && <PersonPanel position={openPos} people={people} positions={positions} isAdmin={isAdmin} onSelect={setOpenPos} onClose={() => setOpenPos(null)} />}
 
       {tab === "chart" ? (
-        <OrgChart people={people} positions={positions} dept={dept} />
+        <OrgChart people={people} positions={positions} dept={dept} isAdmin={isAdmin} />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {directory.map(({ person, roles }) => {

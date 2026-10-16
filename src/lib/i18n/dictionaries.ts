@@ -126,6 +126,15 @@ const en = {
     contactLater: "Contact details appear once they sign in.", kudos: "Kudos",
     showReports: "Show {n} direct reports of {name}", hideReports: "Hide {n} direct reports of {name}",
   },
+  orgAdmin: {
+    title: "Org chart (admin)", addPosition: "Add a position", jobTitle: "Job title", department: "Department", leadership: "Leadership (no department)", team: "Team",
+    reportsTo: "Reports to", nobody: "No one (top of the chart)", level: "Level", automatic: "Automatic — {level}",
+    levelHint: "People of the same level sit on the same row. Automatic reads it from the job title.",
+    levels: { 1: "Partner / C-level", 2: "Director", 3: "Manager", 4: "Coordinator / Lead", 5: "Specialist / Analyst", 6: "Intern" },
+    wrongWay: "{name} is {level} — the same level or more junior than this role. Check who they should report to.",
+    needTitle: "Add a job title.", saved: "Org chart updated", removed: "Position removed", remove: "Remove this position",
+    removeConfirm: "Remove the position “{title}”?", removeConfirmReports: "Remove the position “{title}”? Its {n} direct report(s) will move to the top of the chart until you reassign them.",
+  },
   myEntry: {
     addTitle: "Add yourself to the org chart", addText: "Find your name below — then fill in your position and contact details.",
     listed: "I'm already listed", chooseName: "Choose your name…", thatsMe: "That's me", notListed: "I'm not listed",
@@ -751,6 +760,15 @@ const es: Dict = {
     contactLater: "Los datos de contacto aparecen cuando ingrese.", kudos: "Reconocimientos",
     showReports: "Mostrar los {n} reportes directos de {name}", hideReports: "Ocultar los {n} reportes directos de {name}",
   },
+  orgAdmin: {
+    title: "Organigrama (admin)", addPosition: "Agregar un cargo", jobTitle: "Cargo", department: "Departamento", leadership: "Liderazgo (sin departamento)", team: "Equipo",
+    reportsTo: "Reporta a", nobody: "Nadie (arriba del organigrama)", level: "Nivel", automatic: "Automático — {level}",
+    levelHint: "Las personas del mismo nivel quedan en la misma fila. Automático lo toma del cargo.",
+    levels: { 1: "Socio / C-level", 2: "Director", 3: "Gerente", 4: "Coordinador / Líder", 5: "Especialista / Analista", 6: "Pasante" },
+    wrongWay: "{name} es {level}: el mismo nivel o más junior que este cargo. Revisa a quién debería reportar.",
+    needTitle: "Agrega el cargo.", saved: "Organigrama actualizado", removed: "Cargo eliminado", remove: "Eliminar este cargo",
+    removeConfirm: "¿Eliminar el cargo “{title}”?", removeConfirmReports: "¿Eliminar el cargo “{title}”? Sus {n} reporte(s) directo(s) pasarán arriba del organigrama hasta que los reasignes.",
+  },
   myEntry: {
     addTitle: "Agrégate al organigrama", addText: "Busca tu nombre abajo — luego completa tu cargo y datos de contacto.",
     listed: "Ya estoy en la lista", chooseName: "Elige tu nombre…", thatsMe: "Soy yo", notListed: "No estoy en la lista",
@@ -1373,6 +1391,15 @@ const pt: Dict = {
     directReports: "Liderados diretos ({n})", departmentsLabel: "Departamentos", noContact: "Ainda não há dados de contato.",
     contactLater: "Os dados de contato aparecem quando a pessoa entrar.", kudos: "Reconhecimentos",
     showReports: "Mostrar os {n} liderados diretos de {name}", hideReports: "Ocultar os {n} liderados diretos de {name}",
+  },
+  orgAdmin: {
+    title: "Organograma (admin)", addPosition: "Adicionar um cargo", jobTitle: "Cargo", department: "Departamento", leadership: "Liderança (sem departamento)", team: "Equipe",
+    reportsTo: "Reporta a", nobody: "Ninguém (topo do organograma)", level: "Nível", automatic: "Automático — {level}",
+    levelHint: "Pessoas do mesmo nível ficam na mesma linha. Automático lê pelo cargo.",
+    levels: { 1: "Sócio / C-level", 2: "Diretor", 3: "Gerente", 4: "Coordenador / Líder", 5: "Especialista / Analista", 6: "Estagiário" },
+    wrongWay: "{name} é {level}: o mesmo nível ou mais júnior que este cargo. Confira a quem deveria reportar.",
+    needTitle: "Adicione o cargo.", saved: "Organograma atualizado", removed: "Cargo removido", remove: "Remover este cargo",
+    removeConfirm: "Remover o cargo “{title}”?", removeConfirmReports: "Remover o cargo “{title}”? Seus {n} subordinado(s) direto(s) vão para o topo do organograma até você reatribuir.",
   },
   myEntry: {
     addTitle: "Adicione-se ao organograma", addText: "Encontre seu nome abaixo — depois preencha seu cargo e contato.",

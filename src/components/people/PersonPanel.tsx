@@ -11,6 +11,7 @@ import { deptName } from "@/lib/i18n/text";
 import PersonFacts from "@/components/PersonFacts";
 import { Photo, colorOf, gmailLink, ringCentralLink, slackLink } from "@/components/people/shared";
 import type { Person, Position } from "@/components/PeopleView";
+import OrgAdmin from "@/components/people/OrgAdmin";
 
 type Kudo = { id: string; from_person_id: string; message: string; created_at: string };
 
@@ -23,9 +24,11 @@ function weekStartIso() {
 }
 
 /** Side panel with someone's profile: contact (Gmail / Slack / RingCentral), facts, departments, kudos, manager, reports. */
-export default function PersonPanel({ position, people, positions, onSelect, onClose }: {
+export default function PersonPanel({ position: clicked, people, positions, isAdmin = false, onSelect, onClose }: {
   /** The position that was clicked (org chart) or the person's main one (directory). */
   position: Position;
+  /** Admins can edit positions, managers and levels from here. */
+  isAdmin?: boolean;
   people: Person[];
   positions: Position[];
   onSelect: (p: Position) => void;
@@ -34,6 +37,8 @@ export default function PersonPanel({ position, people, positions, onSelect, onC
   const { t } = useI18n();
   const byId = useMemo(() => new Map(people.map(p => [p.id, p])), [people]);
   const positionById = useMemo(() => new Map(positions.map(p => [p.id, p])), [positions]);
+  // The latest copy (after an admin edit refreshes the page); falls back to another of their positions if it was removed.
+  const position = positionById.get(clicked.id) ?? positions.find(p => p.person_id === clicked.person_id) ?? clicked;
   const person = byId.get(position.person_id);
   const [kudos, setKudos] = useState<{ personId: string; items: Kudo[] } | null>(null);
 
@@ -151,6 +156,8 @@ export default function PersonPanel({ position, people, positions, onSelect, onC
               </ul>
             </div>
           )}
+
+          {isAdmin && <OrgAdmin person={person} people={people} positions={positions} />}
 
           {manager && managerPerson && (
             <div>

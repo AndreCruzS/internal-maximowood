@@ -22,13 +22,17 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
       `${BASE_COLUMNS}, headline, pronouns`,
       BASE_COLUMNS,
     ),
-    supabase.from("positions").select("id, person_id, title, department_id, team, reports_to, sort").order("sort"),
+    selectCompat(
+      cols => supabase.from("positions").select(cols).order("sort"),
+      "id, person_id, title, department_id, team, reports_to, sort, level",
+      "id, person_id, title, department_id, team, reports_to, sort", // before migration 0020
+    ),
   ]);
   const error = people.error?.message ?? positions.error?.message ?? null;
   return (
     <PeopleView
       people={(people.data as Person[] | null) ?? []}
-      positions={(positions.data as Position[] | null) ?? []}
+      positions={(positions.data as unknown as Position[] | null) ?? []}
       me={user?.id ?? null}
       isAdmin={isAdminUser(user)}
       error={error}

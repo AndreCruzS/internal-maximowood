@@ -8,14 +8,17 @@ import { deptName } from "@/lib/i18n/text";
 import type { Person, Position } from "@/components/PeopleView";
 import PersonPanel from "@/components/people/PersonPanel";
 import { Photo, colorOf } from "@/components/people/shared";
+import { levelOf } from "@/lib/orgLevels";
 
 const ROOT = "__gmx__";
 const DEFAULT_DEPTH = 2; // levels expanded below the GMX root on first load
+/** Height of one row of the chart (card + connectors), so each seniority level gets its own row. */
+const ROW = 244; // li padding 28 + ul padding 28 + photo overhang 32 + card 156
 
-type Tree = { children: Map<string, Position[]>; roots: Position[]; board: Position[] };
+type Tree = { children: Map<string, Position[]>; roots: Position[]; board: Position[]; base: number };
 
 /** Whale-style org chart: top-down cards, collapsible branches, zoom/pan canvas, detail panel. */
-export default function OrgChart({ people, positions, dept }: { people: Person[]; positions: Position[]; dept: string }) {
+export default function OrgChart({ people, positions, dept, isAdmin = false }: { people: Person[]; positions: Position[]; dept: string; isAdmin?: boolean }) {
   const { t } = useI18n();
   const deptLabel = (d: string | null) => deptName(t, d);
   /** "Department · Team", without repeating a team named like its department. */
@@ -40,7 +43,8 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
     // Leadership with no one reporting to them yet sits in a row under the GMX box,
     // so the department trees don't all share one very wide row with them.
     const board = roots.filter(r => !r.department_id && !children.has(r.id));
-    return { children, roots: roots.filter(r => !board.includes(r)), board };
+    const top = roots.filter(r => !board.includes(r));
+    return { children, roots: top, board, base: Math.min(...top.map(levelOf)) };
   }, [positions, dept]);
 
   // Collapsed branches: everything deeper than DEFAULT_DEPTH starts collapsed.
@@ -115,26 +119,33 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
   // ── Detail panel ──────────────────────────────────────────────────────────
   const [selected, setSelected] = useState<Position | null>(null);
 
-  const card = (p: Position) => {
+  /**
+   * One card and its branch. `parentLevel` is the manager's level (for the top row, one above the
+   * most senior root): rows that are skipped become a longer connector, so levels line up.
+   */
+  const card = (p: Position, parentLevel: number) => {
     const person = peopleById.get(p.person_id);
     if (!person) return null;
+    const level = levelOf(p);
+    const gap = Math.max(0, level - parentLevel - 1);
     const color = colorOf(p.department_id);
     const kids = tree.children.get(p.id) ?? [];
     const isCollapsed = collapsed.has(p.id);
     return (
       <li key={p.id}>
+        {gap > 0 && <span aria-hidden className="block w-0 border-l-[1.5px] border-[#cbd5d1]" style={{ height: gap * ROW }} />}
         <div className="relative pt-8">
           <button
             type="button"
             onClick={() => !drag.current?.moved && setSelected(p)}
-            className="relative block w-56 rounded-xl border-2 bg-white px-4 pb-4 pt-10 text-center shadow-sm transition-shadow hover:shadow-md"
+            className="relative block h-[156px] w-56 overflow-hidden rounded-xl border-2 bg-white px-4 pb-4 pt-10 text-center shadow-sm transition-shadow hover:shadow-md"
             style={{ borderColor: `${color}55` }}
           >
             <span className="absolute -top-8 left-1/2 -translate-x-1/2">
               <Photo person={person} size={60} color={color} />
             </span>
             <span className="block truncate font-black text-gray-900">{person.full_name}</span>
-            <span className="mt-0.5 block min-h-8 text-xs leading-4 text-gray-500">{p.title}</span>
+            <span className="mt-0.5 line-clamp-2 block min-h-8 text-xs leading-4 text-gray-500" title={p.title}>{p.title}</span>
             <span className="mt-2 block truncate text-xs font-bold" style={{ color }}>
               {deptTeam(p.department_id, p.team)}
             </span>
@@ -155,7 +166,7 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
             </button>
           )}
         </div>
-        {kids.length > 0 && !isCollapsed && <ul>{kids.map(card)}</ul>}
+        {kids.length > 0 && !isCollapsed && <ul>{kids.map(k => card(k, level))}</ul>}
       </li>
     );
   };
@@ -210,10 +221,10 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/brand/gmx-logo-color.png" alt="GMX Group" className="mx-auto h-8 w-auto" />
                   {tree.board.length > 0 && (
-                    <ul className="board">{tree.board.map(card)}</ul>
+                    <ul className="board">{tree.board.map(b => card(b, levelOf(b) - 1))}</ul>
                   )}
                 </div>
-                {tree.roots.length > 0 && <ul>{tree.roots.map(card)}</ul>}
+                {tree.roots.length > 0 && <ul>{tree.roots.map(r => card(r, tree.base - 1))}</ul>}
               </li>
             </ul>
           )}
@@ -223,7 +234,7 @@ export default function OrgChart({ people, positions, dept }: { people: Person[]
       <p className="pointer-events-none absolute bottom-3 right-4 text-[11px] text-gray-400">{t.people.hint}</p>
 
       {/* Detail panel */}
-      {selected && <PersonPanel position={selected} people={people} positions={positions} onSelect={setSelected} onClose={() => setSelected(null)} />}
+      {selected && <PersonPanel position={selected} people={people} positions={positions} isAdmin={isAdmin} onSelect={setSelected} onClose={() => setSelected(null)} />}
     </div>
   );
 }
