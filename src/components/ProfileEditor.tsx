@@ -39,12 +39,13 @@ function TagInput({ id, value, onChange, placeholder }: { id: string; value: str
   );
 }
 
-/** Your profile page, edited in place: cover, photo, headline, pronouns, bio, interests, fun fact, LinkedIn. */
+/** Your profile page, edited in place: cover, photo, nickname, headline, pronouns, bio, interests, fun fact, LinkedIn. */
 export default function ProfileEditor({ person: p, department }: { person: Person; department: string | null }) {
   const { t } = useI18n();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [d, setD] = useState({
+    nickname: p.nickname ?? "",
     headline: p.headline ?? "",
     pronouns: p.pronouns ?? "",
     bio: p.bio ?? "",
@@ -99,7 +100,7 @@ export default function ProfileEditor({ person: p, department }: { person: Perso
     setBusy("save");
     const { error } = await supabase
       .from("people")
-      .update({ headline: d.headline.trim(), pronouns: d.pronouns.trim(), bio: d.bio.trim(), interests: d.interests, fun_fact: d.fun_fact.trim(), cover: d.cover, linkedin })
+      .update({ nickname: d.nickname.trim(), headline: d.headline.trim(), pronouns: d.pronouns.trim(), bio: d.bio.trim(), interests: d.interests, fun_fact: d.fun_fact.trim(), cover: d.cover, linkedin })
       .eq("id", p.id);
     setBusy(null);
     if (error) return toast.error(error.message);
@@ -132,6 +133,10 @@ export default function ProfileEditor({ person: p, department }: { person: Perso
               onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) upload(f); }} />
           </div>
           <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => fileRef.current?.click()} disabled={busy === "photo"}
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-bold text-gray-800 hover:border-[#009f67] hover:text-[#00704a] disabled:opacity-50">
+              {busy === "photo" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />} {t.me.changePhoto}
+            </button>
             {photo && (
               <button type="button" onClick={removePhoto} className="flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-bold text-red-600 hover:bg-red-50">
                 <Trash2 className="h-4 w-4" /> {t.me.removePhoto}
@@ -144,11 +149,16 @@ export default function ProfileEditor({ person: p, department }: { person: Perso
         </div>
         <p className="mt-3 text-xl font-black text-gray-900">
           {p.full_name}
+          {d.nickname.trim() && <span className="ml-2 font-normal text-gray-500">“{d.nickname.trim()}”</span>}
           {d.pronouns.trim() && <span className="ml-2 text-sm font-bold text-gray-400">({d.pronouns.trim()})</span>}
         </p>
         <p className="text-gray-600">{d.headline.trim() || <span className="text-gray-400">{t.me.headlinePlaceholder}</span>}</p>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-[1fr_200px]">
+        <div className="mt-6 grid gap-4 sm:grid-cols-[200px_1fr_200px]">
+          <div>
+            <label className={label} htmlFor="me-nickname">{t.welcome.nickname}</label>
+            <input id="me-nickname" maxLength={40} value={d.nickname} onChange={e => set("nickname", e.target.value)} placeholder={t.welcome.nicknameHint} className={field} />
+          </div>
           <div>
             <label className={label} htmlFor="me-headline">{t.me.headline}</label>
             <input id="me-headline" maxLength={120} value={d.headline} onChange={e => set("headline", e.target.value)} placeholder={t.me.headlinePlaceholder} className={field} />
