@@ -15,6 +15,10 @@ import {
   Tag,
   Truck,
   Users,
+  Plane,
+  ScrollText,
+  UserPlus,
+  CalendarRange,
   type LucideIcon,
 } from "lucide-react";
 
@@ -132,6 +136,10 @@ export const TOOLS: Tool[] = [
   { name: "Orders", description: "GMX logistics order platform", icon: ClipboardList, href: "https://orders.gmxgroup.com/", department: "logistics", company: "gmx", external: true, pinned: true },
   { name: "Data Center", description: "Ads & campaign dashboard", icon: BarChart3, href: "https://maximo-ads-dashboard.vercel.app/login", department: "marketing", company: "maximo", external: true, pinned: true },
   { name: "Expenses", description: "Receipts, reimbursements, cards and fund requests, connected to Ramp", icon: Receipt, href: "/expenses", department: "finance", company: "gmx" },
+  { name: "Travel Requests", description: "Request business travel; Procurement books it", icon: Plane, href: "/travel", department: "finance", company: "gmx", pinned: true },
+  { name: "Travel Policy", description: "Booking rules, per-diems and reimbursement", icon: ScrollText, href: "/travel-policy", department: "hr", company: "gmx" },
+  { name: "Refer a Candidate", description: "Refer someone for an open role", icon: UserPlus, href: "/refer", department: "hr", company: "gmx" },
+  { name: "Holidays & Absences", description: "Office holidays, opening hours and time off", icon: CalendarRange, href: "/holidays", department: "hr", company: "gmx" },
   { name: "Online Gallery", description: "Maximo photos and media library", icon: Images, href: "https://media.maximowood.com/", department: "marketing", company: "maximo", external: true },
 ];
 

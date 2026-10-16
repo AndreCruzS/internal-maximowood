@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import nodemailer from "nodemailer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -24,7 +25,13 @@ export async function sendMail(mail: { to: string; subject: string; text: string
   }
 }
 
-export type EmailKind = "new_hire" | "offboarding";
+export type EmailKind = "new_hire" | "offboarding" | "travel_submitted" | "travel_status" | "referral_submitted" | "referral_status";
+
+/** A stable uuid for "this email about this thing" (e.g. a request + its new status), so it's only sent once. */
+export function emailRef(...parts: string[]): string {
+  const h = createHash("sha1").update(parts.join(":")).digest("hex");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-5${h.slice(13, 16)}-${((parseInt(h[16], 16) & 3) | 8).toString(16)}${h.slice(17, 20)}-${h.slice(20, 32)}`;
+}
 
 /** True when this email already went out (so a retry or double click doesn't send it twice). */
 export async function alreadySent(admin: SupabaseClient, kind: EmailKind, refId: string) {

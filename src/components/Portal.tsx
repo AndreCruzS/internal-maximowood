@@ -11,6 +11,7 @@ import { CelebrationsList, NewJoinersPanel } from "@/components/Celebrations";
 import WhosOut from "@/components/home/WhosOut";
 import Kudos from "@/components/home/Kudos";
 import PollCard from "@/components/polls/PollCard";
+import NextHoliday from "@/components/holidays/NextHoliday";
 import { HandoverBanner, ItSetupBanner, MustReadBanner, OnboardingCard, PlaybookTodos, ReceiptAskBanner } from "@/components/home/HomeBanners";
 import { useI18n } from "@/components/I18nProvider";
 import { useMe } from "@/components/MeProvider";
@@ -140,6 +141,7 @@ export default function Portal({ name, events, home }: { name: string; isAdmin: 
       <HandoverBanner due={home.handoverDue} />
       <ReceiptAskBanner count={home.receiptAsks} />
       <PlaybookTodos todos={home.playbookTodos} />
+      <NextHoliday calendar={home.holidayCalendar} holidays={home.holidays} />
       {/* Portal onboarding is for new employees only (company onboarding comes later). */}
       {home.isNewEmployee && <OnboardingCard total={home.onboarding.items.length} done={doneItems} />}
 
