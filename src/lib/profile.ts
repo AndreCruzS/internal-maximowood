@@ -28,6 +28,8 @@ export const coverOf = (id: string | null | undefined, brandIds: (string | null 
 
 export const AVATAR_BUCKET = "avatars";
 export const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
+/** A picked photo is resized in the browser before upload, so it can be bigger. */
+export const MAX_PHOTO_PICK_BYTES = 20 * 1024 * 1024;
 
 /** Accepts "linkedin.com/in/x" or a full URL; null when it isn't a LinkedIn link. */
 export function normalizeLinkedIn(raw: string): string | null {

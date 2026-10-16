@@ -684,7 +684,7 @@ const en = {
   me: {
     viewProfile: "View full profile", edit: "Edit my profile", emptyMine: "Your profile is empty — tell colleagues about yourself.", emptyOther: "{name} hasn't written about themselves yet.",
     about: "About", askMe: "Ask me about", interests: "Interests", funFact: "Fun fact", details: "Details", team: "Team", inOrgChart: "See in the org chart",
-    photoType: "Use a PNG, JPG or WebP image.", photoSize: "The photo must be under 3 MB.", photoSaved: "Photo updated", linkedinInvalid: "That isn't a LinkedIn link.",
+    photoType: "Use a PNG, JPG or WebP image.", photoSize: "The photo must be under 20 MB.", adjustPhoto: "Adjust photo", dragToMove: "Drag to move the photo", zoom: "Zoom", zoomIn: "Zoom in", zoomOut: "Zoom out", savePhoto: "Save photo", photoLoadError: "Couldn't open your photo. Try again.", photoSaved: "Photo updated", linkedinInvalid: "That isn't a LinkedIn link.",
     cover: "Cover", changePhoto: "Change photo", removePhoto: "Remove photo", headline: "Headline", headlinePlaceholder: "A line about you, e.g. Helping builders find the right wood",
     pronouns: "Pronouns (optional)", pronounsPlaceholder: "e.g. she/her", bioPlaceholder: "What you do, what you've worked on, what you enjoy…", chars: "{n} / {max}",
     interestsPlaceholder: "Surfing, cooking, photography…", funFactPlaceholder: "Something colleagues might not guess",
@@ -1385,7 +1385,7 @@ const es: Dict = {
   me: {
     viewProfile: "Ver perfil completo", edit: "Editar mi perfil", emptyMine: "Tu perfil está vacío — cuéntales a tus colegas sobre ti.", emptyOther: "{name} aún no escribió sobre sí.",
     about: "Sobre mí", askMe: "Pregúntame sobre", interests: "Intereses", funFact: "Dato curioso", details: "Detalles", team: "Equipo", inOrgChart: "Ver en el organigrama",
-    photoType: "Usa una imagen PNG, JPG o WebP.", photoSize: "La foto debe pesar menos de 3 MB.", photoSaved: "Foto actualizada", linkedinInvalid: "Ese no es un enlace de LinkedIn.",
+    photoType: "Usa una imagen PNG, JPG o WebP.", photoSize: "La foto debe pesar menos de 20 MB.", adjustPhoto: "Ajustar foto", dragToMove: "Arrastra para mover la foto", zoom: "Zoom", zoomIn: "Acercar", zoomOut: "Alejar", savePhoto: "Guardar foto", photoLoadError: "No se pudo abrir tu foto. Inténtalo de nuevo.", photoSaved: "Foto actualizada", linkedinInvalid: "Ese no es un enlace de LinkedIn.",
     cover: "Portada", changePhoto: "Cambiar foto", removePhoto: "Quitar foto", headline: "Titular", headlinePlaceholder: "Una frase sobre ti, ej. Ayudo a constructores a encontrar la madera correcta",
     pronouns: "Pronombres (opcional)", pronounsPlaceholder: "ej. ella", bioPlaceholder: "Qué haces, en qué has trabajado, qué disfrutas…", chars: "{n} / {max}",
     interestsPlaceholder: "Surf, cocina, fotografía…", funFactPlaceholder: "Algo que tus colegas no adivinarían",
@@ -2084,7 +2084,7 @@ const pt: Dict = {
   me: {
     viewProfile: "Ver perfil completo", edit: "Editar meu perfil", emptyMine: "Seu perfil está vazio — conte aos colegas sobre você.", emptyOther: "{name} ainda não escreveu sobre si.",
     about: "Sobre", askMe: "Pergunte-me sobre", interests: "Interesses", funFact: "Curiosidade", details: "Detalhes", team: "Time", inOrgChart: "Ver no organograma",
-    photoType: "Use uma imagem PNG, JPG ou WebP.", photoSize: "A foto precisa ter menos de 3 MB.", photoSaved: "Foto atualizada", linkedinInvalid: "Esse não é um link do LinkedIn.",
+    photoType: "Use uma imagem PNG, JPG ou WebP.", photoSize: "A foto precisa ter menos de 20 MB.", adjustPhoto: "Ajustar foto", dragToMove: "Arraste para mover a foto", zoom: "Zoom", zoomIn: "Aproximar", zoomOut: "Afastar", savePhoto: "Salvar foto", photoLoadError: "Não foi possível abrir sua foto. Tente novamente.", photoSaved: "Foto atualizada", linkedinInvalid: "Esse não é um link do LinkedIn.",
     cover: "Capa", changePhoto: "Trocar foto", removePhoto: "Remover foto", headline: "Frase de destaque", headlinePlaceholder: "Uma frase sobre você, ex. Ajudo construtores a encontrar a madeira certa",
     pronouns: "Pronomes (opcional)", pronounsPlaceholder: "ex. ela/dela", bioPlaceholder: "O que você faz, em que já trabalhou, do que gosta…", chars: "{n} / {max}",
     interestsPlaceholder: "Surfe, culinária, fotografia…", funFactPlaceholder: "Algo que os colegas não imaginam",

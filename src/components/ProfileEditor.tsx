@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Check, ExternalLink, Loader2, Trash2, X } from "lucide-react";
+import { Camera, Check, Crop, ExternalLink, Loader2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
 import { fmt } from "@/lib/i18n/locale";
-import { AVATAR_BUCKET, COVER_IDS, MAX_AVATAR_BYTES, coverOf, normalizeLinkedIn } from "@/lib/profile";
+import { AVATAR_BUCKET, COVER_IDS, MAX_AVATAR_BYTES, MAX_PHOTO_PICK_BYTES, coverOf, normalizeLinkedIn } from "@/lib/profile";
+import PhotoCropper from "@/components/PhotoCropper";
 import { Photo, colorOf } from "@/components/people/shared";
 import type { Person } from "@/components/PeopleView";
 
@@ -57,6 +58,7 @@ export default function ProfileEditor({ person: p, department }: { person: Perso
   const [photo, setPhoto] = useState(p.photo_url);
   const brands = [p.company_id, ...(p.companies ?? [])];
   const [busy, setBusy] = useState<"save" | "photo" | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const set = <K extends keyof typeof d>(k: K, v: (typeof d)[K]) => setD(x => ({ ...x, [k]: v }));
 
   const removeOld = async (url: string | null) => {
@@ -64,20 +66,40 @@ export default function ProfileEditor({ person: p, department }: { person: Perso
     if (supabase && url?.startsWith("/avatars/")) await supabase.storage.from(AVATAR_BUCKET).remove([url.slice("/avatars/".length)]);
   };
 
-  const upload = async (file: File) => {
+  const closeCrop = () => setCropSrc(src => { if (src) URL.revokeObjectURL(src); return null; });
+
+  /** A picked file opens the cropper first. */
+  const pick = (file: File) => {
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) return toast.error(t.me.photoType);
+    if (file.size > MAX_PHOTO_PICK_BYTES) return toast.error(t.me.photoSize);
+    setCropSrc(URL.createObjectURL(file));
+  };
+
+  /** Re-crop the current photo. */
+  const adjust = async () => {
+    const supabase = getSupabase();
+    if (!supabase || !photo?.startsWith("/avatars/")) return;
+    setBusy("photo");
+    const { data, error } = await supabase.storage.from(AVATAR_BUCKET).download(photo.slice("/avatars/".length));
+    setBusy(null);
+    if (error || !data) return toast.error(t.me.photoLoadError);
+    setCropSrc(URL.createObjectURL(data));
+  };
+
+  const upload = async (blob: Blob) => {
     const supabase = getSupabase();
     if (!supabase) return;
-    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) return toast.error(t.me.photoType);
-    if (file.size > MAX_AVATAR_BYTES) return toast.error(t.me.photoSize);
+    if (blob.size > MAX_AVATAR_BYTES) return void toast.error(t.me.photoSize);
     setBusy("photo");
-    const path = `${p.id}/${Date.now()}.${file.type.split("/")[1].replace("jpeg", "jpg")}`;
-    const up = await supabase.storage.from(AVATAR_BUCKET).upload(path, file, { contentType: file.type });
-    if (up.error) { setBusy(null); return toast.error(up.error.message); }
+    const path = `${p.id}/${Date.now()}.jpg`;
+    const up = await supabase.storage.from(AVATAR_BUCKET).upload(path, blob, { contentType: "image/jpeg" });
+    if (up.error) { setBusy(null); return void toast.error(up.error.message); }
     const { error } = await supabase.from("people").update({ photo_url: `/avatars/${path}` }).eq("id", p.id);
     setBusy(null);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     await removeOld(photo);
     setPhoto(`/avatars/${path}`);
+    closeCrop();
     toast.success(t.me.photoSaved);
     router.refresh();
   };
@@ -130,13 +152,19 @@ export default function ProfileEditor({ person: p, department }: { person: Perso
               {busy === "photo" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
             </button>
             <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) upload(f); }} />
+              onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) pick(f); }} />
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => fileRef.current?.click()} disabled={busy === "photo"}
               className="flex h-9 items-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-bold text-gray-800 hover:border-[#009f67] hover:text-[#00704a] disabled:opacity-50">
               {busy === "photo" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />} {t.me.changePhoto}
             </button>
+            {photo?.startsWith("/avatars/") && (
+              <button type="button" onClick={adjust} disabled={busy === "photo"}
+                className="flex h-9 items-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-bold text-gray-800 hover:border-[#009f67] hover:text-[#00704a] disabled:opacity-50">
+                <Crop className="h-4 w-4" /> {t.me.adjustPhoto}
+              </button>
+            )}
             {photo && (
               <button type="button" onClick={removePhoto} className="flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-bold text-red-600 hover:bg-red-50">
                 <Trash2 className="h-4 w-4" /> {t.me.removePhoto}
@@ -194,6 +222,7 @@ export default function ProfileEditor({ person: p, department }: { person: Perso
           </button>
         </div>
       </div>
+      {cropSrc && <PhotoCropper src={cropSrc} onCancel={closeCrop} onSave={upload} />}
     </section>
   );
 }
