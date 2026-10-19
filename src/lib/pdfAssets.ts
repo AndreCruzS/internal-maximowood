@@ -9,6 +9,9 @@ export const LOGO_THERMO_URL = "/pdf/logo-thermo.png";
 /** Main Maximo logo with tagline, black, for the white quote page. */
 export const LOGO_MAXIMO_DARK_URL = "/pdf/logo-maximo-dark.png";
 
+/** Global LBM logo (vertical, 658 × 520), for B2B quotes sold as Global LBM. */
+export const LOGO_GLOBALLBM_URL = "/pdf/logo-globallbm.png";
+
 export const LOGO_MW_URL = "/pdf/logo-mw.png";
 
 export const QR_WARRANTY_URL = "/pdf/qr-warranty.png";

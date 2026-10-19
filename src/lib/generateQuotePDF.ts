@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import { LOGO_MAXIMO_DARK_URL, QR_WARRANTY_URL, fetchAsBase64 } from "./pdfAssets";
+import { LOGO_GLOBALLBM_URL, LOGO_MAXIMO_DARK_URL, QR_WARRANTY_URL, fetchAsBase64 } from "./pdfAssets";
 
 /**
  * Quote PDF, laid out like the Maximo quote template (maximo-thermo-quote.html):
@@ -43,6 +43,43 @@ export type QuoteData = {
   items: QuoteLineItem[];
   subtotal?: number;
   grandTotal?: number;
+  /** Company the quote is issued as (B2B sells as Maximo Wood or as Global LBM). Default Maximo. */
+  brand?: QuoteBrand;
+};
+
+export type QuoteBrand = "maximo" | "globallbm";
+
+type RGB = [number, number, number];
+
+/** What changes on the PDF per issuing company; layout, products and terms stay the same. */
+export const QUOTE_BRANDS: Record<QuoteBrand, {
+  name: string;
+  logoUrl: string;
+  /** Logo width ÷ height. */
+  logoAspect: number;
+  logoHeightIn: number;
+  accent: RGB;
+  footer: string;
+  filePrefix: string;
+}> = {
+  maximo: {
+    name: "Maximo Wood",
+    logoUrl: LOGO_MAXIMO_DARK_URL,
+    logoAspect: 1400 / 320,
+    logoHeightIn: 0.5,
+    accent: [196, 162, 63],
+    footer: "maximowood.com  |  info@maximowood.com",
+    filePrefix: "Maximo",
+  },
+  globallbm: {
+    name: "Global LBM",
+    logoUrl: LOGO_GLOBALLBM_URL,
+    logoAspect: 658 / 520,
+    logoHeightIn: 0.7,
+    accent: [75, 198, 96],
+    footer: "",
+    filePrefix: "GlobalLBM",
+  },
 };
 
 /** How long a quote stays valid. */
@@ -121,13 +158,11 @@ export function addDays(usDate: string, days: number): string {
 }
 
 // ── Look (points; the template's sizes) ───────────────────────────────────────
-type RGB = [number, number, number];
 const INK: RGB = [27, 27, 27];
 const SOFT: RGB = [51, 51, 51];
 const MUTED: RGB = [68, 68, 68];
 const HEAD_BG: RGB = [233, 233, 233];
 const RULE: RGB = [227, 227, 227];
-const GOLD: RGB = [196, 162, 63];
 
 const IN = 72;
 const MARGIN_X = 0.6 * IN;
@@ -137,8 +172,9 @@ const FOOTER_H = 18;
 
 export async function generateQuotePDF(data: QuoteData) {
   const doc = new jsPDF({ unit: "pt", format: "letter", orientation: "portrait" });
+  const brand = QUOTE_BRANDS[data.brand ?? "maximo"];
   const [logo, qr] = await Promise.all([
-    fetchAsBase64(LOGO_MAXIMO_DARK_URL).catch(() => null),
+    fetchAsBase64(brand.logoUrl).catch(() => null),
     fetchAsBase64(QR_WARRANTY_URL).catch(() => null),
   ]);
 
@@ -167,11 +203,11 @@ export async function generateQuotePDF(data: QuoteData) {
   // ── Page furniture ──────────────────────────────────────────────────────────
   function drawFooter() {
     const y = pageH - MARGIN_BOTTOM - FOOTER_H;
-    doc.setDrawColor(...GOLD);
+    doc.setDrawColor(...brand.accent);
     doc.setLineWidth(1.5);
     doc.line(MARGIN_X, y, pageW - MARGIN_X, y);
     font("bold", 7.4);
-    doc.text("maximowood.com  |  info@maximowood.com", pageW / 2, y + 12, { align: "center" });
+    if (brand.footer) doc.text(brand.footer, pageW / 2, y + 12, { align: "center" });
   }
 
   function newPage(): number {
@@ -183,9 +219,9 @@ export async function generateQuotePDF(data: QuoteData) {
   // ── Header: logo + Quote / Date / Expires ───────────────────────────────────
   let y = MARGIN_TOP;
   if (logo) {
-    const h = 0.5 * IN;
+    const h = brand.logoHeightIn * IN;
     try {
-      doc.addImage(logo, "PNG", MARGIN_X, y + 3, h * (1400 / 320), h, undefined, "FAST");
+      doc.addImage(logo, "PNG", MARGIN_X, y + 3, h * brand.logoAspect, h, undefined, "FAST");
     } catch {
       // logo is decoration; the quote still renders without it
     }
@@ -196,7 +232,7 @@ export async function generateQuotePDF(data: QuoteData) {
   doc.text(`Date: ${data.date}`, pageW - MARGIN_X, y + 32, { align: "right" });
   const expires = addDays(data.date, QUOTE_VALID_DAYS);
   if (expires) doc.text(`Expires: ${expires}`, pageW - MARGIN_X, y + 32 + lineH(8.5), { align: "right" });
-  y += 0.5 * IN + 0.3 * IN;
+  y += Math.max(0.5, brand.logoHeightIn) * IN + 0.3 * IN;
 
   // ── Bill To / Ship To (no separate ship-to yet: same as bill-to) ────────────
   const colW = contentW / 2;
@@ -402,5 +438,5 @@ export async function generateQuotePDF(data: QuoteData) {
   // ── Save ────────────────────────────────────────────────────────────────────
   const safeName = (data.project || "Project").replace(/[^a-zA-Z0-9_-]/g, "_");
   const safeDate = data.date.replace(/\//g, "-");
-  doc.save(`Maximo_Quote_${safeName}_${safeDate}.pdf`);
+  doc.save(`${brand.filePrefix}_Quote_${safeName}_${safeDate}.pdf`);
 }

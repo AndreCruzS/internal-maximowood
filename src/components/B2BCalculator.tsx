@@ -333,6 +333,10 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
+  // ── Custom price: the rep sets the $/LF for this line instead of the tier price ──
+  const [useCustomPrice, setUseCustomPrice] = useState(false);
+  const [customPriceInput, setCustomPriceInput] = useState("");
+
   // Saved quote being edited (opened from Profile via ?quote=<id>)
   const quote = useSavedQuote(quoteId, q => setCartItems(q.items));
 
@@ -366,11 +370,17 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
     setSelectedSize("");
     setSelectedProfile("");
     setResults(null);
+    resetCustomPrice();
   };
   const handleSizeChange = (v: string) => {
     setSelectedSize(v);
     setSelectedProfile("");
     setResults(null);
+    resetCustomPrice();
+  };
+  const handleProfileChange = (v: string) => {
+    setSelectedProfile(v);
+    resetCustomPrice();
   };
 
   const handleCalculate = () => {
@@ -484,17 +494,34 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
     });
   };
 
+  // ── Price used for the line: custom price > tier price ────────────────────
+  const tierPrice = results?.pricePerLF ?? 0;
+  const customPrice = parseFloat(customPriceInput);
+  const customPriceValid = useCustomPrice && customPrice > 0;
+  const effectivePricePerLF = customPriceValid ? customPrice : tierPrice;
+  const effectiveMaterialCost = results ? Math.round(effectivePricePerLF * results.wastedLF * 100) / 100 : 0;
+  const effectiveTotalCost = results ? Math.round((effectiveMaterialCost + results.addOnCost) * 100) / 100 : 0;
+
+  const toggleCustomPrice = (on: boolean) => {
+    setUseCustomPrice(on);
+    if (on && !customPriceInput) setCustomPriceInput(tierPrice ? tierPrice.toFixed(2) : "");
+  };
+  const resetCustomPrice = () => {
+    setUseCustomPrice(false);
+    setCustomPriceInput("");
+  };
+
   const handleAddToCart = () => {
     if (!results) return;
-    const tierLabel = tier === "distributor" ? "Distributor" : "Dealer";
+    if (useCustomPrice && !customPriceValid) { setError("Please enter a valid custom price per LF."); return; }
     const newItem: CartItem = {
       species: `THERMO® ${selectedSpecies}`,
       profile: selectedProfile,
       nominalSize: selectedSize,
       sqft: results.wastedSqft,
       lf: results.wastedLF,
-      pricePerLF: results.pricePerLF,
-      total: results.materialCost,
+      pricePerLF: effectivePricePerLF,
+      total: effectiveMaterialCost,
       addOns: results.addOnBreakdown,
       lengthType,
       speciesKey: selectedSpecies,
@@ -537,6 +564,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
     setCustomLengthInput("");
     setResults(null);
     setError("");
+    resetCustomPrice();
   };
 
   const handleReset = () => {
@@ -553,8 +581,8 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
           nominalSize: selectedSize,
           sqft: results.wastedSqft,
           lf: results.wastedLF,
-          pricePerLF: results.pricePerLF,
-          total: results.materialCost,
+          pricePerLF: effectivePricePerLF,
+          total: effectiveMaterialCost,
           addOns: results.addOnBreakdown,
           lengthType,
         }
@@ -613,7 +641,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
           <div className="flex gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => { setTier("distributor"); setResults(null); }}
+              onClick={() => { setTier("distributor"); setResults(null); resetCustomPrice(); }}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black border-2 transition-all ${
                 tier === "distributor"
                   ? "text-white border-[#2563EB] shadow-lg"
@@ -626,7 +654,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
             </button>
             <button
               type="button"
-              onClick={() => { setTier("dealer"); setResults(null); }}
+              onClick={() => { setTier("dealer"); setResults(null); resetCustomPrice(); }}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black border-2 transition-all ${
                 tier === "dealer"
                   ? "text-white border-[#7C3AED] shadow-lg"
@@ -685,7 +713,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-[#888]">Profile</Label>
-                <Select value={selectedProfile} onValueChange={setSelectedProfile} disabled={!selectedSize}>
+                <Select value={selectedProfile} onValueChange={handleProfileChange} disabled={!selectedSize}>
                   <SelectTrigger className="h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]">
                     <SelectValue placeholder={selectedSize ? "Select profile..." : "Select size first"} />
                   </SelectTrigger>
@@ -1165,7 +1193,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                 className="text-center py-1.5 px-3 rounded-full text-xs font-bold"
                 style={{ background: `${tierColor}20`, color: tierColor, border: `1px solid ${tierColor}40` }}
               >
-                {tierLabel} — {lengthType === "RL" ? "Random Lengths (RL)" : "Fixed Lengths"} — ${results.pricePerLF.toFixed(2)}/LF
+                {tierLabel} — {lengthType === "RL" ? "Random Lengths (RL)" : "Fixed Lengths"} — ${effectivePricePerLF.toFixed(2)}/LF{customPriceValid && customPrice !== tierPrice ? " (custom)" : ""}
               </div>
 
               {/* LF */}
@@ -1243,16 +1271,42 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
 
               {/* Price breakdown */}
               <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-                <div className="px-4 py-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
+                <div className="px-4 py-3 border-b border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-between gap-2">
                   <p className="text-xs font-black uppercase tracking-widest text-[#888]">Price Breakdown</p>
+                  <label className="flex items-center gap-2 text-xs font-semibold text-[#555] cursor-pointer">
+                    Custom price
+                    <Switch checked={useCustomPrice} onCheckedChange={toggleCustomPrice} />
+                  </label>
                 </div>
                 <div className="p-4 space-y-2">
+                  {useCustomPrice && (
+                    <div className="rounded-lg p-3 mb-1 space-y-1.5" style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}40` }}>
+                      <Label htmlFor="custom-price" className="text-xs font-semibold uppercase tracking-wider text-[#888]">Price per LF</Label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-[#555]">$</span>
+                        <Input
+                          id="custom-price"
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          step="0.01"
+                          value={customPriceInput}
+                          onChange={e => setCustomPriceInput(e.target.value)}
+                          className="h-9 bg-white"
+                        />
+                        <span className="text-sm text-[#555] shrink-0">/LF</span>
+                      </div>
+                      <p className="text-xs text-[#888]">
+                        {tierLabel} price ${tierPrice.toFixed(2)}/LF. The quote shows only the price you enter.
+                      </p>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-[#666]">
-                      Material ({results.wastedLF} LF × ${results.pricePerLF.toFixed(2)})
+                      Material ({results.wastedLF} LF × ${effectivePricePerLF.toFixed(2)})
                     </span>
                     <span className="font-semibold text-[#1A1A1A]">
-                      ${results.materialCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ${effectiveMaterialCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                   {results.addOnBreakdown.map((item, i) => (
@@ -1269,7 +1323,7 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
                   >
                     <span className="font-black text-white text-sm uppercase tracking-wide">Total</span>
                     <span className="font-black text-white text-xl">
-                      ${results.totalCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ${effectiveTotalCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>

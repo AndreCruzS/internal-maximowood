@@ -228,6 +228,10 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
   const [promoScenario, setPromoScenario] = useState<PromoScenario>("conservador");
   const [usePromoPrice, setUsePromoPrice] = useState(false);
 
+  // ── Custom price: the rep sets the $/LF for this line instead of the list price ──
+  const [useCustomPrice, setUseCustomPrice] = useState(false);
+  const [customPriceInput, setCustomPriceInput] = useState("");
+
   // Live price list from the Google Sheet (source of truth); the built-in list
   // covers the moment before it loads, or a sheet outage.
   const { data: pricingRows } = usePricing();
@@ -270,6 +274,7 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
     setSelectedProfile("");
     setResults(null);
     setError("");
+    resetCustomPrice();
   };
   const currentPrice = useMemo(
     () => (selectedProduct ? getPrice(selectedProduct, lengthType) : null),
@@ -277,8 +282,9 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
   );
 
   // Reset cascades
-  const handleSpeciesChange = (v: string) => { setSelectedSpecies(v); setSelectedSize(""); setSelectedProfile(""); setResults(null); };
-  const handleSizeChange = (v: string) => { setSelectedSize(v); setSelectedProfile(""); setResults(null); };
+  const handleSpeciesChange = (v: string) => { setSelectedSpecies(v); setSelectedSize(""); setSelectedProfile(""); setResults(null); resetCustomPrice(); };
+  const handleSizeChange = (v: string) => { setSelectedSize(v); setSelectedProfile(""); setResults(null); resetCustomPrice(); };
+  const handleProfileChange = (v: string) => { setSelectedProfile(v); resetCustomPrice(); };
 
   const handleCalculate = () => {
     setError("");
@@ -368,18 +374,37 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
     });
   };
 
+  // ── Price used for the line: custom price > promo price > list price ──────
+  const promoPrice = usePromoPrice && promoMatch ? promoMatch[promoScenario].ec : null;
+  const priceBeforeCustom = promoPrice ?? results?.pricePerLF ?? 0;
+  const customPrice = parseFloat(customPriceInput);
+  const customPriceValid = useCustomPrice && customPrice > 0;
+  const effectivePricePerLF = customPriceValid ? customPrice : priceBeforeCustom;
+  const effectiveMaterialCost = results ? Math.round(effectivePricePerLF * results.wastedLF * 100) / 100 : 0;
+  const effectiveTotalCost = results ? Math.round((effectiveMaterialCost + results.addOnCost) * 100) / 100 : 0;
+  const lineAddOns = results
+    ? [
+        ...(promoPrice !== null && !customPriceValid
+          ? [{ label: `🏷️ Promo: ${promoScenario.charAt(0).toUpperCase() + promoScenario.slice(1)} scenario (was $${results.pricePerLF.toFixed(2)}/LF)`, amount: 0 }]
+          : []),
+        ...results.addOnBreakdown,
+      ]
+    : [];
+
+  const toggleCustomPrice = (on: boolean) => {
+    setUseCustomPrice(on);
+    if (on && !customPriceInput) setCustomPriceInput(priceBeforeCustom ? priceBeforeCustom.toFixed(2) : "");
+  };
+  const resetCustomPrice = () => {
+    setUseCustomPrice(false);
+    setCustomPriceInput("");
+  };
+
   // ── Add current result to cart ───────────────────────────────────────────
   const handleAddToCart = () => {
     if (!results || !selectedProduct) return;
+    if (useCustomPrice && !customPriceValid) { setError("Please enter a valid custom price per LF."); return; }
     const speciesLabel = category === "thermo" ? `THERMO® ${selectedSpecies}` : selectedSpecies;
-    // When promo is active, override price per LF and total with the promo EC price
-    const effectivePricePerLF = (usePromoPrice && promoMatch)
-      ? promoMatch[promoScenario].ec
-      : results.pricePerLF;
-    const effectiveMaterialCost = effectivePricePerLF * results.wastedLF;
-    const promoAddOnNote = (usePromoPrice && promoMatch)
-      ? [{ label: `🏷️ Promo: ${promoScenario.charAt(0).toUpperCase() + promoScenario.slice(1)} scenario (was $${results.pricePerLF.toFixed(2)}/LF)`, amount: 0 }]
-      : [];
     const newItem: CartItem = {
       species: speciesLabel,
       profile: selectedProfile,
@@ -388,7 +413,7 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
       lf: results.wastedLF,
       pricePerLF: effectivePricePerLF,
       total: effectiveMaterialCost,
-      addOns: [...promoAddOnNote, ...results.addOnBreakdown],
+      addOns: lineAddOns,
       lengthType,
       speciesKey: selectedSpecies,
       profileKey: selectedProfile,
@@ -432,6 +457,7 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
     setResults(null);
     setError("");
     setUsePromoPrice(false);
+    resetCustomPrice();
   };
 
   const handleReset = () => {
@@ -448,9 +474,9 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
     nominalSize: selectedSize,
     sqft: results.wastedSqft,
     lf: results.wastedLF,
-    pricePerLF: results.pricePerLF,
-    total: results.materialCost,
-    addOns: results.addOnBreakdown,
+    pricePerLF: effectivePricePerLF,
+    total: effectiveMaterialCost,
+    addOns: lineAddOns,
     lengthType,
   } : null;
 
@@ -542,7 +568,7 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
 
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase tracking-wider text-[#888]">Profile</Label>
-              <Select value={selectedProfile} onValueChange={setSelectedProfile} disabled={!selectedSize}>
+              <Select value={selectedProfile} onValueChange={handleProfileChange} disabled={!selectedSize}>
                 <SelectTrigger className="h-11 border-[#E5E7EB] focus:ring-[#009f67] focus:border-[#009f67]">
                   <SelectValue placeholder={selectedSize ? "Select profile..." : "Select size first"} />
                 </SelectTrigger>
@@ -1101,7 +1127,7 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
               className="text-center py-1.5 px-3 rounded-full text-xs font-bold"
               style={{ background: `${GOLD}20`, color: "#00704a", border: `1px solid ${GOLD}40` }}
             >
-              {lengthType === "RL" ? "Random Lengths (RL)" : "Fixed Lengths"} — ${results.pricePerLF.toFixed(2)}/LF
+              {lengthType === "RL" ? "Random Lengths (RL)" : "Fixed Lengths"} — ${effectivePricePerLF.toFixed(2)}/LF{customPriceValid && customPrice !== priceBeforeCustom ? " (custom)" : ""}
             </div>
 
             {/* LF */}
@@ -1173,14 +1199,40 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
 
             {/* Price breakdown */}
             <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-              <div className="px-4 py-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
+              <div className="px-4 py-3 border-b border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-between gap-2">
                 <p className="text-xs font-black uppercase tracking-widest text-[#888]">Price Breakdown</p>
+                <label className="flex items-center gap-2 text-xs font-semibold text-[#555] cursor-pointer">
+                  Custom price
+                  <Switch checked={useCustomPrice} onCheckedChange={toggleCustomPrice} />
+                </label>
               </div>
               <div className="p-4 space-y-2">
+                {useCustomPrice && (
+                  <div className="rounded-lg p-3 mb-1 space-y-1.5" style={{ background: `${GOLD}12`, border: `1px solid ${GOLD}40` }}>
+                    <Label htmlFor="custom-price" className="text-xs font-semibold uppercase tracking-wider text-[#888]">Price per LF</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-[#555]">$</span>
+                      <Input
+                        id="custom-price"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        value={customPriceInput}
+                        onChange={e => setCustomPriceInput(e.target.value)}
+                        className="h-9 bg-white"
+                      />
+                      <span className="text-sm text-[#555] shrink-0">/LF</span>
+                    </div>
+                    <p className="text-xs text-[#888]">
+                      List price ${priceBeforeCustom.toFixed(2)}/LF. The quote shows only the price you enter.
+                    </p>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#666]">Material ({results.wastedLF} LF × ${results.pricePerLF.toFixed(2)})</span>
+                  <span className="text-[#666]">Material ({results.wastedLF} LF × ${effectivePricePerLF.toFixed(2)})</span>
                   <span className="font-semibold text-[#1A1A1A]">
-                    ${results.materialCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${effectiveMaterialCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 {results.addOnBreakdown.map((item, i) => (
@@ -1197,7 +1249,7 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
                 >
                   <span className="font-black text-white text-sm uppercase tracking-wide">Total</span>
                   <span className="font-black text-white text-xl">
-                    ${results.totalCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${effectiveTotalCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
