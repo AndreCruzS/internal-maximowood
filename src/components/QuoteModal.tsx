@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { generateQuotePDF } from "@/lib/generateQuotePDF";
-import type { QuoteLineItem } from "@/lib/generateQuotePDF";
+import { generateQuotePDF, QUOTE_BRANDS } from "@/lib/generateQuotePDF";
+import type { QuoteBrand, QuoteLineItem } from "@/lib/generateQuotePDF";
 import { ApiError, createQuote, updateQuote, useInventory } from "@/lib/api";
 import {
   DEFAULT_PREPARED_BY,
@@ -157,6 +157,8 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
   const [leadTime, setLeadTime] = useState(savedQuote?.leadTimeWeeks != null ? String(savedQuote.leadTimeWeeks) : "");
   const [leadTimeError, setLeadTimeError] = useState("");
   const [notes, setNotes] = useState(savedQuote?.notes ?? "");
+  // B2B quotes are issued as Maximo Wood or as Global LBM (distributor); retail is always Maximo.
+  const [brand, setBrand] = useState<QuoteBrand>("maximo");
   const [busy, setBusy] = useState<"save" | "download" | null>(null);
   const [projectError, setProjectError] = useState("");
   // Saving a new quote under a project name that's already taken.
@@ -230,7 +232,7 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
     let pdfFailed = false;
     if (download) {
       try {
-        await generateQuotePDF(toQuoteData(input));
+        await generateQuotePDF({ ...toQuoteData(input), brand: calculator === "b2b" ? brand : "maximo" });
       } catch (err) {
         console.error(err);
         pdfFailed = true;
@@ -319,6 +321,28 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
 
         {/* Quote fields */}
         <div className="space-y-4">
+          {calculator === "b2b" && (
+            <div className="space-y-1.5">
+              <Label>Quote as</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.keys(QUOTE_BRANDS) as QuoteBrand[]).map(id => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setBrand(id)}
+                    aria-pressed={brand === id}
+                    className="flex items-center justify-center gap-2 h-14 rounded-lg border-2 bg-white px-3 transition-all"
+                    style={brand === id ? { borderColor: "#C9A227", background: "#C9A22712" } : { borderColor: "#E0DDD4" }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={QUOTE_BRANDS[id].logoUrl} alt="" className="h-8 w-auto max-w-[96px] object-contain" />
+                    <span className="text-xs font-bold text-[#1A1A1A]">{QUOTE_BRANDS[id].name}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-[#888]">Logo and footer on the PDF. Prices and terms are the same.</p>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Company Name</Label>
