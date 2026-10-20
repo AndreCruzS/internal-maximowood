@@ -10,6 +10,7 @@ import { COMPANIES, DEPARTMENTS, LANGUAGES, OFFICES } from "@/lib/intranet";
 import { saveLocale, useI18n } from "@/components/I18nProvider";
 import { LOCALES, LOCALE_NAMES, fmt, type Locale } from "@/lib/i18n/locale";
 import { deptName, monthName } from "@/lib/i18n/text";
+import { matchPeople } from "@/lib/personMatch";
 
 export type WelcomePerson = {
   id: string;
@@ -36,7 +37,6 @@ type Relation = "superior" | "peer" | "report";
 
 const field = "h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-[15px] outline-none focus:border-[#009f67] focus:ring-2 focus:ring-[#009f67]/15";
 const label = "mb-1.5 block text-sm font-bold text-gray-700";
-const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -102,20 +102,11 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
   );
   const [pick, setPick] = useState("");
 
-  // Not linked yet: offer org-chart entries with a similar name.
-  const matches = useMemo(() => {
-    if (me) return [];
-    const f = norm(d.first).split(/\s+/)[0];
-    const l = norm(d.last).split(/\s+/).pop() ?? "";
-    if (!f) return [];
-    return people
-      .filter(p => !p.user_id)
-      .filter(p => {
-        const n = norm(p.full_name);
-        return n.includes(f) && (!l || n.includes(l));
-      })
-      .slice(0, 4);
-  }, [people, me, d.first, d.last]);
+  // Not linked yet: offer org-chart entries that could be me (surname, first name, nickname or email).
+  const matches = useMemo(
+    () => (me ? [] : matchPeople(people, { first: d.first, last: d.last, nickname: d.nickname, email })),
+    [people, me, d.first, d.last, d.nickname, email],
+  );
   const titleOf = (personId: string) => positions.find(p => p.person_id === personId)?.title ?? "";
   // Team step: colleagues in my department(s) (Leadership = no department); everyone on request.
   const myself = me?.id ?? (d.claim && d.claim !== "new" ? d.claim : null);
@@ -260,7 +251,7 @@ export default function WelcomeWizard({ email, metaName, people, positions, me, 
               </div>
               <div>
                 <label className={label} htmlFor="nick">{w.nickname}</label>
-                <input id="nick" value={d.nickname} onChange={e => set({ nickname: e.target.value })} className={field} />
+                <input id="nick" value={d.nickname} onChange={e => set({ nickname: e.target.value, claim: "" })} className={field} />
                 <p className="mt-1 text-xs text-gray-400">{w.nicknameHint}</p>
               </div>
               {!me && matches.length > 0 && (

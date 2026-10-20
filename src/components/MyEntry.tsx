@@ -12,6 +12,7 @@ import { useMe } from "@/components/MeProvider";
 import PositionRequests, { type PositionRequest } from "@/components/people/PositionRequests";
 import { fmt } from "@/lib/i18n/locale";
 import { deptName } from "@/lib/i18n/text";
+import { matchPeople } from "@/lib/personMatch";
 
 const field = "h-9 w-full rounded-lg border border-gray-300 bg-white px-2.5 text-sm outline-none focus:border-[#009f67]";
 const label = "mb-1 block text-xs font-bold text-gray-500";
@@ -35,8 +36,14 @@ export default function MyEntry({ mine, people, positions }: {
   const [open, setOpen] = useState<"details" | "request" | null>(null);
 
   // ── First visit: claim ────────────────────────────────────────────────────
-  const unclaimed = people.filter(p => !p.user_id);
-  const [pick, setPick] = useState("");
+  // Entries that could be me (surname, first name or email) come first and the best one is pre-selected.
+  const suggested = useMemo(() => {
+    const name = me.name.includes("@") ? "" : me.name.trim();
+    const parts = name.split(/\s+/);
+    return matchPeople(people, { first: parts[0] ?? "", last: parts.slice(1).join(" "), email: me.name.includes("@") ? me.name : "" });
+  }, [people, me.name]);
+  const unclaimed = [...suggested, ...people.filter(p => !p.user_id && !suggested.includes(p))];
+  const [pick, setPick] = useState(suggested[0]?.id ?? "");
   const [newName, setNewName] = useState("");
 
   const run = async (fn: () => Promise<{ error: { message: string } | null }>, ok: string) => {
