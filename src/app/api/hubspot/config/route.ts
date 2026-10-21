@@ -3,7 +3,7 @@ import { getQuotesAccess } from "@/server/quotesAccess";
 import { HUBSPOT_PIPELINES, type HubSpotConfig } from "@/lib/hubspot";
 import { hubspotToken } from "@/server/hubspot/client";
 import { hubspotReference, readSettings } from "@/server/hubspot/settings";
-import { smtpConfigured } from "@/server/quoteMail";
+import { quoteSender, smtpConfigured } from "@/server/quoteMail";
 import { repOf } from "@/server/hubspot/rep";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,7 @@ export async function GET() {
     pipelines: HUBSPOT_PIPELINES.map(p => ({ id: p.id, label: ref.pipelines.find(x => x.id === p.id)?.label ?? p.label })),
     template: settings.template,
     rep: repOf(access.user),
+    sender: quoteSender(repOf(access.user)),
     alwaysCc: settings.alwaysCc,
     portalId: ref.portalId,
   };
