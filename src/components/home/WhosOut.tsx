@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Building2, ChevronDown, Plane, Plus, Stethoscope, Sun, Umbrella, UserRoundCheck, X } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import { useMe } from "@/components/MeProvider";
 import { useMounted } from "@/components/CalendarView";
 import { fmt } from "@/lib/i18n/locale";
 import type { Absence, PersonLite } from "@/server/intranet";
+import { notifyTimeOff } from "@/components/hr/notify";
 
 export const ABSENCE_KINDS = ["vacation", "sick", "travel", "ooo", "holiday"] as const;
 const KIND_ICON = { vacation: Umbrella, sick: Stethoscope, travel: Plane, ooo: Building2, holiday: Sun } as const;
@@ -38,10 +40,14 @@ export default function WhosOut({ absences, people }: { absences: Absence[]; peo
     const supabase = getSupabase();
     if (!supabase || !me.personId || !draft.starts_on || !draft.ends_on) return;
     setBusy(true);
-    const { error } = await supabase.from("absences").insert({ ...draft, note: draft.note.trim(), person_id: me.personId });
+    // select("*"): works before and after migration 0024 (status); pending time off goes to the manager.
+    const { data: row, error } = await supabase.from("absences").insert({ ...draft, note: draft.note.trim(), person_id: me.personId }).select("*").single();
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success(t.absences.added);
+    if ((row as { status?: string } | null)?.status === "pending") {
+      await notifyTimeOff((row as { id: string }).id, "requested");
+      toast.success(t.absences.sentForApproval);
+    } else toast.success(t.absences.added);
     setOpen(false);
     setDraft({ starts_on: "", ends_on: "", kind: "vacation", note: "", covered_by: [] });
     router.refresh();
@@ -142,6 +148,7 @@ export default function WhosOut({ absences, people }: { absences: Absence[]; peo
           <Plus className="h-4 w-4" /> {t.absences.imOut}
         </button>
       )}
+      <Link href="/hr" className="mt-1 block text-xs font-bold text-gray-500 hover:text-[#00704a] hover:underline">{t.absences.requests} →</Link>
     </div>
   );
 }

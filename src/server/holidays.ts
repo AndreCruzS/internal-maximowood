@@ -1,3 +1,5 @@
+import { isApproved } from "@/lib/timeOff";
+import { selectCompat } from "@/server/compat";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { HOLIDAY_COLUMNS, calendarFor, type HolidayCalendar, type OfficeHoliday } from "@/lib/holidays";
 
@@ -25,7 +27,11 @@ export async function loadHolidays(supabase: SupabaseClient, user: User, month: 
   const { from, to } = monthBounds(month);
   const [holidays, absences, people, editor] = await Promise.all([
     supabase.from("office_holidays").select(HOLIDAY_COLUMNS).order("day"),
-    supabase.from("absences").select("id, person_id, starts_on, ends_on, kind, note, covered_by").lte("starts_on", to).gte("ends_on", from).order("starts_on"),
+    selectCompat(
+      cols => supabase.from("absences").select(cols).lte("starts_on", to).gte("ends_on", from).order("starts_on"),
+      "id, person_id, starts_on, ends_on, kind, note, covered_by, status",
+      "id, person_id, starts_on, ends_on, kind, note, covered_by",
+    ),
     supabase.from("people").select("id, full_name, photo_url, company_id, office, live_country, user_id, positions(department_id)").eq("active", true).order("full_name"),
     supabase.rpc("is_hr_editor"),
   ]);
@@ -38,7 +44,7 @@ export async function loadHolidays(supabase: SupabaseClient, user: User, month: 
     holidays: (holidays.data as OfficeHoliday[] | null) ?? [],
     defaultCalendar: calendarFor(me?.office, me?.live_country),
     month,
-    absences: (absences.data as HolidayAbsence[] | null) ?? [],
+    absences: ((absences.data as (HolidayAbsence & { status?: string })[] | null) ?? []).filter(isApproved),
     people: rows.map(p => ({
       id: p.id, full_name: p.full_name, photo_url: p.photo_url, company_id: p.company_id, country: country(p),
       departments: [...new Set(p.positions.map(x => x.department_id).filter(Boolean) as string[])],

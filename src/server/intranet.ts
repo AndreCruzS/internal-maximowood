@@ -1,3 +1,4 @@
+import { isApproved } from "@/lib/timeOff";
 import { loadPolls } from "@/server/polls";
 import { selectCompat } from "@/server/compat";
 import { HOLIDAY_COLUMNS, calendarFor, type OfficeHoliday } from "@/lib/holidays";
@@ -44,7 +45,12 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
     supabase.from("news").select("id").eq("must_read", true).limit(200),
     supabase.from("news_reads").select("news_id").eq("user_id", userId),
     supabase.from("people").select("id, full_name, user_id, photo_url").eq("active", true).order("full_name"),
-    supabase.from("absences").select("id, person_id, starts_on, ends_on, kind, note, covered_by").gte("ends_on", from).lte("starts_on", to).order("starts_on"),
+    // Pending / declined time off (0024) is visible to managers and HR but isn't "out": filtered below.
+    selectCompat(
+      cols => supabase.from("absences").select(cols).gte("ends_on", from).lte("starts_on", to).order("starts_on"),
+      "id, person_id, starts_on, ends_on, kind, note, covered_by, status",
+      "id, person_id, starts_on, ends_on, kind, note, covered_by",
+    ),
     selectCompat(
       cols => supabase.from("kudos").select(cols).gte("created_at", kudosSince).order("created_at", { ascending: false }).limit(50),
       "id, from_person_id, to_person_id, message, created_at, category, gif",
@@ -73,7 +79,7 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
     news: (news.data as NewsItem[] | null) ?? [],
     unreadMustRead: ((mustRead.data as { id: string }[] | null) ?? []).filter(n => !readIds.has(n.id)).length,
     people: (people.data as PersonLite[] | null) ?? [],
-    absences: (absences.data as Absence[] | null) ?? [],
+    absences: ((absences.data as (Absence & { status?: string })[] | null) ?? []).filter(isApproved),
     kudos: (kudos.data as Kudo[] | null) ?? [],
     onboarding: {
       items: (items.data as OnboardingItem[] | null) ?? [],

@@ -17,6 +17,7 @@ import {
   Users,
   Plane,
   UserPlus,
+  CalendarCheck,
   CalendarRange,
   type LucideIcon,
 } from "lucide-react";
@@ -137,6 +138,7 @@ export const TOOLS: Tool[] = [
   { name: "Expenses", description: "Receipts, reimbursements, cards and fund requests, connected to Ramp", icon: Receipt, href: "/expenses", department: "finance", company: "gmx" },
   { name: "Travel Requests", description: "Request business travel; Procurement books it", icon: Plane, href: "/travel", department: "finance", company: "gmx", pinned: true },
   { name: "Refer a Candidate", description: "Refer someone for an open role", icon: UserPlus, href: "/refer", department: "hr", company: "gmx" },
+  { name: "Time Off & Pay", description: "Request time off, approve your team's, and pay & benefits in Rippling", icon: CalendarCheck, href: "/hr", department: "hr", company: "gmx", pinned: true },
   { name: "Holidays & Absences", description: "Office holidays, opening hours and time off", icon: CalendarRange, href: "/holidays", department: "hr", company: "gmx" },
   { name: "Online Gallery", description: "Maximo photos and media library", icon: Images, href: "https://media.maximowood.com/", department: "marketing", company: "maximo", external: true },
 ];
