@@ -4,6 +4,7 @@ import {
   hubspotRecordUrl,
   matchOwner,
   parseHubSpotQuoteRequest,
+  ccFor,
   parseSettings,
   planHubSpotCalls,
   renderTemplate,
@@ -123,5 +124,18 @@ describe("settings, links and sample data", () => {
     expect(sampleSearch("oak").contacts.map(c => c.id)).toEqual(["demo_ct_maria"]);
     expect(sampleSearch("o").contacts).toEqual([]);
     expect(sampleDeals("demo_ct_maria", null).map(d => d.id)).toEqual(["demo_dl_oak_deck"]);
+  });
+});
+
+describe("always CC", () => {
+  it("copies Helen by default, and respects an admin's list (even an empty one)", () => {
+    expect(parseSettings({}).alwaysCc).toEqual(["helen.tiene@maximowood.com"]);
+    expect(parseSettings({ alwaysCc: [] }).alwaysCc).toEqual([]);
+    expect(parseSettings({ alwaysCc: ["A@Maximowood.com", "a@maximowood.com", "not-an-email"] }).alwaysCc).toEqual(["a@maximowood.com"]);
+  });
+  it("puts the rep first, drops duplicates and never copies the customer", () => {
+    expect(ccFor("rep@maximowood.com", ["helen.tiene@maximowood.com"])).toEqual(["rep@maximowood.com", "helen.tiene@maximowood.com"]);
+    expect(ccFor("helen.tiene@maximowood.com", ["Helen.Tiene@maximowood.com"])).toEqual(["helen.tiene@maximowood.com"]);
+    expect(ccFor("rep@maximowood.com", ["helen.tiene@maximowood.com"], "Helen.Tiene@maximowood.com")).toEqual(["rep@maximowood.com"]);
   });
 });

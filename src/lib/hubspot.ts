@@ -66,14 +66,20 @@ export type HubSpotSettings = {
   template: { subject: string; body: string };
   /** App login email (lowercase) → HubSpot owner id, when the emails differ. */
   ownerOverrides: Record<string, string>;
+  /** Copied on every quote email, besides the rep. */
+  alwaysCc: string[];
 };
+
+/** Helen (Maximo) is copied on every quote email unless an admin changes it. */
+export const DEFAULT_ALWAYS_CC = ["helen.tiene@maximowood.com"];
+const MAX_ALWAYS_CC = 10;
 
 export const DEFAULT_TEMPLATE = {
   subject: "Maximo quote – {project}",
   body: "Hi {contact},\n\nThank you for your interest in Maximo. Please find attached the quote for {project}.\n\nLet me know if you have any questions — happy to help.\n\nBest regards,\n{rep}",
 };
 
-export const DEFAULT_SETTINGS: HubSpotSettings = { defaultStages: {}, template: DEFAULT_TEMPLATE, ownerOverrides: {} };
+export const DEFAULT_SETTINGS: HubSpotSettings = { defaultStages: {}, template: DEFAULT_TEMPLATE, ownerOverrides: {}, alwaysCc: DEFAULT_ALWAYS_CC };
 
 export const TASK_DUE_HOURS = 48;
 export const MAX_PDF_BYTES = 10 * 1024 * 1024;
@@ -155,7 +161,21 @@ export function parseSettings(value: unknown): HubSpotSettings {
       body: (typeof tpl.body === "string" && tpl.body.trim() ? tpl.body.slice(0, MAX_MESSAGE) : "") || DEFAULT_TEMPLATE.body,
     },
     ownerOverrides: Object.fromEntries(Object.entries(overrides).filter(([k, id]) => isEmail(k) && /^\d+$/.test(id)).map(([k, id]) => [k.toLowerCase(), id])),
+    // Never saved yet → Helen; saved as an empty list → nobody extra.
+    alwaysCc: Array.isArray(v.alwaysCc)
+      ? [...new Set(v.alwaysCc.filter(isEmail).map(e => e.trim().toLowerCase()))].slice(0, MAX_ALWAYS_CC)
+      : DEFAULT_ALWAYS_CC,
   };
+}
+
+/** Who's copied on a quote email: the rep, then the always-CC list (no duplicates, never the customer). */
+export function ccFor(repEmail: string, alwaysCc: string[], to = ""): string[] {
+  const out: string[] = [];
+  for (const e of [repEmail, ...alwaysCc]) {
+    const k = e.trim().toLowerCase();
+    if (k && k !== to.trim().toLowerCase() && !out.some(x => x.toLowerCase() === k)) out.push(e.trim());
+  }
+  return out;
 }
 
 // ── Owners ────────────────────────────────────────────────────────────────────
@@ -261,6 +281,8 @@ export type HubSpotConfig = {
   pipelines: { id: string; label: string }[];
   template: { subject: string; body: string };
   rep: { email: string; name: string };
+  /** Copied on every quote email besides the rep (admin setting). */
+  alwaysCc: string[];
   portalId: string | null;
 };
 

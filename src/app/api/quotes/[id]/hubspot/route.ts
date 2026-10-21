@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getQuotesAccess } from "@/server/quotesAccess";
 import { selectQuotes, type QuoteRow } from "@/server/quotes";
 import {
+  ccFor,
   MAX_PDF_BYTES,
   hubspotRecordUrl,
   matchOwner,
@@ -84,7 +85,7 @@ export async function POST(request: Request, { params }: Ctx) {
       email = await sendQuoteMail({
         from: rep,
         to: req.email.to,
-        cc: [rep.email],
+        cc: ccFor(rep.email, settings.alwaysCc, req.email.to),
         subject: req.email.subject,
         message: req.email.message,
         attachment: { filename, content: bytes },
@@ -117,7 +118,7 @@ export async function POST(request: Request, { params }: Ctx) {
     user_id: access.user.id,
     action: req.action,
     to_email: req.action === "send" ? req.email.to : null,
-    cc: req.action === "send" ? [rep.email] : [],
+    cc: req.action === "send" ? ccFor(rep.email, settings.alwaysCc, req.email.to) : [],
     subject: req.action === "send" ? req.email.subject : null,
     message: req.email.message || null,
     email_status: email.status,

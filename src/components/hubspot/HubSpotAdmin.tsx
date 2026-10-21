@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { HsOwner, HubSpotSettings } from "@/lib/hubspot";
+import { isEmail, type HsOwner, type HubSpotSettings } from "@/lib/hubspot";
 
 type AdminData = {
   mode: "live" | "sample";
@@ -48,13 +48,20 @@ function HubSpotAdminForm({ data, onSaved }: { data: AdminData; onSaved: () => v
   const [draft, setDraft] = useState<HubSpotSettings>(data.settings);
   const [rows, setRows] = useState(() => Object.entries(data.settings.ownerOverrides).map(([email, ownerId]) => ({ email, ownerId })));
   const [saving, setSaving] = useState(false);
+  const [ccText, setCcText] = useState(data.settings.alwaysCc.join(", "));
 
   const save = async () => {
     setSaving(true);
     const body: HubSpotSettings = {
       ...draft,
       ownerOverrides: Object.fromEntries(rows.filter(r => r.email.trim() && r.ownerId.trim()).map(r => [r.email.trim().toLowerCase(), r.ownerId.trim()])),
+      alwaysCc: ccText.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean),
     };
+    const badCc = body.alwaysCc.filter(e => !isEmail(e));
+    if (badCc.length) {
+      setSaving(false);
+      return toast.error(`Not a valid email: ${badCc.join(", ")}`);
+    }
     const res = await fetch("/api/admin/hubspot", { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const json = await res.json().catch(() => ({}));
     setSaving(false);
@@ -120,6 +127,18 @@ function HubSpotAdminForm({ data, onSaved }: { data: AdminData; onSaved: () => v
         <Input value={draft.template.subject} onChange={e => setDraft({ ...draft, template: { ...draft.template, subject: e.target.value } })} aria-label="Default subject" />
         <Textarea value={draft.template.body} onChange={e => setDraft({ ...draft, template: { ...draft.template, body: e.target.value } })} rows={7} className="text-sm" aria-label="Default message" />
         <p className="text-xs text-gray-400">Placeholders: {"{project}"}, {"{contact}"}, {"{company}"}, {"{rep}"}. Reps edit the message before sending.</p>
+      </div>
+
+      {/* Always CC */}
+      <div className="space-y-2">
+        <p className="text-xs font-black uppercase tracking-widest text-gray-400">Always CC</p>
+        <Input
+          value={ccText}
+          onChange={e => setCcText(e.target.value)}
+          placeholder="name@maximowood.com, other@lumberplus.com"
+          aria-label="Always CC"
+        />
+        <p className="text-xs text-gray-400">Copied on every quote email, besides the rep. Separate addresses with commas; leave empty for nobody.</p>
       </div>
 
       {/* Owners */}
