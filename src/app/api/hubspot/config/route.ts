@@ -19,6 +19,7 @@ export async function GET() {
     pipelines: HUBSPOT_PIPELINES.map(p => ({ id: p.id, label: ref.pipelines.find(x => x.id === p.id)?.label ?? p.label })),
     template: settings.template,
     rep: repOf(access.user),
+    alwaysCc: settings.alwaysCc,
     portalId: ref.portalId,
   };
   return NextResponse.json(body);

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { renderTemplate, type HubSpotConfig, type HubSpotQuoteResponse, type QuoteAction } from "@/lib/hubspot";
+import { ccFor, renderTemplate, type HubSpotConfig, type HubSpotQuoteResponse, type QuoteAction } from "@/lib/hubspot";
 import { pickEmail, toTarget, type CustomerPick } from "@/components/hubspot/HubSpotCustomer";
 
 /**
@@ -84,7 +84,7 @@ export default function HubSpotCompose({
             <p className="font-bold text-gray-900">{send ? (result.emailStatus === "sent" ? `Sent to ${to}.` : "The email wasn't sent.") : "Saved to HubSpot."}</p>
           )}
           <ul className="mt-2 list-disc pl-5 text-gray-700">
-            {send && <li>Email from {config.rep.email} to {to}, CC you, with the PDF attached{result.mode === "sample" ? " (not sent)" : ""}.</li>}
+            {send && <li>Email from {config.rep.email} to {to}, CC {ccFor(config.rep.email, config.alwaysCc ?? [], to).join(", ")}, with the PDF attached{result.mode === "sample" ? " (not sent)" : ""}.</li>}
             <li>{send ? "Email" : "Note"} with the PDF logged on the contact, company and deal.</li>
             <li>Deal amount set to the quote total (stage unchanged).</li>
             {task && <li>Follow-up task for you, due in 48 hours.</li>}
@@ -134,7 +134,7 @@ export default function HubSpotCompose({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="hs-cc">CC</Label>
-              <Input id="hs-cc" value={config.rep.email} readOnly className="bg-gray-50 text-gray-500" />
+              <Input id="hs-cc" value={ccFor(config.rep.email, config.alwaysCc ?? [], to).join(", ")} readOnly className="bg-gray-50 text-gray-500" />
             </div>
           </div>
           <p className="-mt-2 text-[11px] text-gray-500">From {config.rep.name} &lt;{config.rep.email}&gt;</p>
