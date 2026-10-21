@@ -24,6 +24,8 @@ import {
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import AdminUsers from "@/components/AdminUsers";
+import HubSpotAdmin from "@/components/hubspot/HubSpotAdmin";
+import QuoteHubSpotBadge from "@/components/hubspot/QuoteHubSpotBadge";
 import { deleteQuote, sendJson, useQuotes } from "@/lib/api";
 import { generateQuotePDF } from "@/lib/generateQuotePDF";
 import { quoteEditHref, toQuoteData, type SavedQuote } from "@/lib/quotes";
@@ -371,6 +373,7 @@ function QuotesCard({ account }: { account: ProfileAccount }) {
                   <td className="px-4 py-3 text-gray-600">
                     <div>{q.company || "—"}</div>
                     {q.contact && <div className="text-xs text-gray-400">{q.contact}</div>}
+                    <QuoteHubSpotBadge quote={q} />
                   </td>
                   {showAll && (
                     <td className="px-4 py-3 text-gray-600">
@@ -498,7 +501,10 @@ export default function Profile({ account, initialTab }: { account: ProfileAccou
       </div>
 
       {tab === "admin" && account.isAdmin ? (
-        <AdminUsers />
+        <>
+          <AdminUsers />
+          <HubSpotAdmin />
+        </>
       ) : (
         <>
           <div className="grid gap-6 lg:grid-cols-2">

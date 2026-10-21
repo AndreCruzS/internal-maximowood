@@ -20,10 +20,27 @@ export type QuoteRow = {
   total: number | string;
   created_at: string;
   updated_at: string;
+  hubspot_contact_id?: string | null;
+  hubspot_company_id?: string | null;
+  hubspot_deal_id?: string | null;
+  last_sent_at?: string | null;
+  last_sent_to?: string | null;
+  last_send_action?: string | null;
 };
 
 export const QUOTE_COLUMNS =
   "id, user_id, project_name, calculator, company, contact, address, prepared_by, notes, tax, shipping, lead_time_weeks, items, total, created_at, updated_at";
+
+/** QUOTE_COLUMNS plus the HubSpot columns (migration 0026). Use with selectQuotes, which falls back without them. */
+export const QUOTE_COLUMNS_WITH_HUBSPOT = `${QUOTE_COLUMNS}, hubspot_contact_id, hubspot_company_id, hubspot_deal_id, last_sent_at, last_sent_to, last_send_action`;
+
+type Result<T> = { data: T | null; error: { code?: string; message: string } | null };
+/** Selects with the HubSpot columns; before migration 0026 (Postgres 42703) retries without them. */
+export async function selectQuotes<T>(run: (columns: string) => PromiseLike<Result<T>>): Promise<Result<T>> {
+  const first = await run(QUOTE_COLUMNS_WITH_HUBSPOT);
+  if (!first.error || !["42703", "PGRST204"].includes(first.error.code ?? "")) return first;
+  return run(QUOTE_COLUMNS);
+}
 
 // PostgREST returns numeric columns as strings.
 const num = (v: number | string | null): number | null => (v == null ? null : Number(v));
@@ -46,6 +63,17 @@ export function rowToQuote(row: QuoteRow): SavedQuote {
     total: num(row.total) ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    hubspot:
+      row.hubspot_deal_id || row.hubspot_contact_id || row.hubspot_company_id || row.last_sent_at
+        ? {
+            contactId: row.hubspot_contact_id ?? null,
+            companyId: row.hubspot_company_id ?? null,
+            dealId: row.hubspot_deal_id ?? null,
+            lastSentAt: row.last_sent_at ?? null,
+            lastSentTo: row.last_sent_to ?? null,
+            lastAction: row.last_send_action === "send" || row.last_send_action === "save_only" ? row.last_send_action : null,
+          }
+        : null,
   };
 }
 

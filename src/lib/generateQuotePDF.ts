@@ -170,7 +170,19 @@ const MARGIN_TOP = 0.5 * IN;
 const MARGIN_BOTTOM = 0.4 * IN;
 const FOOTER_H = 18;
 
+/** Builds the quote PDF and downloads it. */
 export async function generateQuotePDF(data: QuoteData) {
+  const { doc, filename } = await buildQuotePDF(data);
+  doc.save(filename);
+}
+
+/** The same PDF as a Blob (to email it or attach it in HubSpot), with its file name. */
+export async function quotePDFBlob(data: QuoteData): Promise<{ blob: Blob; filename: string }> {
+  const { doc, filename } = await buildQuotePDF(data);
+  return { blob: doc.output("blob"), filename };
+}
+
+async function buildQuotePDF(data: QuoteData): Promise<{ doc: jsPDF; filename: string }> {
   const doc = new jsPDF({ unit: "pt", format: "letter", orientation: "portrait" });
   const brand = QUOTE_BRANDS[data.brand ?? "maximo"];
   const [logo, qr] = await Promise.all([
@@ -438,5 +450,5 @@ export async function generateQuotePDF(data: QuoteData) {
   // ── Save ────────────────────────────────────────────────────────────────────
   const safeName = (data.project || "Project").replace(/[^a-zA-Z0-9_-]/g, "_");
   const safeDate = data.date.replace(/\//g, "-");
-  doc.save(`${brand.filePrefix}_Quote_${safeName}_${safeDate}.pdf`);
+  return { doc, filename: `${brand.filePrefix}_Quote_${safeName}_${safeDate}.pdf` };
 }

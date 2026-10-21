@@ -5,6 +5,7 @@ import {
   parseQuoteInput,
   quoteToRow,
   rowToQuote,
+  selectQuotes,
   type QuoteRow,
 } from "@/server/quotes";
 import { getQuotesAccess, withOwners } from "@/server/quotesAccess";
@@ -19,14 +20,16 @@ export async function GET() {
   const access = await getQuotesAccess();
   if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
 
-  const { data, error } = await access.db
-    .from("quotes")
-    .select(QUOTE_COLUMNS)
-    .order("updated_at", { ascending: false })
-    .limit(access.isAdmin ? 2000 : 500);
+  const { data, error } = await selectQuotes(cols =>
+    access.db
+      .from("quotes")
+      .select(cols)
+      .order("updated_at", { ascending: false })
+      .limit(access.isAdmin ? 2000 : 500),
+  );
   if (error) return NextResponse.json({ error: error.message }, { status: 502 });
 
-  const quotes = (data as QuoteRow[]).map(rowToQuote);
+  const quotes = (data as unknown as QuoteRow[]).map(rowToQuote);
   return NextResponse.json({ quotes: access.isAdmin ? await withOwners(quotes) : quotes });
 }
 
