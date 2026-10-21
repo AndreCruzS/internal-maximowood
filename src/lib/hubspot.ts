@@ -281,6 +281,8 @@ export type HubSpotConfig = {
   pipelines: { id: string; label: string }[];
   template: { subject: string; body: string };
   rep: { email: string; name: string };
+  /** Who the email shows as sender: the rep once the SMTP relay is on, else "<Rep> – Maximo" <no-reply@…>. Replies go to the rep. */
+  sender: { email: string; name: string };
   /** Copied on every quote email besides the rep (admin setting). */
   alwaysCc: string[];
   portalId: string | null;

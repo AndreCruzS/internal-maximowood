@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { planHubSpotCalls, type HubSpotQuoteRequest } from "@/lib/hubspot";
 import { HubSpotError, openDeals, searchCustomers } from "./client";
 import { executePlan, sampleResult, type HubSpotOps } from "./execute";
-import { messageHtml, sendQuoteMail } from "../quoteMail";
+import { messageHtml, quoteSender, sendQuoteMail } from "../quoteMail";
 
 // No test talks to HubSpot: the ops are fakes, and fetch is stubbed where the client is used.
 
@@ -148,5 +148,21 @@ describe("quote email", () => {
   });
   it("turns the rep's text into escaped paragraphs", () => {
     expect(messageHtml("Hi <Ana>,\nline two\n\nBye")).toContain("<p style=\"margin:0 0 14px\">Hi &lt;Ana&gt;,<br>line two</p><p");
+  });
+});
+
+describe("quote sender", () => {
+  const rep = { email: "matheus.selleti@maximowood.com", name: "Matheus Selleti" };
+  const env = { ...process.env };
+  afterEach(() => { process.env = { ...env }; });
+  it("sends from the SMTP account under the rep's name until the relay is on", () => {
+    delete process.env.QUOTE_SEND_AS_REP;
+    delete process.env.QUOTE_FROM_ADDRESS;
+    process.env.SMTP_USER = "no-reply@gmxgroup.com";
+    expect(quoteSender(rep)).toEqual({ email: "no-reply@gmxgroup.com", name: "Matheus Selleti – Maximo" });
+  });
+  it("sends as the rep once QUOTE_SEND_AS_REP=1", () => {
+    process.env.QUOTE_SEND_AS_REP = "1";
+    expect(quoteSender(rep)).toEqual(rep);
   });
 });

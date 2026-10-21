@@ -1,7 +1,13 @@
 import nodemailer from "nodemailer";
 
 /**
- * The quote email, sent FROM THE REP'S OWN ADDRESS through Google Workspace SMTP.
+ * The quote email, sent through Google Workspace SMTP.
+ *
+ * Who it's from:
+ *   - QUOTE_SEND_AS_REP=1 (once the Workspace SMTP relay is on): FROM THE REP'S OWN ADDRESS.
+ *   - Otherwise (today): from the SMTP account itself, shown as "<Rep> – Maximo"
+ *     <no-reply@…>, because Gmail replaces any other sender with that account anyway.
+ *   Either way replies go to the rep (Reply-To), and the rep is CC'd.
  *
  * Same settings as the intranet's mailer (src/server/email.ts there): SMTP_USER /
  * SMTP_PASS (+ SMTP_HOST, default smtp.gmail.com; SMTP_PORT, default 465). For the
@@ -25,6 +31,18 @@ export type QuoteMail = {
 
 export const smtpConfigured = () => !!(process.env.SMTP_USER && process.env.SMTP_PASS);
 
+/** True once the Workspace SMTP relay lets the app send as any address in our domains. */
+export const sendsAsRep = () => process.env.QUOTE_SEND_AS_REP === "1";
+
+const EMAILISH = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+
+/** The From of a quote email: the rep, or (until the relay is on) the SMTP account under the rep's name. */
+export function quoteSender(rep: { email: string; name: string }): { email: string; name: string } {
+  if (sendsAsRep()) return rep;
+  const account = [process.env.QUOTE_FROM_ADDRESS, process.env.SMTP_USER].find(a => a && EMAILISH.test(a.trim()))?.trim() || "no-reply@gmxgroup.com";
+  return { email: account, name: `${rep.name || rep.email} – Maximo` };
+}
+
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 /** The rep's message as simple HTML: paragraphs and line breaks, nothing else. */
@@ -43,8 +61,9 @@ export async function sendQuoteMail(mail: QuoteMail): Promise<MailResult> {
   const port = Number(process.env.SMTP_PORT) || 465;
   try {
     const transport = nodemailer.createTransport({ host: process.env.SMTP_HOST || "smtp.gmail.com", port, secure: port === 465, auth: { user, pass } });
+    const sender = quoteSender(mail.from);
     await transport.sendMail({
-      from: { name: header(mail.from.name), address: mail.from.email },
+      from: { name: header(sender.name), address: sender.email },
       replyTo: mail.from.email,
       to: mail.to,
       cc: mail.cc,
