@@ -7,9 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { generateQuotePDF, QUOTE_BRANDS } from "@/lib/generateQuotePDF";
+import { generateQuotePDF, quotePDFBlob, QUOTE_BRANDS } from "@/lib/generateQuotePDF";
 import type { QuoteBrand, QuoteLineItem } from "@/lib/generateQuotePDF";
-import { ApiError, createQuote, updateQuote, useInventory } from "@/lib/api";
+import { ApiError, createQuote, updateQuote, useHubSpotConfig, useInventory } from "@/lib/api";
+import HubSpotCustomer, { emptyPick, pickFromSaved, pickReady, type CustomerPick } from "@/components/hubspot/HubSpotCustomer";
+import HubSpotCompose from "@/components/hubspot/HubSpotCompose";
+import type { QuoteAction } from "@/lib/hubspot";
 import {
   DEFAULT_PREPARED_BY,
   toQuoteData,
@@ -18,7 +21,7 @@ import {
   type SavedQuote,
 } from "@/lib/quotes";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Download, Loader2, MapPin, CheckCircle2, AlertTriangle, Package, ChevronDown, ChevronUp, Save } from "lucide-react";
+import { FileText, Download, Loader2, MapPin, CheckCircle2, AlertTriangle, Package, ChevronDown, ChevronUp, Save, Mail, NotebookPen } from "lucide-react";
 import { toast } from "sonner";
 import QuoteItemRow from "@/components/QuoteItemRow";
 import { findInventoryMatch, type InventoryItem, type LengthEntry } from "@/lib/inventoryMatch";
@@ -141,6 +144,8 @@ function InventoryRow({ item, inventoryItems, inventoryLoading, inventoryError }
   );
 }
 
+type SaveMode = "save" | "download" | QuoteAction;
+
 // ── Main Modal ────────────────────────────────────────────────────────────────
 // Parents remount this with `key` when a different saved quote is opened, so
 // the fields initialise from `savedQuote` once.
@@ -159,10 +164,25 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
   const [notes, setNotes] = useState(savedQuote?.notes ?? "");
   // B2B quotes are issued as Maximo Wood or as Global LBM (distributor); retail is always Maximo.
   const [brand, setBrand] = useState<QuoteBrand>("maximo");
-  const [busy, setBusy] = useState<"save" | "download" | null>(null);
+  const [busy, setBusy] = useState<SaveMode | null>(null);
   const [projectError, setProjectError] = useState("");
   // Saving a new quote under a project name that's already taken.
-  const [conflict, setConflict] = useState<{ existingId: string; message: string; download: boolean } | null>(null);
+  const [conflict, setConflict] = useState<{ existingId: string; message: string; mode: SaveMode } | null>(null);
+
+  // ── HubSpot: customer + deal, then "Send to customer" / "Save to HubSpot only" ──
+  const hubspot = useHubSpotConfig(open);
+  const [hsPick, setHsPick] = useState<CustomerPick>(() =>
+    savedQuote?.hubspot ? pickFromSaved(savedQuote.hubspot, savedQuote.company, savedQuote.contact) : emptyPick(),
+  );
+  const [hsError, setHsError] = useState("");
+  const [compose, setCompose] = useState<{ action: QuoteAction; quote: SavedQuote; input: QuoteInput } | null>(null);
+  // A quote saved on the way to HubSpot: the parent hears about it when the dialog closes,
+  // because it re-keys (remounts) the dialog for a newly saved quote.
+  const [pendingSaved, setPendingSaved] = useState<SavedQuote | null>(null);
+  const close = () => {
+    if (pendingSaved) onSaved?.(pendingSaved);
+    onClose();
+  };
 
   // Fetch inventory
   const {
@@ -195,11 +215,18 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
   });
 
   /**
-   * Save (create, or update `targetId`), then optionally download the PDF.
+   * Save (create, or update `targetId`), then optionally download the PDF, or go on
+   * to the HubSpot step ("send" / "save_only").
    * Saving is keyed by project name: a new quote whose project already exists
    * stops at a "replace it?" prompt instead of creating a duplicate.
    */
-  const save = async (download: boolean, targetId = savedQuote?.id) => {
+  const save = async (mode: SaveMode, targetId = pendingSaved?.id ?? savedQuote?.id) => {
+    const toHubSpot = mode === "send" || mode === "save_only";
+    if (toHubSpot) {
+      const problem = pickReady(hsPick, companyName);
+      setHsError(problem ?? "");
+      if (problem) return;
+    }
     if (!project.trim()) {
       setProjectError("Give the quote a project name — it's how the quote is saved.");
       return;
@@ -211,14 +238,14 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
     setLeadTimeError("");
     setProjectError("");
     setConflict(null);
-    setBusy(download ? "download" : "save");
+    setBusy(mode);
     const input = buildInput();
     let saved: SavedQuote;
     try {
       saved = targetId ? await updateQuote(targetId, input) : await createQuote(input);
     } catch (err) {
       if (err instanceof ApiError && err.status === 409 && typeof err.body.existingId === "string") {
-        setConflict({ existingId: err.body.existingId, message: err.message, download });
+        setConflict({ existingId: err.body.existingId, message: err.message, mode });
       } else {
         toast.error(err instanceof Error ? err.message : "Couldn't save the quote. Please try again.");
       }
@@ -229,8 +256,15 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
     void queryClient.invalidateQueries({ queryKey: ["quotes"] });
     toast.success(targetId ? `Quote "${saved.projectName}" updated` : `Quote "${saved.projectName}" saved`);
 
+    if (toHubSpot) {
+      setPendingSaved(saved);
+      setCompose({ action: mode, quote: saved, input });
+      setBusy(null);
+      return;
+    }
+
     let pdfFailed = false;
-    if (download) {
+    if (mode === "download") {
       try {
         await generateQuotePDF({ ...toQuoteData(input), brand: calculator === "b2b" ? brand : "maximo" });
       } catch (err) {
@@ -241,12 +275,13 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
     }
     setBusy(null);
     // Last: the parent may re-key (remount) this modal for the saved quote.
+    setPendingSaved(null);
     onSaved?.(saved);
     if (!pdfFailed) onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+    <Dialog open={open} onOpenChange={v => { if (!v) close(); }}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
@@ -263,6 +298,25 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
           )}
         </DialogHeader>
 
+        {compose && hubspot.data ? (
+          <HubSpotCompose
+            action={compose.action}
+            quoteId={compose.quote.id}
+            projectName={compose.quote.projectName}
+            companyName={compose.input.company}
+            contactName={compose.input.contact}
+            address={compose.input.address}
+            pick={hsPick}
+            config={hubspot.data}
+            buildPdf={() => quotePDFBlob({ ...toQuoteData(compose.input), brand: calculator === "b2b" ? brand : "maximo" })}
+            onBack={() => setCompose(null)}
+            onDone={() => {
+              void queryClient.invalidateQueries({ queryKey: ["quotes"] });
+              void queryClient.invalidateQueries({ queryKey: ["quote-sends", compose.quote.id] });
+            }}
+          />
+        ) : (
+        <>
         {/* Items summary */}
         <div className="rounded-lg border overflow-hidden" style={{ borderColor: "#009f6730" }}>
           <div className="px-3 py-2" style={{ background: "#1A1A1A" }}>
@@ -321,6 +375,27 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
 
         {/* Quote fields */}
         <div className="space-y-4">
+          {hubspot.data && (
+            <div className="space-y-1">
+              <HubSpotCustomer
+                config={hubspot.data}
+                pick={hsPick}
+                onChange={p => { setHsPick(p); setHsError(""); }}
+                onAutofill={v => {
+                  if (v.company !== undefined) setCompanyName(v.company);
+                  if (v.contact !== undefined) setContact(v.contact);
+                  if (v.address !== undefined) setAddress(v.address);
+                }}
+              />
+              {hsError && <p className="text-xs text-red-600">{hsError}</p>}
+              {savedQuote?.hubspot?.lastSentAt && (
+                <p className="text-[11px] text-[#888]">
+                  {savedQuote.hubspot.lastAction === "send" ? `Last sent to ${savedQuote.hubspot.lastSentTo ?? "the customer"}` : "Last saved to HubSpot"} on{" "}
+                  {new Date(savedQuote.hubspot.lastSentAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                </p>
+              )}
+            </div>
+          )}
           {calculator === "b2b" && (
             <div className="space-y-1.5">
               <Label>Quote as</Label>
@@ -438,7 +513,7 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
                 <div className="mt-2 flex gap-2">
                   <Button
                     size="sm"
-                    onClick={() => void save(conflict.download, conflict.existingId)}
+                    onClick={() => void save(conflict.mode, conflict.existingId)}
                     disabled={busy !== null}
                     className="font-bold text-white"
                     style={{ background: "#009f67" }}
@@ -463,12 +538,12 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
         )}
 
         <div className="flex flex-wrap gap-3 pt-2">
-          <Button variant="outline" onClick={onClose} className="flex-1" disabled={busy !== null}>
+          <Button variant="outline" onClick={close} className="flex-1" disabled={busy !== null}>
             Cancel
           </Button>
           <Button
             variant="outline"
-            onClick={() => void save(false)}
+            onClick={() => void save("save")}
             disabled={busy !== null}
             className="flex-1 font-bold gap-2"
           >
@@ -479,7 +554,7 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
             )}
           </Button>
           <Button
-            onClick={() => void save(true)}
+            onClick={() => void save("download")}
             disabled={busy !== null}
             className="flex-[1.4] font-bold gap-2 text-white"
             style={{ background: "#009f67" }}
@@ -491,6 +566,29 @@ export default function QuoteModal({ open, onClose, items, calculator, savedQuot
             )}
           </Button>
         </div>
+        {hubspot.data && (
+          <div className="flex flex-wrap gap-3">
+            <Button
+              onClick={() => void save("send")}
+              disabled={busy !== null}
+              className="flex-1 gap-2 font-bold text-white"
+              style={{ background: "#ff7a59" }}
+            >
+              {busy === "send" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />} Send to customer
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => void save("save_only")}
+              disabled={busy !== null}
+              className="flex-1 gap-2 font-bold"
+              style={{ borderColor: "#ff7a59", color: "#c2410c" }}
+            >
+              {busy === "save_only" ? <Loader2 className="w-4 h-4 animate-spin" /> : <NotebookPen className="w-4 h-4" />} Save to HubSpot only
+            </Button>
+          </div>
+        )}
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );

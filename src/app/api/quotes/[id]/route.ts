@@ -5,6 +5,7 @@ import {
   parseQuoteInput,
   quoteToRow,
   rowToQuote,
+  selectQuotes,
   type QuoteRow,
 } from "@/server/quotes";
 import { getQuotesAccess, withOwner } from "@/server/quotesAccess";
@@ -27,7 +28,7 @@ export async function GET(_request: Request, { params }: Ctx) {
   const access = await getQuotesAccess();
   if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
 
-  const { data, error } = await access.db.from("quotes").select(QUOTE_COLUMNS).eq("id", id).maybeSingle();
+  const { data, error } = await selectQuotes(cols => access.db.from("quotes").select(cols).eq("id", id).maybeSingle());
   if (error) return NextResponse.json({ error: error.message }, { status: 502 });
   if (!data) return notFound();
 

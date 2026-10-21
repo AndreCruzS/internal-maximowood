@@ -20,6 +20,7 @@ import type { ProfileAccount } from "@/components/Profile";
 import { deleteQuote, useQuotes } from "@/lib/api";
 import { generateQuotePDF } from "@/lib/generateQuotePDF";
 import { quoteEditHref, toQuoteData, type SavedQuote } from "@/lib/quotes";
+import QuoteHubSpotBadge from "@/components/hubspot/QuoteHubSpotBadge";
 
 const GREEN = "#009f67"; // GMX Forest Green
 
@@ -181,6 +182,7 @@ export default function MyQuotes({ account }: { account: ProfileAccount }) {
                   <td className="px-4 py-3 text-gray-600">
                     <div>{q.company || "—"}</div>
                     {q.contact && <div className="text-xs text-gray-400">{q.contact}</div>}
+                    <QuoteHubSpotBadge quote={q} />
                   </td>
                   {showAll && (
                     <td className="px-4 py-3 text-gray-600">

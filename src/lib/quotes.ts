@@ -25,6 +25,17 @@ export type SavedQuote = {
   total: number;
   createdAt: string;
   updatedAt: string;
+  /** HubSpot link and last send (migration 0026); null when never sent / not linked. */
+  hubspot?: QuoteHubSpot | null;
+};
+
+export type QuoteHubSpot = {
+  contactId: string | null;
+  companyId: string | null;
+  dealId: string | null;
+  lastSentAt: string | null;
+  lastSentTo: string | null;
+  lastAction: "send" | "save_only" | null;
 };
 
 /** What the client sends to create or update a quote. */

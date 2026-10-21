@@ -19,6 +19,7 @@ import ProfileEditor from "@/components/ProfileEditor";
 import type { Person } from "@/components/PeopleView";
 import { useI18n } from "@/components/I18nProvider";
 import { sendJson } from "@/lib/api";
+import HubSpotAdmin from "@/components/hubspot/HubSpotAdmin";
 
 const GREEN = "#009f67"; // GMX Forest Green
 const DARK = "#1A1A1A";
@@ -208,7 +209,10 @@ export default function Profile({ account, initialTab, person, department }: {
       </div>
 
       {tab === "admin" && account.isAdmin ? (
-        <AdminUsers />
+        <>
+          <AdminUsers />
+          <HubSpotAdmin />
+        </>
       ) : (
         <>
           {person && <ProfileEditor person={person} department={department} />}

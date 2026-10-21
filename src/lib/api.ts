@@ -147,3 +147,43 @@ export const updateQuote = (id: string, input: QuoteInput) =>
   sendJson<{ quote: SavedQuote }>(`/api/quotes/${id}`, "PATCH", input).then(r => r.quote);
 
 export const deleteQuote = (id: string) => sendJson<{ ok: true }>(`/api/quotes/${id}`, "DELETE");
+
+// ── HubSpot (quotes) ──────────────────────────────────────────────────────────
+export function useHubSpotConfig(enabled: boolean) {
+  return useQuery<import("@/lib/hubspot").HubSpotConfig>({
+    queryKey: ["hubspot-config"],
+    queryFn: () => getJson("/api/hubspot/config"),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useHubSpotSearch(q: string) {
+  return useQuery<{ contacts: import("@/lib/hubspot").HsContact[]; companies: import("@/lib/hubspot").HsCompany[] }>({
+    queryKey: ["hubspot-search", q],
+    queryFn: () => getJson(`/api/hubspot/search?q=${encodeURIComponent(q)}`),
+    enabled: q.trim().length >= 2,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useHubSpotDeals(contactId: string | null, companyId: string | null) {
+  const qs = new URLSearchParams({ ...(contactId ? { contactId } : {}), ...(companyId ? { companyId } : {}) }).toString();
+  return useQuery<{ deals: import("@/lib/hubspot").HsDeal[] }>({
+    queryKey: ["hubspot-deals", contactId, companyId],
+    queryFn: () => getJson(`/api/hubspot/deals?${qs}`),
+    enabled: !!(contactId || companyId),
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useQuoteSends(quoteId: string | null) {
+  return useQuery<{ sends: import("@/lib/hubspot").QuoteSendRecord[] }>({
+    queryKey: ["quote-sends", quoteId],
+    queryFn: () => getJson(`/api/quotes/${quoteId}/hubspot`),
+    enabled: !!quoteId,
+    refetchOnWindowFocus: false,
+  });
+}
