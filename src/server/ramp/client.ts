@@ -13,6 +13,28 @@ export const RAMP_SCOPES = [
   "spend_programs:read", "unified_requests:write",
 ] as const;
 
+/**
+ * The scopes asked for at sign-in. Ramp refuses the whole sign-in (400 invalid_scope) if any
+ * of them isn't enabled on the app, so RAMP_SCOPES (space- or comma-separated) can match the
+ * app exactly; by default all of RAMP_SCOPES above.
+ */
+export function requestedScopes(env = process.env.RAMP_SCOPES): string[] {
+  const list = (env ?? "").split(/[\s,]+/).map(s => s.trim()).filter(s => /^[a-z_]+:(read|write)$/.test(s));
+  return list.length ? [...new Set(list)] : [...RAMP_SCOPES];
+}
+
+/** Ramp's OAuth error, e.g. "invalid_scope: …" or "unauthorized_client: …" (never the credentials). */
+async function oauthError(res: Response): Promise<string> {
+  try {
+    const j = (await res.json()) as { error?: unknown; error_description?: unknown };
+    const code = typeof j.error === "string" ? j.error.slice(0, 60) : "";
+    const desc = typeof j.error_description === "string" ? j.error_description.slice(0, 200) : "";
+    return [code, desc].filter(Boolean).join(": ");
+  } catch {
+    return "";
+  }
+}
+
 const base = () => (process.env.RAMP_API_URL || "https://api.ramp.com").replace(/\/$/, "");
 export const rampConnected = () => Boolean(process.env.RAMP_CLIENT_ID && process.env.RAMP_CLIENT_SECRET);
 
@@ -35,10 +57,13 @@ async function getToken(force = false) {
       Authorization: `Basic ${Buffer.from(`${id}:${secret}`).toString("base64")}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: new URLSearchParams({ grant_type: "client_credentials", scope: RAMP_SCOPES.join(" ") }),
+    body: new URLSearchParams({ grant_type: "client_credentials", scope: requestedScopes().join(" ") }),
     cache: "no-store",
   });
-  if (!res.ok) throw new RampError(`Ramp sign-in failed (${res.status})`, res.status);
+  if (!res.ok) {
+    const why = await oauthError(res);
+    throw new RampError(`Ramp sign-in failed (${res.status}${why ? ` — ${why}` : ""})`, res.status);
+  }
   const json = (await res.json()) as { access_token: string; expires_in: number };
   token = { value: json.access_token, expires: Date.now() + json.expires_in * 1000 };
   return token.value;

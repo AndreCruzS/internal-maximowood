@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { fromMinor, normalizeTxn } from "./client";
+import { RAMP_SCOPES, fromMinor, normalizeTxn, requestedScopes } from "./client";
 import { demoRamp, isDemoId } from "./demo";
 import { verifyRampSignature } from "./webhook";
 import { needsReceipt, rampMemo, receiptPath } from "@/lib/expenses";
@@ -70,5 +70,15 @@ describe("sample data", () => {
     expect(demoRamp("11111111-2222-3333-4444-555555555555", "Ana", now)).toEqual(a);
     expect(a.txns.filter(needsReceipt).length).toBe(4);
     expect([...a.txns, ...a.cards].every(x => isDemoId(x.id))).toBe(true);
+  });
+});
+
+describe("ramp scopes", () => {
+  it("asks for every scope by default", () => {
+    expect(requestedScopes(undefined)).toEqual([...RAMP_SCOPES]);
+    expect(requestedScopes("")).toEqual([...RAMP_SCOPES]);
+  });
+  it("uses RAMP_SCOPES when set, ignoring junk and duplicates", () => {
+    expect(requestedScopes("transactions:read, cards:read  cards:read bogus users;write")).toEqual(["transactions:read", "cards:read"]);
   });
 });
