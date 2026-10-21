@@ -52,8 +52,10 @@ let token: { value: string; expires: number } | null = null;
 
 async function getToken(force = false) {
   if (!force && token && token.expires > Date.now() + 60_000) return token.value;
-  const id = process.env.RAMP_CLIENT_ID;
-  const secret = process.env.RAMP_CLIENT_SECRET;
+  // Pasted values often carry stray spaces, line breaks or quotes.
+  const clean = (v: string | undefined) => v?.trim().replace(/^["']+|["']+$/g, "").trim();
+  const id = clean(process.env.RAMP_CLIENT_ID);
+  const secret = clean(process.env.RAMP_CLIENT_SECRET);
   if (!id || !secret) throw new RampError("Ramp is not connected", 503);
   const res = await fetch(`${base()}/developer/v1/token`, {
     method: "POST",
