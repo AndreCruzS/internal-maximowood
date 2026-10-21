@@ -25,14 +25,18 @@ export function requestedScopes(env = process.env.RAMP_SCOPES): string[] {
 
 /** Ramp's OAuth error, e.g. "invalid_scope: …" or "unauthorized_client: …" (never the credentials). */
 async function oauthError(res: Response): Promise<string> {
+  const raw = await res.text().catch(() => "");
   try {
-    const j = (await res.json()) as { error?: unknown; error_description?: unknown };
-    const code = typeof j.error === "string" ? j.error.slice(0, 60) : "";
-    const desc = typeof j.error_description === "string" ? j.error_description.slice(0, 200) : "";
-    return [code, desc].filter(Boolean).join(": ");
+    const j = JSON.parse(raw) as { error?: unknown; error_description?: unknown; error_v2?: { error_code?: unknown; message?: unknown } };
+    const code = typeof j.error === "string" ? j.error : typeof j.error_v2?.error_code === "string" ? j.error_v2.error_code : "";
+    const desc = typeof j.error_description === "string" ? j.error_description : typeof j.error_v2?.message === "string" ? j.error_v2.message : "";
+    const why = [code.slice(0, 60), desc.slice(0, 200)].filter(Boolean).join(": ");
+    if (why) return why;
   } catch {
-    return "";
+    // not JSON: fall through to the raw text
   }
+  // Ramp's own reply (it never echoes the client secret), trimmed.
+  return raw.replace(/\s+/g, " ").trim().slice(0, 200);
 }
 
 const base = () => (process.env.RAMP_API_URL || "https://api.ramp.com").replace(/\/$/, "");
