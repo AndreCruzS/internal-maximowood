@@ -17,9 +17,10 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
     data: { user },
   } = await supabase.auth.getUser();
   const [people, positions] = await Promise.all([
+    // Newest columns first (rippling_id: 0025, headline/pronouns: 0015), older lists while a migration is pending.
     selectCompat(
-      cols => supabase.from("people").select(cols).eq("active", true).order("full_name"),
-      `${BASE_COLUMNS}, headline, pronouns`,
+      cols => selectCompat(c => supabase.from("people").select(c).eq("active", true).order("full_name"), cols, `${BASE_COLUMNS}, headline, pronouns`),
+      `${BASE_COLUMNS}, headline, pronouns, rippling_id`,
       BASE_COLUMNS,
     ),
     selectCompat(

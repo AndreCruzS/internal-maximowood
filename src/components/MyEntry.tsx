@@ -187,7 +187,7 @@ export default function MyEntry({ mine, people, positions }: {
         {!open && (
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => setOpen("details")} className={button}>{t.myEntry.editDetails}</button>
-            <button type="button" onClick={() => setOpen("request")} disabled={!!pending} className={button}>{t.myEntry.requestButton}</button>
+            {!mine.rippling_id && <button type="button" onClick={() => setOpen("request")} disabled={!!pending} className={button}>{t.myEntry.requestButton}</button>}
           </div>
         )}
       </div>
@@ -215,7 +215,7 @@ export default function MyEntry({ mine, people, positions }: {
             </div>
             <div>
               <label className={label} htmlFor="me-co">{t.myEntry.company}</label>
-              <select id="me-co" value={details.company_id} onChange={e => setDetails(d => ({ ...d, company_id: e.target.value }))} className={field}>
+              <select id="me-co" value={details.company_id} onChange={e => setDetails(d => ({ ...d, company_id: e.target.value }))} disabled={!!mine.rippling_id} title={mine.rippling_id ? t.rippling.managedHint : undefined} className={`${field} disabled:bg-gray-50`}>
                 <option value="">—</option>
                 {COMPANIES.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>

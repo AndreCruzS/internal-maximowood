@@ -13,6 +13,8 @@ import PersonPanel from "@/components/people/PersonPanel";
 
 export type Person = {
   id: string;
+  /** Linked to a Rippling worker (0025): title, department, manager, start date, office and company come from Rippling. */
+  rippling_id?: string | null;
   full_name: string;
   email: string | null;
   phone: string | null;

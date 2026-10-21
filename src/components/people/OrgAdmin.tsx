@@ -22,10 +22,13 @@ export default function OrgAdmin({ person, people, positions }: { person: Person
   const o = t.orgAdmin;
   const mine = positions.filter(p => p.person_id === person.id).sort((a, b) => a.sort - b.sort);
   const [editing, setEditing] = useState<string | "new" | null>(null);
+  // Rippling owns title, department and manager for linked people: change them in Rippling.
+  const managed = !!person.rippling_id;
 
   return (
     <div>
       <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">{o.title}</p>
+      {managed && <p className="mb-2 rounded-lg bg-[#f2fbf7] px-3 py-2 text-xs text-gray-700">{t.rippling.managedHint}</p>}
       <ul className="space-y-2">
         {mine.map(p =>
           editing === p.id ? (
@@ -36,13 +39,13 @@ export default function OrgAdmin({ person, people, positions }: { person: Person
                 <span className="block truncate font-bold text-gray-900">{p.title}</span>
                 <span className="block truncate text-xs text-gray-500">{deptName(t, p.department_id)} · {o.levels[levelOf(p)]}</span>
               </span>
-              <button type="button" onClick={() => setEditing(p.id)} className="flex h-8 items-center gap-1 rounded-lg border border-gray-300 px-2 text-xs font-bold text-gray-700 hover:border-[#009f67]">
+              {!managed && <button type="button" onClick={() => setEditing(p.id)} className="flex h-8 items-center gap-1 rounded-lg border border-gray-300 px-2 text-xs font-bold text-gray-700 hover:border-[#009f67]">
                 <Pencil className="h-3.5 w-3.5" /> {t.common.edit}
-              </button>
+              </button>}
             </li>
           ),
         )}
-        {editing === "new" ? (
+        {managed ? null : editing === "new" ? (
           <li><PositionForm person={person} position={null} people={people} positions={positions} onDone={() => setEditing(null)} /></li>
         ) : (
           <li>

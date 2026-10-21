@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, ExternalLink, FileText, FolderOpen, HeartPulse, Loader2, Pencil, Receipt, Sun, UserCog, X } from "lucide-react";
 import { toast } from "sonner";
@@ -111,9 +112,14 @@ export default function HrView({ data }: { data: TimeOffData }) {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <header>
-        <h1 className="text-2xl font-black text-gray-900">{h.title}</h1>
-        <p className="mt-1 text-sm text-gray-600">{h.subtitle}</p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">{h.title}</h1>
+          <p className="mt-1 text-sm text-gray-600">{h.subtitle}</p>
+        </div>
+        {data.canEditHrPay && (
+          <Link href="/hr/rippling" className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-bold text-gray-700 hover:border-[#009f67] hover:text-[#00704a]">{t.rippling.link} →</Link>
+        )}
       </header>
 
       {!data.ready && <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{h.migrationPending}</p>}

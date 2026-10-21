@@ -41,7 +41,7 @@ export async function alreadySent(admin: SupabaseClient, kind: EmailKind, refId:
   return (data ?? []).length > 0;
 }
 
-export async function logEmail(admin: SupabaseClient, row: { kind: EmailKind; ref_id: string; to_email: string; subject: string; created_by: string } & MailResult) {
+export async function logEmail(admin: SupabaseClient, row: { kind: EmailKind; ref_id: string; to_email: string; subject: string; created_by: string | null } & MailResult) {
   await admin.from("email_log").insert({ ...row, error: row.error ?? null });
 }
 
