@@ -1,4 +1,5 @@
 import { isApproved } from "@/lib/timeOff";
+import { WISH_COLUMNS, type Wish } from "@/lib/wishes";
 import { loadPolls } from "@/server/polls";
 import { selectCompat } from "@/server/compat";
 import { HOLIDAY_COLUMNS, calendarFor, type OfficeHoliday } from "@/lib/holidays";
@@ -40,7 +41,7 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
   const to = iso(new Date(today.getTime() + 14 * 86_400_000));
   // Kudos are public for the week they're given (the client trims to the viewer's week).
   const kudosSince = new Date(today.getTime() - 8 * 86_400_000).toISOString();
-  const [news, mustRead, reads, people, absences, kudos, items, progress, celebrations, mine, isIt, itQueue, polls, canPoll, handovers, receiptAsks, todos, holidays] = await Promise.all([
+  const [news, mustRead, reads, people, absences, kudos, items, progress, celebrations, mine, isIt, itQueue, polls, canPoll, handovers, receiptAsks, todos, holidays, wishes] = await Promise.all([
     supabase.from("news").select(NEWS_COLUMNS).order("published_at", { ascending: false }).limit(6),
     supabase.from("news").select("id").eq("must_read", true).limit(200),
     supabase.from("news_reads").select("news_id").eq("user_id", userId),
@@ -68,6 +69,8 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
     supabase.from("receipt_requests").select("asked_person_id").eq("status", "open").limit(200), // 0018
     supabase.rpc("my_playbook_todos"), // 0019
     supabase.from("office_holidays").select(HOLIDAY_COLUMNS).gte("day", from).order("day").limit(200), // 0021
+    // Birthday / anniversary wishes (0027); empty until the migration is applied.
+    supabase.from("celebration_wishes").select(WISH_COLUMNS).gte("occasion_year", today.getFullYear() - 1).order("created_at").limit(2000),
   ]);
   // New employee = started in the last 90 days (or, with only a year, this year).
   const me = mine.data as { id: string; start_date: string | null; start_year: number | null; office: string | null; live_country: string | null } | null;
@@ -99,6 +102,7 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
     /** Upcoming company holidays (all calendars) and the viewer's own calendar. */
     holidays: (holidays.data as OfficeHoliday[] | null) ?? [],
     holidayCalendar: calendarFor(me?.office, me?.live_country),
+    wishes: (wishes.data as Wish[] | null) ?? [],
     celebrations: (celebrations.data as { id: string; full_name: string; birth_month: number | null; birth_day: number | null; start_date: string | null }[] | null) ?? [],
   };
 }

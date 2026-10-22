@@ -218,7 +218,7 @@ export default function Portal({ name, events, home }: { name: string; isAdmin: 
           <WhosOut absences={home.absences} people={home.people} />
         </Panel>
         <Panel title={t.home.celebrations} action={<Link href="/people" className="text-sm font-bold text-[#00704a] hover:underline">{t.nav.people}</Link>}>
-          <CelebrationsList people={home.celebrations} />
+          <CelebrationsList people={home.celebrations} wishes={home.wishes} everyone={home.people} />
         </Panel>
         <NewJoinersPanel people={home.celebrations} />
       </div>
