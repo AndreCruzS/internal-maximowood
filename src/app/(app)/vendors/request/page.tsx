@@ -22,6 +22,7 @@ export default async function VendorRequestPage({ searchParams }: { searchParams
   if (id && UUID_RE.test(id)) {
     const detail = await loadRequest(supabase, user.id, id);
     if (!detail) redirect("/vendors?tab=requests");
+    if (detail.request.kind === "change_bank" || detail.request.kind === "change_details") redirect(`/vendors/change?id=${id}`);
     const editable = detail.request.requester_person_id === detail.me && (detail.request.status === "draft" || detail.request.status === "needs_info");
     if (!editable) redirect(`/vendors/requests/${id}`);
     return <VendorRequestForm ctx={detail} request={detail.request} files={detail.files} />;

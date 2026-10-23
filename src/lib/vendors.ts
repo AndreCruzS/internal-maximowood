@@ -24,8 +24,11 @@ export type VendorPublic = {
   next_review_on: string | null;
   sanctions_status: SanctionsStatus;
   created_at: string;
+  /** Computed by the view (migration 0030): the yearly review is due within 30 days, or overdue. */
+  review_due?: "overdue" | "due_soon" | null;
 };
-export const VENDOR_PUBLIC_COLUMNS = "id, legal_name, dba, country, company_ids, category, status, approved_at, next_review_on, sanctions_status, created_at";
+export const VENDOR_PUBLIC_COLUMNS_V1 = "id, legal_name, dba, country, company_ids, category, status, approved_at, next_review_on, sanctions_status, created_at";
+export const VENDOR_PUBLIC_COLUMNS = `${VENDOR_PUBLIC_COLUMNS_V1}, review_due`;
 
 /** Extra fields only vendor staff (approvers, payments, finance, admins) see. */
 export type VendorPrivate = {

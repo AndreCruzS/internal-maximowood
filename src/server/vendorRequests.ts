@@ -7,6 +7,7 @@ import {
 import { sanctionsIndex } from "@/server/sanctions";
 import { vendorRoles, type VendorRoles } from "@/server/vendors";
 import { alreadySent, emailRef, logEmail, renderEmail, sendMail, type EmailKind, type MailResult } from "@/server/email";
+import type { VendorSnapshot } from "@/lib/vendorChanges";
 
 export type Approval = ApprovalLike & { comment: string; screening_acknowledged: boolean; at: string };
 export type RequestEvent = { id: number; from_status: string | null; to_status: string; by_person: string | null; at: string };
@@ -88,6 +89,8 @@ export type RequestDetail = RequestsContext & {
   files: RequestFile[];
   screenings: RequestScreening[];
   internal: Internal | null;
+  /** Vendor staff only: the vendor before this change (snapshot on submit), for the old → new diff. */
+  previous: VendorSnapshot | null;
 };
 
 export async function loadRequest(supabase: SupabaseClient, userId: string, id: string): Promise<RequestDetail | null> {
@@ -101,6 +104,9 @@ export async function loadRequest(supabase: SupabaseClient, userId: string, id: 
     supabase.from("vendor_screenings").select("result, score, matches, list_version, screened_at").eq("request_id", id).order("screened_at", { ascending: false }).limit(5),
     ctx.roles.isStaff ? supabase.rpc("vendor_request_internal", { target: id }) : Promise.resolve({ data: null }),
   ]);
+  const vendorId = (data as { vendor_id: string | null }).vendor_id;
+  // Before migration 0030 the function doesn't exist: no diff.
+  const previous = ctx.roles.isStaff && vendorId ? await supabase.rpc("vendor_request_previous", { target: id }) : { data: null };
   const internalRow = ((internal.data as Internal[] | null) ?? [])[0] ?? null;
   const request = data as unknown as VendorRequestRow;
   if (internalRow) request.sanctions_cleared_by = internalRow.sanctions_cleared_by;
@@ -112,18 +118,22 @@ export async function loadRequest(supabase: SupabaseClient, userId: string, id: 
     files: (files.data as RequestFile[] | null) ?? [],
     screenings: (screenings.data as RequestScreening[] | null) ?? [],
     internal: internalRow,
+    previous: previous.data && typeof previous.data === "object" && Object.keys(previous.data as object).length ? (previous.data as VendorSnapshot) : null,
   };
 }
 
 // ── Sanctions on a request (service role) ─────────────────────────────────────
 /** Screens the request's vendor names against the loaded OFAC list and records the result. */
 export async function screenRequest(admin: SupabaseClient, id: string): Promise<{ result: string } | { error: string }> {
-  const { data } = await admin.from("vendor_requests").select("payload").eq("id", id).maybeSingle();
+  const { data } = await admin.from("vendor_requests").select("kind, payload").eq("id", id).maybeSingle();
   if (!data) return { error: "Request not found" };
   const index = await sanctionsIndex(admin);
   if (!index) return { error: "The OFAC sanctions list isn't loaded yet. Finance can load it in Vendors → Sanctions check." };
-  const p = readPayload((data as { payload: unknown }).payload);
-  const s = screenNames([p.vendor.legal_name, p.vendor.dba], index);
+  const row = data as { kind: string; payload: unknown };
+  const p = readPayload(row.payload);
+  // A bank change is also checked on the new account holder's name.
+  const names = [p.vendor.legal_name, p.vendor.dba, ...(row.kind === "change_bank" ? [p.bank.holder_name] : [])];
+  const s = screenNames(names, index);
   const { data: status, error } = await admin.rpc("set_vendor_request_screening", {
     target: id, result: s.result, score: s.score, matches: s.hits, list_version: index.version,
   });
@@ -201,7 +211,7 @@ export async function notifyVendorRequest(
   const vendor = p.vendor.legal_name || "Vendor";
   const results: MailResult[] = [];
 
-  for (const step of emailPlan(event, r.status, !!r.registered_at && event === "registered")) {
+  for (const step of emailPlan(event, r.status, !!r.registered_at && event === "registered", r.kind)) {
     const kind = step.kind as EmailKind;
     const people = (await audience(admin, step.audience, r, approvals)).filter(x => x.id !== actor.personId);
     const rows: [string, string][] = [

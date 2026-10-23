@@ -85,8 +85,8 @@ export async function POST(request: NextRequest, { params }: Ctx) {
   if (rpc.error) return NextResponse.json({ error: rpc.error.message }, { status: 400 });
 
   const emails = await notifyVendorRequest(admin, id, event, actor, request.nextUrl.origin).catch(() => []);
-  const { data: now } = await supabase.from("vendor_requests").select("status, registered_at, screening_status").eq("id", id).maybeSingle();
-  const row = now as { status: string; registered_at: string | null; screening_status: string } | null;
+  const { data: now } = await supabase.from("vendor_requests").select("kind, status, registered_at, screening_status").eq("id", id).maybeSingle();
+  const row = now as { kind: string; status: string; registered_at: string | null; screening_status: string } | null;
   return NextResponse.json({
     stage: row ? stage(row as Parameters<typeof stage>[0]) : null,
     screening: row?.screening_status ?? null,

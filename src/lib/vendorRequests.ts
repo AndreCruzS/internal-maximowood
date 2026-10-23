@@ -8,10 +8,11 @@
  *   Any step can send it back (needs_info) or reject it; the requester can cancel until it's approved.
  */
 import { last4, type SanctionsStatus } from "@/lib/vendors";
+import { CHANGE_FIELDS, needsBankStep } from "@/lib/vendorChanges";
 
 export const REQUEST_STATUSES = ["draft", "submitted", "dept_confirmed", "pending_approval", "needs_info", "approved", "rejected", "cancelled"] as const;
 export type RequestStatus = (typeof REQUEST_STATUSES)[number];
-export type RequestKind = "new" | "change_bank" | "change_details" | "reactivate" | "legacy_review";
+export type RequestKind = "new" | "change_bank" | "change_details" | "reactivate" | "legacy_review" | "periodic_review";
 
 export const TAX_ID_TYPES = ["ein", "ssn_last4", "itin", "cnpj", "cpf", "vat", "other"] as const;
 export const REQUEST_PAYMENT_METHODS = ["wire", "ach", "check", "pix", "other"] as const;
@@ -37,6 +38,8 @@ export type RequestPayload = {
   };
   justification: { reason: string; comparison: string; benefits: string };
   compliance: { vetted: boolean | null; vetted_note: string; risks: string };
+  /** Details changes (phase C): the fields this request changes; the database applies only these. */
+  changed: string[];
 };
 
 export const emptyPayload = (): RequestPayload => ({
@@ -54,6 +57,7 @@ export const emptyPayload = (): RequestPayload => ({
   details: { category: "", goods_services: "", contract_term: "", annual_spend: "", payment_terms: "", is_1099: null },
   justification: { reason: "", comparison: "", benefits: "" },
   compliance: { vetted: null, vetted_note: "", risks: "" },
+  changed: [],
 });
 
 /** A stored payload, with every field present (older or partial payloads fill in empty). */
@@ -78,6 +82,9 @@ export function readPayload(value: unknown): RequestPayload {
     details: merge(base.details, v.details),
     justification: merge(base.justification, v.justification),
     compliance: merge(base.compliance, v.compliance),
+    changed: Array.isArray((v as Record<string, unknown>).changed)
+      ? [...new Set(((v as Record<string, unknown>).changed as unknown[]).filter((x): x is string => typeof x === "string" && (CHANGE_FIELDS as readonly string[]).includes(x)))]
+      : [],
   };
 }
 
@@ -196,7 +203,7 @@ export function canApprove(me: string | null, r: RequestLike, approvals: Approva
 
 export function canRegister(me: string | null, r: RequestLike, approvals: ApprovalLike[], isPayments: boolean): Allowed | Denied {
   if (!me || !isPayments) return { ok: false, reason: "not_payments" };
-  if (r.status !== "approved" || r.registered_at) return { ok: false, reason: "not_waiting" };
+  if (r.status !== "approved" || r.registered_at || !needsBankStep(r.kind)) return { ok: false, reason: "not_waiting" };
   const roles = rolesOn(r, approvals).get(me);
   if (roles?.length) return { ok: false, reason: "other_role" };
   return { ok: true };
@@ -232,8 +239,12 @@ const MOVES: Record<string, RequestStatus[]> = {
 export const canMove = (from: RequestStatus, to: RequestStatus) => (MOVES[from] ?? []).includes(to);
 export const isOpen = (s: RequestStatus) => s === "draft" || s === "submitted" || s === "pending_approval" || s === "needs_info";
 export const requesterCanCancel = (s: RequestStatus) => s === "draft" || s === "submitted" || s === "needs_info" || s === "pending_approval";
-/** Shown as "registered at the bank" once Payments set it up. */
-export const stage = (r: Pick<RequestLike, "status" | "registered_at">) => (r.status === "approved" && r.registered_at ? "registered" : r.status);
+/**
+ * Shown as "registered at the bank" once Payments set it up; a yearly review has no bank step, so
+ * once approved it's simply "reviewed".
+ */
+export const stage = (r: Pick<RequestLike, "status" | "registered_at"> & { kind?: RequestKind }) =>
+  r.status === "approved" && r.kind && !needsBankStep(r.kind) ? "reviewed" : r.status === "approved" && r.registered_at ? "registered" : r.status;
 
 // ── Emails ────────────────────────────────────────────────────────────────────
 export type VendorEvent = "submitted" | "confirmed" | "approved" | "registered" | "review_started";
@@ -244,12 +255,15 @@ export type EmailKindVendor = "vendor_submitted" | "vendor_approval" | "vendor_d
  * Who hears about a step, given where the request ended up. Never the person who just acted
  * (filtered by the server), never bank details (only a link).
  */
-export function emailPlan(event: VendorEvent, status: RequestStatus, registered: boolean): { kind: EmailKindVendor; audience: Audience }[] {
+export function emailPlan(event: VendorEvent, status: RequestStatus, registered: boolean, kind: RequestKind = "new"): { kind: EmailKindVendor; audience: Audience }[] {
   if (event === "registered" || registered) return [{ kind: "vendor_registered", audience: "requester" }];
   switch (status) {
     case "submitted": return [{ kind: "vendor_submitted", audience: "dept_heads" }];
     case "pending_approval": return event === "approved" ? [] : [{ kind: "vendor_approval", audience: "approvers" }];
-    case "approved": return [{ kind: "vendor_decision", audience: "requester" }, { kind: "vendor_registered", audience: "payments" }];
+    case "approved":
+      return needsBankStep(kind)
+        ? [{ kind: "vendor_decision", audience: "requester" }, { kind: "vendor_registered", audience: "payments" }]
+        : [{ kind: "vendor_decision", audience: "requester" }];
     case "rejected":
     case "needs_info": return [{ kind: "vendor_decision", audience: "requester" }];
     default: return [];

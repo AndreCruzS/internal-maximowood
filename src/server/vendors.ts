@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { selectCompat } from "@/server/compat";
 import {
-  BANK_COLUMNS, VENDOR_PRIVATE_COLUMNS, VENDOR_PUBLIC_COLUMNS, importKey, screenNames,
+  BANK_COLUMNS, VENDOR_PRIVATE_COLUMNS, VENDOR_PUBLIC_COLUMNS, VENDOR_PUBLIC_COLUMNS_V1, importKey, screenNames,
   type BankAccountMasked, type ImportRow, type SanctionsHit, type ScreeningResult, type VendorPrivate, type VendorPublic,
 } from "@/lib/vendors";
 import { readSanctionsMeta, sanctionsIndex, screenVendors, type SanctionsMeta } from "@/server/sanctions";
@@ -37,7 +38,8 @@ export type VendorsData = {
 export async function loadVendors(supabase: SupabaseClient): Promise<VendorsData> {
   const roles = await vendorRoles(supabase);
   const [list, companies] = await Promise.all([
-    supabase.from("vendors_public").select(VENDOR_PUBLIC_COLUMNS).order("legal_name").limit(5000),
+    // review_due comes with migration 0030; before it, the older columns.
+    selectCompat(cols => supabase.from("vendors_public").select(cols).order("legal_name").limit(5000), VENDOR_PUBLIC_COLUMNS, VENDOR_PUBLIC_COLUMNS_V1),
     supabase.from("companies").select("id, name").order("sort"),
   ]);
   const ready = !list.error;

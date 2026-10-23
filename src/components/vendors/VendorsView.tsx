@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Building2, CheckCircle2, ClipboardCheck, Inbox, ListChecks, Loader2, RefreshCw, Search, ShieldCheck, Upload } from "lucide-react";
+import { AlertTriangle, Building2, CheckCircle2, Clock, Inbox, ListChecks, Loader2, RefreshCw, Search, ShieldCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/components/I18nProvider";
 import { fmt } from "@/lib/i18n/locale";
 import { plural } from "@/lib/i18n/dictionaries";
-import { VENDOR_STATUSES, masked, reviewOverdue, type VendorPublic } from "@/lib/vendors";
+import { VENDOR_STATUSES, masked, type VendorPublic } from "@/lib/vendors";
+import { reviewDue, type ReviewDue } from "@/lib/vendorChanges";
 import ImportPanel from "@/components/vendors/ImportPanel";
 import SanctionsBadge from "@/components/vendors/SanctionsBadge";
 import RequestsPanel from "@/components/vendors/RequestsPanel";
@@ -75,7 +76,6 @@ function MasterList({ data }: { data: VendorsData }) {
   const v = t.vendors;
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
-  const [open, setOpen] = useState<string | null>(null);
   const staff = data.roles.isStaff;
   const companyName = useMemo(() => new Map(data.companies.map(c => [c.id, c.name])), [data.companies]);
   const today = new Date().toISOString().slice(0, 10);
@@ -128,7 +128,7 @@ function MasterList({ data }: { data: VendorsData }) {
             </thead>
             <tbody>
               {list.map(x => (
-                <Row key={x.id} x={x} data={data} staff={staff} open={open === x.id} onToggle={() => setOpen(open === x.id ? null : x.id)} companyName={companyName} d={d} overdue={reviewOverdue(x, today)} />
+                <Row key={x.id} x={x} data={data} staff={staff} companyName={companyName} d={d} due={x.review_due ?? reviewDue(x, today)} />
               ))}
             </tbody>
           </table>
@@ -139,109 +139,46 @@ function MasterList({ data }: { data: VendorsData }) {
   );
 }
 
-function Row({ x, data, staff, open, onToggle, companyName, d, overdue }: {
-  x: VendorPublic; data: VendorsData; staff: boolean; open: boolean; onToggle: () => void;
-  companyName: Map<string, string>; d: (ymd: string | null) => string; overdue: boolean;
+function Row({ x, data, staff, companyName, d, due }: {
+  x: VendorPublic; data: VendorsData; staff: boolean;
+  companyName: Map<string, string>; d: (ymd: string | null) => string; due: ReviewDue;
 }) {
   const { t } = useI18n();
   const v = t.vendors;
-  const det = data.details[x.id];
-  const banks = data.banks[x.id] ?? [];
-  const screening = data.screenings[x.id];
+  const banks = (data.banks[x.id] ?? []).filter(b => b.active || !(data.banks[x.id] ?? []).some(o => o.active));
   return (
-    <>
-      <tr className="border-b border-gray-50 align-top hover:bg-gray-50/60">
-        <td className="py-2.5 pr-3">
-          <button type="button" onClick={onToggle} disabled={!staff} className="text-left font-bold text-gray-900 enabled:hover:underline" aria-expanded={staff ? open : undefined}>
-            {x.legal_name}
-          </button>
-          {x.dba && <div className="text-xs text-gray-500">{fmt(v.dba, { name: x.dba })}</div>}
-          {x.category && <div className="text-xs text-gray-400">{x.category}</div>}
-        </td>
-        <td className="py-2.5 pr-3 text-gray-600">{x.country || "—"}</td>
-        <td className="py-2.5 pr-3">
-          <div className="flex flex-wrap gap-1">
-            {x.company_ids.map(c => <span key={c} className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-bold text-gray-600">{companyName.get(c) ?? c}</span>)}
-          </div>
-        </td>
-        <td className="py-2.5 pr-3">
-          <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[x.status] ?? ""}`}>{v.status[x.status]}</span>
-        </td>
-        <td className="py-2.5 pr-3 whitespace-nowrap text-gray-600">
-          {d(x.next_review_on)}
-          {overdue && <div className="flex items-center gap-1 text-[11px] font-bold text-red-600"><AlertTriangle className="h-3 w-3" /> {v.overdue}</div>}
-        </td>
-        <td className="py-2.5 pr-3"><SanctionsBadge status={x.sanctions_status} /></td>
-        {staff && (
-          <td className="py-2.5 text-xs text-gray-600">
-            {banks.length === 0 ? "—" : banks.map(b => (
-              <div key={b.id} className="whitespace-nowrap">
-                <Building2 className="mr-1 inline h-3 w-3 text-gray-400" />
-                {b.bank_name || "—"} {masked(b.account_last4)} {b.payment_method && <span className="uppercase text-gray-400">· {b.payment_method}</span>}
-              </div>
-            ))}
-          </td>
-        )}
-      </tr>
-      {staff && open && (
-        <tr className="border-b border-gray-100 bg-gray-50/60">
-          <td colSpan={7} className="px-3 py-3 text-xs text-gray-600">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div>
-                <p className="font-bold text-gray-500">{v.taxId}</p>
-                <p>{det?.tax_id || "—"}</p>
-                {det?.contact?.name && <p className="mt-1">{det.contact.name}</p>}
-                {det?.contact?.email && <p>{det.contact.email}</p>}
-                {det?.contact?.phone && <p>{det.contact.phone}</p>}
-              </div>
-              <div>
-                <p className="font-bold text-gray-500">{v.columns.bank}</p>
-                {banks.length === 0 ? <p>—</p> : banks.map(b => (
-                  <p key={b.id}>
-                    {b.bank_name} · {b.holder_name || "—"} · {masked(b.account_last4) || "—"}
-                    {b.routing_last4 && ` · routing ${masked(b.routing_last4)}`}{b.swift_bic && ` · ${b.swift_bic}`}
-                    {b.bank_country && ` · ${b.bank_country}`} · {b.currency}
-                  </p>
-                ))}
-              </div>
-              <div>
-                <p className="font-bold text-gray-500">{v.hits}</p>
-                {screening && screening.matches.length ? (
-                  <ul className="space-y-0.5">
-                    {screening.matches.slice(0, 3).map(h => (
-                      <li key={`${h.ent_num}-${h.name}`}>{h.name} <span className="text-gray-400">({Math.round(h.score * 100)}% · {h.programs})</span></li>
-                    ))}
-                  </ul>
-                ) : <p>—</p>}
-              </div>
+    <tr className="border-b border-gray-50 align-top hover:bg-gray-50/60">
+      <td className="py-2.5 pr-3">
+        <Link href={`/vendors/${x.id}`} className="font-bold text-gray-900 hover:underline">{x.legal_name}</Link>
+        {x.dba && <div className="text-xs text-gray-500">{fmt(v.dba, { name: x.dba })}</div>}
+        {x.category && <div className="text-xs text-gray-400">{x.category}</div>}
+      </td>
+      <td className="py-2.5 pr-3 text-gray-600">{x.country || "—"}</td>
+      <td className="py-2.5 pr-3">
+        <div className="flex flex-wrap gap-1">
+          {x.company_ids.map(c => <span key={c} className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-bold text-gray-600">{companyName.get(c) ?? c}</span>)}
+        </div>
+      </td>
+      <td className="py-2.5 pr-3">
+        <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[x.status] ?? ""}`}>{v.status[x.status]}</span>
+      </td>
+      <td className="py-2.5 pr-3 whitespace-nowrap text-gray-600">
+        {d(x.next_review_on)}
+        {due === "overdue" && <div className="flex items-center gap-1 text-[11px] font-bold text-red-600"><AlertTriangle className="h-3 w-3" /> {v.overdue}</div>}
+        {due === "due_soon" && <div className="flex items-center gap-1 text-[11px] font-bold text-amber-700"><Clock className="h-3 w-3" /> {v.dueSoon}</div>}
+      </td>
+      <td className="py-2.5 pr-3"><SanctionsBadge status={x.sanctions_status} /></td>
+      {staff && (
+        <td className="py-2.5 text-xs text-gray-600">
+          {banks.length === 0 ? "—" : banks.map(b => (
+            <div key={b.id} className={`whitespace-nowrap ${b.active ? "" : "text-gray-400"}`}>
+              <Building2 className="mr-1 inline h-3 w-3 text-gray-400" />
+              {b.bank_name || "—"} {masked(b.account_last4)} {b.payment_method && <span className="uppercase text-gray-400">· {b.payment_method}</span>}
             </div>
-            {(x.status === "legacy_pending" || overdue) && (data.roles.isFinance || data.roles.isAdmin || data.roles.isApprover) && <StartReview vendorId={x.id} />}
-          </td>
-        </tr>
+          ))}
+        </td>
       )}
-    </>
-  );
-}
-
-/** Finance / approvers: send a vendor that's already at the bank (or due for its yearly review) to the approvers. */
-function StartReview({ vendorId }: { vendorId: string }) {
-  const { t } = useI18n();
-  const a = t.vendorRequests.actions;
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const start = async () => {
-    setBusy(true);
-    const res = await fetch("/api/vendors/requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "review", vendorId }) });
-    const json = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
-    setBusy(false);
-    if (!res.ok || !json.id) return toast.error(json.error ?? "Error");
-    toast.success(a.reviewStarted);
-    router.push(`/vendors/requests/${json.id}`);
-  };
-  return (
-    <button type="button" onClick={start} disabled={busy} className="mt-3 flex items-center gap-1.5 rounded-lg bg-[#009f67] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
-      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardCheck className="h-3.5 w-3.5" />} {a.startReview}
-    </button>
+    </tr>
   );
 }
 

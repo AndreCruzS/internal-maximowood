@@ -28,7 +28,8 @@ export async function sendMail(mail: { to: string; subject: string; text: string
 export type EmailKind =
   | "new_hire" | "offboarding" | "travel_submitted" | "travel_status" | "referral_submitted" | "referral_status"
   | "time_off_request" | "time_off_decision"
-  | "vendor_submitted" | "vendor_approval" | "vendor_decision" | "vendor_registered";
+  | "vendor_submitted" | "vendor_approval" | "vendor_decision" | "vendor_registered"
+  | "vendor_review_due" | "vendor_suspended";
 
 /** A stable uuid for "this email about this thing" (e.g. a request + its new status), so it's only sent once. */
 export function emailRef(...parts: string[]): string {

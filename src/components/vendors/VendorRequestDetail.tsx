@@ -13,6 +13,7 @@ import { masked } from "@/lib/vendors";
 import {
   REGISTRATION_METHODS, approvalOutcome, canApprove, canConfirm, canRegister, readPayload, requesterCanCancel, screeningGate,
 } from "@/lib/vendorRequests";
+import { bankChange, buildDiff, isChangeKind, needsBankStep } from "@/lib/vendorChanges";
 import SanctionsBadge from "@/components/vendors/SanctionsBadge";
 import RequestStatusBadge from "@/components/vendors/RequestStatusBadge";
 import type { RequestDetail } from "@/server/vendorRequests";
@@ -44,6 +45,10 @@ export default function VendorRequestDetail({ data }: { data: RequestDetail }) {
   const outcome = approvalOutcome(data.approvals, data.required);
   const gate = screeningGate(r.screening_status, ack, fpNote);
   const mine = data.me === r.requester_person_id;
+  const companyName = (id: string) => data.companies.find(x => x.id === id)?.name ?? id;
+  const change = isChangeKind(r.kind);
+  const diff = r.kind === "change_details" ? buildDiff(data.previous, p, r.company_ids, companyName) : [];
+  const bank = r.kind === "change_bank" ? bankChange(data.previous, p) : null;
   const latest = data.screenings[0];
 
   const act = async (body: Record<string, unknown>, key: string) => {
@@ -82,11 +87,14 @@ export default function VendorRequestDetail({ data }: { data: RequestDetail }) {
           <h1 className="text-3xl font-black text-gray-900">{p.vendor.legal_name || "—"}</h1>
           {p.vendor.dba && <p className="text-gray-500">{p.vendor.dba}</p>}
           <p className="mt-1 text-sm text-gray-500">{fmt(v.detail.requestedBy, { name: name(r.requester_person_id), date: when(r.submitted_at ?? r.created_at) })}</p>
+          {r.vendor_id && (
+            <Link href={`/vendors/${r.vendor_id}`} className="mt-1 inline-block text-sm font-bold text-[#00704a] hover:underline">{v.openVendor} →</Link>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <RequestStatusBadge status={r.status} registeredAt={r.registered_at} />
+          <RequestStatusBadge status={r.status} registeredAt={r.registered_at} kind={r.kind} />
           {mine && (r.status === "draft" || r.status === "needs_info") && (
-            <Link href={`/vendors/request?id=${r.id}`} className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-bold text-gray-700 hover:bg-gray-50">
+            <Link href={change ? `/vendors/change?id=${r.id}` : `/vendors/request?id=${r.id}`} className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-bold text-gray-700 hover:bg-gray-50">
               <Pencil className="h-3.5 w-3.5" /> {v.detail.edit}
             </Link>
           )}
@@ -102,6 +110,50 @@ export default function VendorRequestDetail({ data }: { data: RequestDetail }) {
 
       <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-5">
+          {/* What changes (old → new; the old values only for vendor staff) */}
+          {change && (
+            <section className={`${card} border-amber-200`}>
+              <h2 className="mb-3 font-black text-gray-900">{v.diff.title}</h2>
+              {r.kind === "change_details" ? (
+                diff.length ? (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
+                        <th className="py-1.5 pr-3" />
+                        <th className="py-1.5 pr-3">{v.diff.before}</th>
+                        <th className="py-1.5">{v.diff.after}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {diff.map(d => (
+                        <tr key={d.field} className="border-b border-gray-50 align-top">
+                          <td className="py-1.5 pr-3 font-bold text-gray-700">{v.change.fieldNames[d.field]}</td>
+                          <td className="py-1.5 pr-3 text-gray-500 line-through decoration-red-300">{data.previous ? d.before || v.diff.empty : "•••"}</td>
+                          <td className="py-1.5 font-bold text-gray-900">{d.after || v.diff.empty}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <ul className="text-sm text-gray-700">{p.changed.map(fl => <li key={fl}>• {v.change.fieldNames[fl as keyof typeof v.change.fieldNames] ?? fl}</li>)}</ul>
+                )
+              ) : bank && (
+                <div className="grid gap-3 text-sm sm:grid-cols-2">
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                    <p className="mb-1 text-xs font-bold uppercase tracking-wider text-gray-500">{v.diff.bankBefore}</p>
+                    {data.previous ? (bank.before.length ? bank.before.map((x, i) => <p key={i} className="text-gray-700">{x}</p>) : <p className="text-gray-400">{v.diff.empty}</p>) : <p className="text-gray-400">•••</p>}
+                  </div>
+                  <div className="rounded-xl border border-[#9fdcc5] bg-[#f2fbf7] p-3">
+                    <p className="mb-1 text-xs font-bold uppercase tracking-wider text-[#00704a]">{v.diff.bankAfter}</p>
+                    <p className="font-bold text-gray-900">{bank.after || v.diff.empty}</p>
+                  </div>
+                  <p className="text-xs text-gray-500 sm:col-span-2">{v.diff.bankNote}</p>
+                </div>
+              )}
+              {!data.previous && <p className="mt-2 text-xs text-gray-400">{v.diff.hidden}</p>}
+            </section>
+          )}
+
           {/* What was requested */}
           <section className={card}>
             <h2 className="mb-3 font-black text-gray-900">{v.detail.payload}</h2>
@@ -109,6 +161,7 @@ export default function VendorRequestDetail({ data }: { data: RequestDetail }) {
               {row(v.detail.department, r.department_id ? deptName(t, r.department_id) : f.leadership)}
               {row(v.detail.companies, r.company_ids.map(c => data.companies.find(x => x.id === c)?.name ?? c).join(", "))}
               {row(v.detail.purpose, r.purpose)}
+              {!change && <>
               {row(f.country, p.vendor.country)}
               {row(f.taxId, [p.vendor.tax_id, p.vendor.tax_id_type && f.taxIdTypes[p.vendor.tax_id_type as keyof typeof f.taxIdTypes]].filter(Boolean).join(" · "))}
               {row(f.registry, p.vendor.registry_url)}
@@ -126,8 +179,9 @@ export default function VendorRequestDetail({ data }: { data: RequestDetail }) {
               {row(f.benefits, p.justification.benefits)}
               {row(f.vetted, p.compliance.vetted === null ? "" : `${p.compliance.vetted ? f.yes : f.no}${p.compliance.vetted_note ? ` — ${p.compliance.vetted_note}` : ""}`)}
               {row(f.risks, p.compliance.risks)}
+              </>}
             </div>
-            {(p.bank.bank_name || p.bank.account_last4) && (
+            {!change && (p.bank.bank_name || p.bank.account_last4) && (
               <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm">
                 <p className="mb-1 flex items-center gap-1.5 font-bold text-gray-700"><Landmark className="h-4 w-4" /> {f.bank}</p>
                 <p className="text-gray-700">
@@ -267,7 +321,7 @@ export default function VendorRequestDetail({ data }: { data: RequestDetail }) {
           )}
 
           {/* Payments */}
-          {data.roles.isPayments && r.status === "approved" && !r.registered_at && (
+          {data.roles.isPayments && r.status === "approved" && !r.registered_at && needsBankStep(r.kind) && (
             <section className={`${card} ${registerAllowed.ok ? "border-[#009f67]" : ""}`}>
               <h2 className="font-black text-gray-900">{a.registerTitle}</h2>
               {registerAllowed.ok ? (

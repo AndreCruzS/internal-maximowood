@@ -31,14 +31,14 @@ export default function RequestsPanel({ data }: { data: RequestsOverview }) {
             const p = readPayload(r.payload);
             return (
               <li key={r.id}>
-                <Link href={r.status === "draft" && r.requester_person_id === data.me ? `/vendors/request?id=${r.id}` : `/vendors/requests/${r.id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 hover:bg-gray-50">
+                <Link href={r.status === "draft" && r.requester_person_id === data.me ? (r.kind === "change_bank" || r.kind === "change_details" ? `/vendors/change?id=${r.id}` : `/vendors/request?id=${r.id}`) : `/vendors/requests/${r.id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 hover:bg-gray-50">
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-bold text-gray-900">{p.vendor.legal_name || "—"}</span>
                     <span className="block text-xs text-gray-500">
                       {v.kind[r.kind]} · {(r.requester_person_id && data.people[r.requester_person_id]) || "—"} · {new Date(r.updated_at).toLocaleDateString(tag, { month: "short", day: "numeric" })}
                     </span>
                   </span>
-                  <RequestStatusBadge status={r.status} registeredAt={r.registered_at} />
+                  <RequestStatusBadge status={r.status} registeredAt={r.registered_at} kind={r.kind} />
                 </Link>
               </li>
             );
