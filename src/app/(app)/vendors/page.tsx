@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { getDict } from "@/lib/i18n/server";
 import { loadVendors } from "@/server/vendors";
+import { loadRequestsOverview } from "@/server/vendorRequests";
 import VendorsView, { type VendorsTab } from "@/components/vendors/VendorsView";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ export default async function VendorsPage({ searchParams }: { searchParams: Prom
   }
   const { tab: raw } = await searchParams;
   const manage = data.roles.isFinance || data.roles.isAdmin;
-  const tab: VendorsTab = (raw === "import" || raw === "sanctions") && manage ? raw : "list";
-  return <VendorsView data={data} tab={tab} />;
+  const tab: VendorsTab = (raw === "import" || raw === "sanctions") && manage ? raw : raw === "requests" ? "requests" : "list";
+  const requests = tab === "requests" ? await loadRequestsOverview(supabase, user.id) : null;
+  return <VendorsView data={data} tab={tab} requests={requests} />;
 }

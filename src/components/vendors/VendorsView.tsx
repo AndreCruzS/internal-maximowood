@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Building2, CheckCircle2, ListChecks, Loader2, RefreshCw, Search, ShieldCheck, Upload } from "lucide-react";
+import { AlertTriangle, Building2, CheckCircle2, ClipboardCheck, Inbox, ListChecks, Loader2, RefreshCw, Search, ShieldCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/components/I18nProvider";
 import { fmt } from "@/lib/i18n/locale";
@@ -11,9 +11,11 @@ import { plural } from "@/lib/i18n/dictionaries";
 import { VENDOR_STATUSES, masked, reviewOverdue, type VendorPublic } from "@/lib/vendors";
 import ImportPanel from "@/components/vendors/ImportPanel";
 import SanctionsBadge from "@/components/vendors/SanctionsBadge";
+import RequestsPanel from "@/components/vendors/RequestsPanel";
 import type { VendorsData } from "@/server/vendors";
+import type { RequestsOverview } from "@/server/vendorRequests";
 
-export type VendorsTab = "list" | "import" | "sanctions";
+export type VendorsTab = "list" | "requests" | "import" | "sanctions";
 
 const card = "rounded-2xl border border-gray-200 bg-white p-5 shadow-sm";
 const field = "h-9 rounded-lg border border-gray-300 bg-white px-2.5 text-sm outline-none focus:border-[#009f67]";
@@ -27,12 +29,13 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 /** Vendor Master List: the list, the bank import and the OFAC sanctions check. */
-export default function VendorsView({ data, tab }: { data: VendorsData; tab: VendorsTab }) {
+export default function VendorsView({ data, tab, requests = null }: { data: VendorsData; tab: VendorsTab; requests?: RequestsOverview | null }) {
   const { t, tag } = useI18n();
   const v = t.vendors;
   const manage = data.roles.isFinance || data.roles.isAdmin;
   const tabs: { id: VendorsTab; label: string; icon: typeof ListChecks }[] = [
     { id: "list", label: v.tabs.list, icon: ListChecks },
+    { id: "requests", label: t.vendorRequests.tab, icon: Inbox },
     ...(manage ? [{ id: "import" as const, label: v.tabs.import, icon: Upload }, { id: "sanctions" as const, label: v.tabs.sanctions, icon: ShieldCheck }] : []),
   ];
 
@@ -60,6 +63,7 @@ export default function VendorsView({ data, tab }: { data: VendorsData; tab: Ven
         </nav>
       )}
       {tab === "list" && <MasterList data={data} />}
+      {tab === "requests" && requests && <RequestsPanel data={requests} />}
       {tab === "import" && manage && <ImportPanel companies={data.companies} sanctionsLoaded={!!data.sanctions?.version} />}
       {tab === "sanctions" && manage && <SanctionsPanel data={data} tag={tag} />}
     </div>
@@ -211,10 +215,33 @@ function Row({ x, data, staff, open, onToggle, companyName, d, overdue }: {
                 ) : <p>—</p>}
               </div>
             </div>
+            {(x.status === "legacy_pending" || overdue) && (data.roles.isFinance || data.roles.isAdmin || data.roles.isApprover) && <StartReview vendorId={x.id} />}
           </td>
         </tr>
       )}
     </>
+  );
+}
+
+/** Finance / approvers: send a vendor that's already at the bank (or due for its yearly review) to the approvers. */
+function StartReview({ vendorId }: { vendorId: string }) {
+  const { t } = useI18n();
+  const a = t.vendorRequests.actions;
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const start = async () => {
+    setBusy(true);
+    const res = await fetch("/api/vendors/requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "review", vendorId }) });
+    const json = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
+    setBusy(false);
+    if (!res.ok || !json.id) return toast.error(json.error ?? "Error");
+    toast.success(a.reviewStarted);
+    router.push(`/vendors/requests/${json.id}`);
+  };
+  return (
+    <button type="button" onClick={start} disabled={busy} className="mt-3 flex items-center gap-1.5 rounded-lg bg-[#009f67] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
+      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardCheck className="h-3.5 w-3.5" />} {a.startReview}
+    </button>
   );
 }
 
