@@ -75,6 +75,7 @@ export const ALLOWED_EMAIL_DOMAINS = [
   "maximowood.com", "maximowood.us",
   "lumberplus.com", "lumberplus.us",
   "us4pro.com", "us4pro.us",
+  "gflumber.com",
 ] as const;
 
 export const isCompanyEmail = (email: string) =>

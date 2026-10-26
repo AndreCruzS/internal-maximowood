@@ -2,9 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
+import { cleanCode, usesEmailCode } from "@/lib/emailCode";
 
 const LOGO_WHITE = "/brand/gmx-logo-white.png";
 const LOGO_COLOR = "/brand/gmx-logo-color.png";
@@ -19,12 +20,60 @@ const GoogleMark = () => (
   </svg>
 );
 
-/** Company Google accounts only: Google sends people to /auth/callback, which checks the domain. */
+const inputClass = "w-full h-12 rounded-md border border-gray-300 px-3 text-base text-gray-900 outline-none focus:border-[#009f67] focus:ring-2 focus:ring-[#009f67]/20";
+
+/**
+ * Company Google accounts: Google sends people to /auth/callback, which checks the domain.
+ * gflumber.com (Global LBM, on Microsoft 365) signs in with a code emailed by /api/auth/email-code.
+ */
 function Login() {
   const { t } = useI18n();
-  const reason = useSearchParams().get("error");
+  const params = useSearchParams();
+  const router = useRouter();
+  const reason = params.get("error");
+  const linkEmail = params.get("email") ?? "";
   const [error, setError] = useState(reason === "domain" ? t.login.notCompany : reason ? t.login.failed : "");
   const [isLoading, setIsLoading] = useState(false);
+  // Email-code sign-in: "google" (the default), "email" (type the address), "code" (type the code).
+  const [step, setStep] = useState<"google" | "email" | "code">(usesEmailCode(linkEmail) ? "code" : "google");
+  const [email, setEmail] = useState(usesEmailCode(linkEmail) ? linkEmail : "");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sentTo, setSentTo] = useState(usesEmailCode(linkEmail) ? linkEmail : "");
+
+  const post = async (path: string, body: object) => {
+    const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    return { ok: res.ok, ...((await res.json().catch(() => ({}))) as { error?: string; retryAfter?: number }) };
+  };
+
+  const sendCode = async (address: string) => {
+    setError("");
+    if (!usesEmailCode(address)) { setError(t.login.notCodeDomain); return; }
+    const to = address.trim().toLowerCase();
+    setBusy(true);
+    try {
+      const r = await post("/api/auth/email-code", { email: to });
+      if (r.ok) { setSentTo(to); setCode(""); setStep("code"); }
+      else if (r.error === "too_soon") { setError(t.login.tooSoon.replace("{n}", String(r.retryAfter ?? 60))); setSentTo(to); setStep("code"); }
+      else setError(r.error === "not_code_domain" ? t.login.notCodeDomain : t.login.sendFailed);
+    } catch {
+      setError(t.login.unreachable);
+    }
+    setBusy(false);
+  };
+
+  const verify = async () => {
+    setError("");
+    setBusy(true);
+    try {
+      const r = await post("/api/auth/verify-code", { email: sentTo, code });
+      if (r.ok) { router.replace("/"); router.refresh(); return; }
+      setError(r.error === "not_code_domain" ? t.login.notCodeDomain : r.error === "wrong_code" ? t.login.wrongCode : t.login.failed);
+    } catch {
+      setError(t.login.unreachable);
+    }
+    setBusy(false);
+  };
 
   const signIn = async () => {
     setError("");
@@ -83,15 +132,73 @@ function Login() {
             </div>
           )}
 
-          <Button
-            type="button"
-            onClick={signIn}
-            disabled={isLoading}
-            className="w-full h-12 gap-3 border border-gray-300 bg-white text-gray-800 font-bold text-base shadow-sm transition-all hover:bg-gray-50 hover:border-[#009f67]"
-          >
-            <GoogleMark />
-            {isLoading ? t.login.signingIn : t.login.signIn}
-          </Button>
+          {step === "google" && (
+            <>
+              <Button
+                type="button"
+                onClick={signIn}
+                disabled={isLoading}
+                className="w-full h-12 gap-3 border border-gray-300 bg-white text-gray-800 font-bold text-base shadow-sm transition-all hover:bg-gray-50 hover:border-[#009f67]"
+              >
+                <GoogleMark />
+                {isLoading ? t.login.signingIn : t.login.signIn}
+              </Button>
+              <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-gray-400">
+                <span className="h-px flex-1 bg-gray-200" />{t.login.or}<span className="h-px flex-1 bg-gray-200" />
+              </div>
+              <button
+                type="button"
+                onClick={() => { setError(""); setStep("email"); }}
+                className="w-full text-center text-sm font-semibold text-[#00704a] hover:underline"
+              >
+                {t.login.codeOpen}
+              </button>
+            </>
+          )}
+
+          {step === "email" && (
+            <form onSubmit={e => { e.preventDefault(); void sendCode(email); }} className="space-y-3">
+              <p className="text-sm font-bold text-gray-900">{t.login.codeTitle}</p>
+              <label className="block text-sm text-gray-600">
+                {t.login.codeEmail}
+                <input
+                  type="email" autoComplete="email" autoFocus required value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="name@gflumber.com" className={`mt-1 ${inputClass}`}
+                />
+              </label>
+              <Button type="submit" disabled={busy || !email.trim()} className="w-full h-12 bg-[#009f67] text-white font-bold text-base hover:bg-[#00704a]">
+                {busy ? t.login.sending : t.login.sendCode}
+              </Button>
+              <button type="button" onClick={() => { setError(""); setStep("google"); }} className="w-full text-center text-sm text-gray-500 hover:underline">
+                {t.login.backToGoogle}
+              </button>
+            </form>
+          )}
+
+          {step === "code" && (
+            <form onSubmit={e => { e.preventDefault(); void verify(); }} className="space-y-3">
+              <p className="text-sm text-gray-600">{t.login.codeSent.replace("{email}", sentTo)}</p>
+              <label className="block text-sm text-gray-600">
+                {t.login.code}
+                <input
+                  inputMode="numeric" autoComplete="one-time-code" autoFocus required value={code}
+                  onChange={e => setCode(cleanCode(e.target.value).slice(0, 10))}
+                  className={`mt-1 ${inputClass} text-center text-2xl font-bold tracking-[0.4em]`}
+                />
+              </label>
+              <Button type="submit" disabled={busy || code.length < 6} className="w-full h-12 bg-[#009f67] text-white font-bold text-base hover:bg-[#00704a]">
+                {busy ? t.login.verifying : t.login.verify}
+              </Button>
+              <div className="flex justify-between text-sm">
+                <button type="button" disabled={busy} onClick={() => void sendCode(sentTo)} className="text-[#00704a] font-semibold hover:underline">
+                  {t.login.resend}
+                </button>
+                <button type="button" onClick={() => { setError(""); setCode(""); setStep("email"); }} className="text-gray-500 hover:underline">
+                  {t.login.otherEmail}
+                </button>
+              </div>
+            </form>
+          )}
 
           <p className="mt-8 pt-6 border-t border-gray-100 text-xs text-gray-400 text-center">
             {t.login.footer}

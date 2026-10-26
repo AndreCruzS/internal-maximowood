@@ -1007,6 +1007,13 @@ const en = {
     welcome: "Welcome back", subtitle: "Sign in to the GMX Group Intranet with your company Google account.", signIn: "Sign in with Google", signingIn: "Opening Google…",
     footer: "For GMX Group employees · Use your company email", intranet: "Intranet", tagline: "Making sustainability our business.",
     notCompany: "That isn't a GMX Group company account. Sign in with your company email.", failed: "Google sign-in didn't finish. Please try again.", unreachable: "Could not reach the server. Please try again.",
+    or: "or", codeOpen: "Global LBM (@gflumber.com)? Sign in with an email code", codeTitle: "Sign in with an email code",
+    codeEmail: "Your @gflumber.com email", sendCode: "Email me a code", sending: "Sending…",
+    codeSent: "We sent a code to {email}. It can take a minute — check Junk too.", code: "Code", verify: "Sign in", verifying: "Checking…",
+    resend: "Send a new code", otherEmail: "Use another email", backToGoogle: "Back to Google sign-in",
+    notCodeDomain: "Email codes are only for @gflumber.com addresses. Everyone else signs in with Google.",
+    tooSoon: "A code was just sent. You can ask for a new one in {n} seconds.", sendFailed: "We couldn't send the code. Please try again in a moment.",
+    wrongCode: "That code isn't right or has expired. Check it, or ask for a new one.",
   },
 };
 
@@ -2014,6 +2021,13 @@ const es: Dict = {
     welcome: "Bienvenido de nuevo", subtitle: "Ingresa a la Intranet de GMX Group con tu cuenta de Google de la empresa.", signIn: "Ingresar con Google", signingIn: "Abriendo Google…",
     footer: "Para empleados de GMX Group · Usa tu correo de la empresa", intranet: "Intranet", tagline: "La sostenibilidad es nuestro negocio.",
     notCompany: "Esa cuenta no es de GMX Group. Ingresa con tu correo de la empresa.", failed: "No se completó el ingreso con Google. Inténtalo de nuevo.", unreachable: "No se pudo conectar con el servidor. Inténtalo de nuevo.",
+    or: "o", codeOpen: "¿Global LBM (@gflumber.com)? Ingresa con un código por correo", codeTitle: "Ingresa con un código por correo",
+    codeEmail: "Tu correo @gflumber.com", sendCode: "Enviarme un código", sending: "Enviando…",
+    codeSent: "Enviamos un código a {email}. Puede tardar un minuto; revisa también Correo no deseado.", code: "Código", verify: "Ingresar", verifying: "Verificando…",
+    resend: "Enviar un código nuevo", otherEmail: "Usar otro correo", backToGoogle: "Volver al ingreso con Google",
+    notCodeDomain: "Los códigos por correo son solo para direcciones @gflumber.com. Los demás ingresan con Google.",
+    tooSoon: "Acabamos de enviar un código. Puedes pedir otro en {n} segundos.", sendFailed: "No pudimos enviar el código. Inténtalo de nuevo en un momento.",
+    wrongCode: "Ese código no es correcto o ya venció. Revísalo o pide uno nuevo.",
   },
 };
 
@@ -3019,6 +3033,13 @@ const pt: Dict = {
     welcome: "Bem-vindo de volta", subtitle: "Entre na Intranet do GMX Group com sua conta Google da empresa.", signIn: "Entrar com o Google", signingIn: "Abrindo o Google…",
     footer: "Para colaboradores do GMX Group · Use seu e-mail da empresa", intranet: "Intranet", tagline: "Sustentabilidade é o nosso negócio.",
     notCompany: "Essa conta não é do GMX Group. Entre com seu e-mail da empresa.", failed: "O login com o Google não terminou. Tente novamente.", unreachable: "Não foi possível conectar ao servidor. Tente novamente.",
+    or: "ou", codeOpen: "Global LBM (@gflumber.com)? Entre com um código por e-mail", codeTitle: "Entrar com um código por e-mail",
+    codeEmail: "Seu e-mail @gflumber.com", sendCode: "Enviar código", sending: "Enviando…",
+    codeSent: "Enviamos um código para {email}. Pode levar um minuto; confira também o Lixo eletrônico.", code: "Código", verify: "Entrar", verifying: "Verificando…",
+    resend: "Enviar um novo código", otherEmail: "Usar outro e-mail", backToGoogle: "Voltar ao login com o Google",
+    notCodeDomain: "Códigos por e-mail são só para endereços @gflumber.com. Os demais entram com o Google.",
+    tooSoon: "Acabamos de enviar um código. Você pode pedir outro em {n} segundos.", sendFailed: "Não conseguimos enviar o código. Tente novamente em instantes.",
+    wrongCode: "Esse código não está certo ou expirou. Confira ou peça um novo.",
   },
 };
 
