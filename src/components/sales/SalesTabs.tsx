@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, Calculator, FileText } from "lucide-react";
+import { Building2, Calculator, ClipboardCheck, FileText } from "lucide-react";
 import { useI18n } from "@/components/I18nProvider";
 import { deptName } from "@/lib/i18n/text";
 import type { Dict } from "@/lib/i18n/dictionaries";
@@ -33,12 +33,13 @@ export default function SalesTabs() {
     { href: "/calculator", label: t.sales.retail, icon: Calculator },
     { href: "/b2b", label: t.sales.b2b, icon: Building2 },
     { href: "/quotes", label: t.sales.saved, icon: FileText },
+    { href: "/checklists", label: t.sales.checklists, icon: ClipboardCheck },
   ];
-  if (!tabs.some(x => x.href === path)) return null;
+  if (!tabs.some(x => x.href === path || path.startsWith(`${x.href}/`))) return null;
   return (
     <nav aria-label={t.sales.label} className="flex w-full rounded-full border border-gray-200 bg-gray-100 p-1 sm:w-auto">
       {tabs.map(x => {
-        const on = path === x.href;
+        const on = path === x.href || path.startsWith(`${x.href}/`);
         return (
           <Link key={x.href} href={x.href} aria-current={on ? "page" : undefined}
             className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-xs font-black uppercase tracking-wide transition-all sm:flex-none sm:px-5 sm:text-sm ${

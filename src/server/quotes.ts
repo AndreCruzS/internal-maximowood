@@ -26,13 +26,14 @@ export type QuoteRow = {
   last_sent_at?: string | null;
   last_sent_to?: string | null;
   last_send_action?: string | null;
+  customer_approved_at?: string | null;
 };
 
 export const QUOTE_COLUMNS =
   "id, user_id, project_name, calculator, company, contact, address, prepared_by, notes, tax, shipping, lead_time_weeks, items, total, created_at, updated_at";
 
-/** QUOTE_COLUMNS plus the HubSpot columns (migration 0026). Use with selectQuotes, which falls back without them. */
-export const QUOTE_COLUMNS_WITH_HUBSPOT = `${QUOTE_COLUMNS}, hubspot_contact_id, hubspot_company_id, hubspot_deal_id, last_sent_at, last_sent_to, last_send_action`;
+/** QUOTE_COLUMNS plus the HubSpot columns (0026) and the approval stamp (0032). Use with selectQuotes, which falls back without them. */
+export const QUOTE_COLUMNS_WITH_HUBSPOT = `${QUOTE_COLUMNS}, hubspot_contact_id, hubspot_company_id, hubspot_deal_id, last_sent_at, last_sent_to, last_send_action, customer_approved_at`;
 
 type Result<T> = { data: T | null; error: { code?: string; message: string } | null };
 /** Selects with the HubSpot columns; before migration 0026 (Postgres 42703) retries without them. */
@@ -63,6 +64,7 @@ export function rowToQuote(row: QuoteRow): SavedQuote {
     total: num(row.total) ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    customerApprovedAt: row.customer_approved_at ?? null,
     hubspot:
       row.hubspot_deal_id || row.hubspot_contact_id || row.hubspot_company_id || row.last_sent_at
         ? {

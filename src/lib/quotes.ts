@@ -27,6 +27,8 @@ export type SavedQuote = {
   updatedAt: string;
   /** HubSpot link and last send (migration 0026); null when never sent / not linked. */
   hubspot?: QuoteHubSpot | null;
+  /** When the rep marked the customer's approval and started the checklist (migration 0032). */
+  customerApprovedAt?: string | null;
 };
 
 export type QuoteHubSpot = {

@@ -946,7 +946,7 @@ const en = {
     cols: { length: "Group / length", pieces: "Pieces", packs: "Packs", share: "% of order", stock: "Stock", adjust: "Adjust" },
     max: "max", edit: "Edit", add: "Add", total: "Total", totalPieces: "Total pieces", linearFeet: "Linear feet", mix: "Mix · 4–5 / 6–11 / 12+", packsOf: "Packs ({n} pcs)",
   },
-  sales: { label: "Quote Builder", retail: "Retail quote", b2b: "B2B quote", saved: "Saved quotes" },
+  sales: { label: "Quote Builder", retail: "Retail quote", b2b: "B2B quote", saved: "Saved quotes", checklists: "Checklists" },
   prehire: {
     title: "Before day one", hint: "Everything the hiring leader and IT get ready before the first day, so nothing gets lost.",
     preview: "Preview as new hire", previewDemo: "Preview new-hire page", leaderSide: "Leader & IT (before day one)", employeeSide: "Employee",
@@ -1960,7 +1960,7 @@ const es: Dict = {
     cols: { length: "Grupo / largo", pieces: "Piezas", packs: "Paquetes", share: "% del pedido", stock: "Stock", adjust: "Ajustar" },
     max: "máx", edit: "Editar", add: "Agregar", total: "Total", totalPieces: "Piezas totales", linearFeet: "Pies lineales", mix: "Mezcla · 4–5 / 6–11 / 12+", packsOf: "Paquetes ({n} pzs)",
   },
-  sales: { label: "Creador de cotizaciones", retail: "Cotización minorista", b2b: "Cotización B2B", saved: "Cotizaciones guardadas" },
+  sales: { label: "Creador de cotizaciones", retail: "Cotización minorista", b2b: "Cotización B2B", saved: "Cotizaciones guardadas", checklists: "Checklists" },
   prehire: {
     title: "Antes del primer día", hint: "Todo lo que el líder y TI preparan antes del primer día, para que nada se pierda.",
     preview: "Ver como nuevo empleado", previewDemo: "Ver la página del nuevo empleado", leaderSide: "Líder y TI (antes del primer día)", employeeSide: "Empleado",
@@ -2972,7 +2972,7 @@ const pt: Dict = {
     cols: { length: "Grupo / comprimento", pieces: "Peças", packs: "Pacotes", share: "% do pedido", stock: "Estoque", adjust: "Ajustar" },
     max: "máx", edit: "Editar", add: "Adicionar", total: "Total", totalPieces: "Total de peças", linearFeet: "Pés lineares", mix: "Mix · 4–5 / 6–11 / 12+", packsOf: "Pacotes ({n} pçs)",
   },
-  sales: { label: "Criador de cotações", retail: "Cotação varejo", b2b: "Cotação B2B", saved: "Cotações salvas" },
+  sales: { label: "Criador de cotações", retail: "Cotação varejo", b2b: "Cotação B2B", saved: "Cotações salvas", checklists: "Checklists" },
   prehire: {
     title: "Antes do primeiro dia", hint: "Tudo o que o líder e a TI preparam antes do primeiro dia, para nada se perder.",
     preview: "Ver como novo colaborador", previewDemo: "Ver a página do novo colaborador", leaderSide: "Líder e TI (antes do primeiro dia)", employeeSide: "Colaborador",

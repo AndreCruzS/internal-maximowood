@@ -39,8 +39,8 @@ const toOwner = (u: Pick<User, "email" | "user_metadata">): Owner => ({
   name: (u.user_metadata?.name as string | undefined) ?? null,
 });
 
-/** Admin only: attach salesperson name/email to every quote. */
-export async function withOwners(quotes: SavedQuote[]): Promise<SavedQuote[]> {
+/** Admin only: attach salesperson name/email to every quote (or checklist). */
+export async function withOwners<T extends { ownerId: string; owner?: Owner | null }>(quotes: T[]): Promise<T[]> {
   const admin = getSupabaseAdmin();
   if (!admin || quotes.length === 0) return quotes;
 
