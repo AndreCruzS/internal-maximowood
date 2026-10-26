@@ -20,7 +20,7 @@ export async function startChecklist(quoteId?: string): Promise<string> {
 }
 
 /** The rep's checklists (admins: everyone's), with status and a way to start a blank one. */
-export default function ChecklistList({ isAdmin, myId }: { isAdmin: boolean; myId: string }) {
+export default function ChecklistList({ isAdmin, myId, quotesHref = "/quotes" }: { isAdmin: boolean; myId: string; quotesHref?: string }) {
   const router = useRouter();
   const [list, setList] = useState<Checklist[] | null>(null);
   const [error, setError] = useState("");
@@ -77,7 +77,7 @@ export default function ChecklistList({ isAdmin, myId }: { isAdmin: boolean; myI
         <p className="flex items-center gap-2 p-6 text-sm text-gray-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</p>
       ) : list.length === 0 ? (
         <div className="px-6 py-14 text-center text-sm text-gray-500">
-          No checklists yet. Open <Link href="/quotes" className="font-bold underline">Saved quotes</Link> and press <b>Customer approved</b> on a quote.
+          No checklists yet. Open <Link href={quotesHref} className="font-bold underline">Saved quotes</Link> and press <b>Customer approved</b> on a quote.
         </div>
       ) : (
         <div className="overflow-x-auto">
