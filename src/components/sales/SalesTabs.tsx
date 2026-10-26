@@ -7,13 +7,14 @@ import { useI18n } from "@/components/I18nProvider";
 import { deptName } from "@/lib/i18n/text";
 import type { Dict } from "@/lib/i18n/dictionaries";
 
-const TOOL_PAGES: Record<string, keyof Dict["tools"]> = { "/tally": "/tally", "/pricing": "/pricing", "/inventory": "/inventory" };
+const TOOL_PAGES: Record<string, keyof Dict["tools"]> = { "/tally": "/tally", "/pricing": "/pricing", "/inventory": "/inventory", "/checklists": "/checklists" };
 
 /** "Commercial / Sales › Maximo › Quote Builder" above Maximo's tools. */
 export function SalesCrumbs() {
   const { t } = useI18n();
   const path = usePathname();
-  const page = TOOL_PAGES[path] ? t.tools[TOOL_PAGES[path]]?.name : t.sales.label;
+  const key = TOOL_PAGES[path] ?? (path.startsWith("/checklists/") ? "/checklists" : undefined);
+  const page = key ? t.tools[key]?.name : t.sales.label;
   return (
     <p className="text-xs text-gray-500">
       <Link href="/departments/commercial" className="hover:text-gray-900 hover:underline">{deptName(t, "commercial")}</Link>

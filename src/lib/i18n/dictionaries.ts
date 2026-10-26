@@ -46,6 +46,7 @@ const en = {
   tools: {
     "/calculator": { name: "Quote Builder", description: "Retail & B2B quotes, and your saved ones" },
     "/tally": { name: "Tally Calculator", description: "Split an order into packs per length, from live stock" },
+    "/checklists": { name: "Checklists", description: "Approved quote → client approval checklist for logistics" },
     "/expenses": { name: "Expenses", description: "Receipts, reimbursements, cards and fund requests, connected to Ramp" },
     "/travel": { name: "Travel Requests", description: "Request business travel; Procurement books it" },
     "/refer": { name: "Refer a Candidate", description: "Refer someone for an open role" },
@@ -1060,6 +1061,7 @@ const es: Dict = {
   tools: {
     "/calculator": { name: "Creador de cotizaciones", description: "Cotizaciones minoristas y B2B, y las guardadas" },
     "/tally": { name: "Calculadora de tally", description: "Divide un pedido en paquetes por largo, con el stock en vivo" },
+    "/checklists": { name: "Checklists", description: "Cotización aprobada → checklist de aprobación del cliente para logística" },
     "/expenses": { name: "Gastos", description: "Recibos, reembolsos, tarjetas y pedidos de fondos, conectados a Ramp" },
     "/travel": { name: "Solicitudes de viaje", description: "Pide un viaje de negocios; Compras lo reserva" },
     "/refer": { name: "Recomendar candidato", description: "Recomienda a alguien para una vacante" },
@@ -2072,6 +2074,7 @@ const pt: Dict = {
   tools: {
     "/calculator": { name: "Criador de cotações", description: "Cotações varejo e B2B, e as salvas" },
     "/tally": { name: "Calculadora de tally", description: "Divide um pedido em pacotes por comprimento, com o estoque ao vivo" },
+    "/checklists": { name: "Checklists", description: "Cotação aprovada → checklist de aprovação do cliente para a logística" },
     "/expenses": { name: "Despesas", description: "Recibos, reembolsos, cartões e pedidos de verba, conectados ao Ramp" },
     "/travel": { name: "Solicitações de viagem", description: "Peça uma viagem a trabalho; Compras reserva" },
     "/refer": { name: "Indicar candidato", description: "Indique alguém para uma vaga" },

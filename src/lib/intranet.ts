@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  ClipboardCheck,
   ClipboardList,
   Briefcase,
   Calculator,
@@ -132,6 +133,7 @@ export type Tool = {
 export const TOOLS: Tool[] = [
   { name: "Quote Builder", description: "Retail & B2B quotes, and your saved ones", icon: Calculator, href: "/calculator", department: "commercial", company: "maximo", pinned: true },
   { name: "Tally Calculator", description: "Split an order into packs per length, from live stock", icon: Ruler, href: "/tally", department: "commercial", company: "maximo", pinned: true },
+  { name: "Checklists", description: "Approved quote → client approval checklist for logistics", icon: ClipboardCheck, href: "/checklists", department: "commercial", company: "maximo", pinned: true },
   { name: "Sample Requester", description: "Request product samples for customers", icon: PackageOpen, href: "https://samples.maximowood.com/samples", department: "commercial", company: "maximo", external: true },
   { name: "Pricing", description: "Maximo price list", icon: Tag, href: "/pricing", department: "commercial", company: "maximo" },
   { name: "Inventory", description: "Live stock by branch", icon: Package, href: "/inventory", department: "commercial", company: "maximo", pinned: true },
