@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  ClipboardCheck,
   Building2,
   Calculator,
   Check,
@@ -26,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import AdminUsers from "@/components/AdminUsers";
 import HubSpotAdmin from "@/components/hubspot/HubSpotAdmin";
 import QuoteHubSpotBadge from "@/components/hubspot/QuoteHubSpotBadge";
+import { startChecklist } from "@/components/checklist/ChecklistList";
 import { deleteQuote, sendJson, useQuotes } from "@/lib/api";
 import { generateQuotePDF } from "@/lib/generateQuotePDF";
 import { quoteEditHref, toQuoteData, type SavedQuote } from "@/lib/quotes";
@@ -228,6 +230,18 @@ function PasswordCard() {
 // ── Quotes ───────────────────────────────────────────────────────────────────
 function QuotesCard({ account }: { account: ProfileAccount }) {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  // "Customer approved": opens the quote's checklist, pre-filled from it the first time.
+  const approve = async (q: SavedQuote) => {
+    setApprovingId(q.id);
+    try {
+      router.push(`/checklists/${await startChecklist(q.id)}`);
+    } catch (e) {
+      toast.error((e as Error).message);
+      setApprovingId(null);
+    }
+  };
   const { data: allQuotes = [], isLoading, error } = useQuotes();
   const [search, setSearch] = useState("");
   // Admins get every salesperson's quotes from the API; salespeople only their own.
@@ -394,6 +408,18 @@ function QuotesCard({ account }: { account: ProfileAccount }) {
                       >
                         <Pencil className="w-3.5 h-3.5" /> Edit
                       </Link>
+                      <button
+                        type="button"
+                        onClick={() => void approve(q)}
+                        disabled={approvingId === q.id}
+                        title={q.customerApprovedAt ? "Open the checklist for logistics" : "The customer approved this quote: start the checklist for logistics"}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold border transition-colors disabled:opacity-50 whitespace-nowrap ${
+                          q.customerApprovedAt ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100" : "border-gray-300 bg-white hover:bg-gray-50"
+                        }`}
+                      >
+                        {approvingId === q.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ClipboardCheck className="w-3.5 h-3.5" />}
+                        {q.customerApprovedAt ? "Checklist" : "Customer approved"}
+                      </button>
                       <button
                         type="button"
                         onClick={() => void download(q)}

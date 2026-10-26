@@ -1,4 +1,4 @@
-import { Building2, Calculator, Package, Tag, Users, type LucideIcon } from "lucide-react";
+import { Building2, Calculator, ClipboardCheck, Package, Tag, Users, type LucideIcon } from "lucide-react";
 
 /**
  * Every tool the portal links to. The portal home renders these as tiles,
@@ -29,6 +29,7 @@ export const GROUPS: { id: ToolGroup; label: string; note?: string }[] = [
 export const TOOLS: Tool[] = [
   { name: "Retail Calculator", description: "Thermowood, hardwood & Accoya quotes", icon: Calculator, href: "/calculator", group: "sales" },
   { name: "B2B Calculator", description: "Distributor & dealer quotes", icon: Building2, href: "/b2b", group: "sales" },
+  { name: "Checklists", description: "Approved quotes → checklist for logistics", icon: ClipboardCheck, href: "/checklists", group: "sales" },
   { name: "Pricing", description: "Price list", icon: Tag, href: "/pricing", group: "sales" },
   { name: "Inventory", description: "Live stock by branch", icon: Package, href: "/inventory", group: "stock" },
   { name: "Team logins", description: "Create & manage accounts", icon: Users, href: "/profile?tab=admin", group: "admin", adminOnly: true },
