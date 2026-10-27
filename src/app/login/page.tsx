@@ -32,7 +32,7 @@ function Login() {
   const router = useRouter();
   const reason = params.get("error");
   const linkEmail = params.get("email") ?? "";
-  const [error, setError] = useState(reason === "domain" ? t.login.notCompany : reason ? t.login.failed : "");
+  const [error, setError] = useState(reason === "domain" ? t.login.notCompany : reason === "access" ? t.login.noAccess : reason ? t.login.failed : "");
   const [isLoading, setIsLoading] = useState(false);
   // Email-code sign-in: "google" (the default), "email" (type the address), "code" (type the code).
   const [step, setStep] = useState<"google" | "email" | "code">(usesEmailCode(linkEmail) ? "code" : "google");
@@ -68,7 +68,7 @@ function Login() {
     try {
       const r = await post("/api/auth/verify-code", { email: sentTo, code });
       if (r.ok) { router.replace("/"); router.refresh(); return; }
-      setError(r.error === "not_code_domain" ? t.login.notCodeDomain : r.error === "wrong_code" ? t.login.wrongCode : t.login.failed);
+      setError(r.error === "not_code_domain" ? t.login.notCodeDomain : r.error === "wrong_code" ? t.login.wrongCode : r.error === "access" ? t.login.noAccess : t.login.failed);
     } catch {
       setError(t.login.unreachable);
     }

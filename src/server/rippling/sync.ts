@@ -4,6 +4,7 @@ import { diffRippling, parseRipplingSettings, planCounts, type IntranetPerson, t
 import { IT_EMAIL, alreadySent, logEmail, renderEmail, sendMail } from "@/server/email";
 import { fetchRippling, ripplingConnected } from "@/server/rippling/client";
 import { demoRippling } from "@/server/rippling/demo";
+import { selectCompat } from "@/server/compat";
 
 export type SyncResult = {
   sample: boolean;
@@ -20,7 +21,11 @@ const todayYmd = () => new Date().toISOString().slice(0, 10);
 /** The intranet side of the diff (read with the service role: every person, positions, open offboardings). */
 export async function loadIntranetPeople(admin: SupabaseClient): Promise<IntranetPerson[]> {
   const [people, positions, offboardings] = await Promise.all([
-    admin.from("people").select("id, full_name, email, rippling_id, start_date, office, company_id, active"),
+    selectCompat(
+      cols => admin.from("people").select(cols),
+      "id, full_name, email, rippling_id, start_date, office, company_id, active, alt_emails, employment_type, legal_entity",
+      "id, full_name, email, rippling_id, start_date, office, company_id, active",
+    ),
     admin.from("positions").select("id, person_id, title, department_id, reports_to, sort").order("sort"),
     admin.from("offboardings").select("person_id").eq("status", "requested"),
   ]);
@@ -102,7 +107,8 @@ async function applyPlan(admin: SupabaseClient, plan: SyncPlan, people: Intranet
   // 1. Matched people: link + Rippling-owned fields.
   for (const u of plan.updates) {
     const v = u.values;
-    if (fail(`Update ${u.name}`, (await admin.from("people").update({ rippling_id: u.workerId, rippling_synced_at: now, start_date: v.startDate, office: v.office, company_id: v.companyId }).eq("id", u.personId)).error)) continue;
+    const hrFields = u.changes.some(c => c.field === "employment_type" || c.field === "legal_entity") ? { employment_type: v.employmentType, legal_entity: v.legalEntity } : {};
+    if (fail(`Update ${u.name}`, (await admin.from("people").update({ rippling_id: u.workerId, rippling_synced_at: now, start_date: v.startDate, office: v.office, company_id: v.companyId, ...hrFields }).eq("id", u.personId)).error)) continue;
     const pos = positionOf(u.personId);
     const row = { title: v.title || "Employee", department_id: v.departmentId, reports_to: positionOf(v.managerPersonId) };
     if (pos) fail(`Position of ${u.name}`, (await admin.from("positions").update(row).eq("id", pos)).error);
@@ -120,6 +126,7 @@ async function applyPlan(admin: SupabaseClient, plan: SyncPlan, people: Intranet
       .insert({
         full_name: w.fullName, email: w.workEmail, company_id: c.companyId, companies: c.companyId ? [c.companyId] : [],
         start_date: w.startDate, office: c.office, rippling_id: w.id, rippling_synced_at: now, active: true,
+        ...(w.employmentType ? { employment_type: w.employmentType } : {}), ...(w.entity ? { legal_entity: w.entity.slice(0, 120) } : {}),
       })
       .select("id")
       .maybeSingle();

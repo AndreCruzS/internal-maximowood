@@ -12,8 +12,9 @@ export const CALENDAR_TZ: Record<HolidayCalendar, string> = {
 };
 export const CALENDAR_COUNTRY: Record<HolidayCalendar, "US" | "BR"> = { "gmx-us": "US", "lumberplus-us": "US", br: "BR", curitiba: "BR" };
 
-/** The calendar someone sees first, from their office (remote: their country). */
-export function calendarFor(office: string | null | undefined, liveCountry?: string | null): HolidayCalendar {
+/** The calendar someone sees first: HR's choice for them (0033), else from their office (remote: their country). */
+export function calendarFor(office: string | null | undefined, liveCountry?: string | null, override?: string | null): HolidayCalendar {
+  if (override && (HOLIDAY_CALENDARS as readonly string[]).includes(override)) return override as HolidayCalendar;
   if (office === "curitiba") return "curitiba";
   if (office?.startsWith("lumberplus")) return "lumberplus-us";
   if (office === "aventura") return "gmx-us";

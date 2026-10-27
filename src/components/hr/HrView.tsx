@@ -118,7 +118,10 @@ export default function HrView({ data }: { data: TimeOffData }) {
           <p className="mt-1 text-sm text-gray-600">{h.subtitle}</p>
         </div>
         {data.canEditHrPay && (
-          <Link href="/hr/rippling" className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-bold text-gray-700 hover:border-[#009f67] hover:text-[#00704a]">{t.rippling.link} →</Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/hr/access" className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-bold text-gray-700 hover:border-[#009f67] hover:text-[#00704a]">{t.access.link} →</Link>
+            <Link href="/hr/rippling" className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-bold text-gray-700 hover:border-[#009f67] hover:text-[#00704a]">{t.rippling.link} →</Link>
+          </div>
         )}
       </header>
 

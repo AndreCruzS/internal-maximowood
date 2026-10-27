@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { cleanCode, isCodeShape, normalizeEmail, usesEmailCode } from "@/lib/emailCode";
 import { isCompanyEmail } from "@/lib/intranet";
+import { checkAccess } from "@/server/access";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,10 @@ export async function POST(request: NextRequest) {
   if (!isCompanyEmail(data.user.email ?? "")) {
     await supabase.auth.signOut();
     return NextResponse.json({ error: "not_code_domain" }, { status: 403 });
+  }
+  if (!(await checkAccess(data.user)).ok) {
+    await supabase.auth.signOut();
+    return NextResponse.json({ error: "access" }, { status: 403 });
   }
   return NextResponse.json({ ok: true });
 }

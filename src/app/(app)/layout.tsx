@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { checkAccess } from "@/server/access";
 
 export default async function AppGroupLayout({
   children,
@@ -10,6 +11,8 @@ export default async function AppGroupLayout({
   const supabase = await getSupabaseServer();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
   if (supabase && user) {
+    // Sessions from before HR switched the W2-only check on end here too.
+    if (!(await checkAccess(user)).ok) redirect("/auth/no-access");
     await supabase.rpc("ensure_my_profile");
     const { data, error } = await supabase.from("profiles").select("onboarded_at").eq("user_id", user.id).maybeSingle();
     // Fails open (e.g. before the 0007 migration) so the portal never locks people out.

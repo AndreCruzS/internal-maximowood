@@ -108,3 +108,22 @@ describe("leaveKind", () => {
     expect(leaveKind("Jury duty")).toBe("ooo");
   });
 });
+
+describe("diffRippling · W2 access fields (0033)", () => {
+  it("matches a person's other email and brings employment type and legal entity", () => {
+    const ane = person({ id: "p-ane", email: "ane@lumberplus.com", alt_emails: ["ane.rambo@gmxgroup.com"], employment_type: null, legal_entity: "" });
+    const plan = diffRippling([worker({ id: "w-ane", workEmail: "ane.rambo@gmxgroup.com", employmentType: "w2", entity: "Lumber Plus Enterprises" })], [ane], settings, { today });
+    expect(plan.creates).toEqual([]);
+    expect(plan.updates[0].personId).toBe("p-ane");
+    expect(plan.updates[0].changes).toEqual(expect.arrayContaining([
+      { field: "employment_type", from: null, to: "w2" },
+      { field: "legal_entity", from: null, to: "Lumber Plus Enterprises" },
+    ]));
+  });
+  it("keeps HR's type when Rippling doesn't say", () => {
+    const joe = person({ id: "p-joe", email: "joe@x.com", employment_type: "contractor", legal_entity: "" });
+    const plan = diffRippling([worker({ id: "w-joe", workEmail: "joe@x.com" })], [joe], settings, { today });
+    expect(plan.updates[0].values.employmentType).toBe("contractor");
+    expect(plan.updates[0].changes.map(c => c.field)).not.toContain("employment_type");
+  });
+});

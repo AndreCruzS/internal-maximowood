@@ -32,17 +32,21 @@ export async function loadHolidays(supabase: SupabaseClient, user: User, month: 
       "id, person_id, starts_on, ends_on, kind, note, covered_by, status",
       "id, person_id, starts_on, ends_on, kind, note, covered_by",
     ),
-    supabase.from("people").select("id, full_name, photo_url, company_id, office, live_country, user_id, positions(department_id)").eq("active", true).order("full_name"),
+    selectCompat(
+      cols => supabase.from("people").select(cols).eq("active", true).order("full_name"),
+      "id, full_name, photo_url, company_id, office, live_country, holiday_calendar, user_id, positions(department_id)",
+      "id, full_name, photo_url, company_id, office, live_country, user_id, positions(department_id)",
+    ),
     supabase.rpc("is_hr_editor"),
   ]);
-  type Row = { id: string; full_name: string; photo_url: string | null; company_id: string | null; office: string | null; live_country: string | null; user_id: string | null; positions: { department_id: string | null }[] };
+  type Row = { id: string; full_name: string; photo_url: string | null; company_id: string | null; office: string | null; live_country: string | null; holiday_calendar?: string | null; user_id: string | null; positions: { department_id: string | null }[] };
   const rows = (people.data as Row[] | null) ?? [];
   const me = rows.find(p => p.user_id === user.id) ?? null;
   const country = (p: Row) => (p.live_country === "BR" || p.live_country === "US" ? p.live_country : p.office === "curitiba" ? "BR" : p.office ? "US" : null);
   return {
     ready: !holidays.error,
     holidays: (holidays.data as OfficeHoliday[] | null) ?? [],
-    defaultCalendar: calendarFor(me?.office, me?.live_country),
+    defaultCalendar: calendarFor(me?.office, me?.live_country, me?.holiday_calendar),
     month,
     absences: ((absences.data as (HolidayAbsence & { status?: string })[] | null) ?? []).filter(isApproved),
     people: rows.map(p => ({

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { leaveStatus, lookupFrom, normalizeLeave, normalizeWorker, workerStatus } from "./fields";
+import { employmentType, leaveStatus, lookupFrom, normalizeLeave, normalizeWorker, workerStatus } from "./fields";
 import { demoRippling } from "./demo";
 import type { IntranetPerson } from "@/lib/rippling";
 
@@ -42,5 +42,14 @@ describe("sample data", () => {
     expect(one.workers.every(w => w.id.startsWith("demo_"))).toBe(true);
     expect(one.workers.filter(w => w.workEmail?.endsWith("@x.com")).map(w => w.workEmail)).toEqual(["a@x.com", "b@x.com"]);
     expect(one.leave.every(l => l.id.startsWith("demo_"))).toBe(true);
+  });
+});
+
+describe("employmentType", () => {
+  it("reads Rippling's employment types", () => {
+    expect(employmentType("SALARIED_FT")).toBe("w2");
+    expect(employmentType({ type: "CONTRACTOR" })).toBe("contractor");
+    expect(employmentType({ label: "Hourly, part-time" })).toBe("w2");
+    expect(employmentType(null)).toBeNull();
   });
 });

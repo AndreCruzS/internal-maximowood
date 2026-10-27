@@ -50,6 +50,15 @@ export function workerStatus(raw: unknown): RipplingWorker["status"] {
   return "other";
 }
 
+/** Rippling employment type ("SALARIED_FT", "Contractor", { type: "CONTRACTOR" }…) → W2 or contractor. */
+export function employmentType(raw: unknown): "w2" | "contractor" | null {
+  const s = (str(raw, obj(raw).type, obj(raw).label, obj(raw).name) ?? "").toUpperCase();
+  if (!s) return null;
+  if (/CONTRACT|1099|FREELANC/.test(s)) return "contractor";
+  if (/EMPLOYEE|SALAR|HOURLY|FULL|PART|W-?2|INTERN|TEMP/.test(s)) return "w2";
+  return null;
+}
+
 export function normalizeWorker(raw: unknown, lookups: { departments?: Lookup; locations?: Lookup } = {}): RipplingWorker | null {
   const w = obj(raw);
   const user = obj(w.user);
@@ -72,6 +81,7 @@ export function normalizeWorker(raw: unknown, lookups: { departments?: Lookup; l
     status: workerStatus(w.status ?? w.employment_status ?? obj(w.employment).status),
     location: nameOf(w.work_location ?? w.location ?? w.work_location_id, lookups.locations),
     entity: nameOf(w.legal_entity ?? w.company ?? w.entity, undefined),
+    employmentType: employmentType(w.employment_type ?? obj(w.employment).type ?? w.worker_type),
   };
 }
 

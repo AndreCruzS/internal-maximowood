@@ -22,6 +22,8 @@ export type RipplingWorker = {
   location: string | null;
   /** Legal entity / company name, mapped to an intranet company. */
   entity: string | null;
+  /** W2 employee or contractor (Rippling's employment type); undefined when Rippling doesn't say. */
+  employmentType?: "w2" | "contractor" | null;
 };
 
 /** Approved / cancelled time off from Rippling. */
@@ -69,15 +71,19 @@ export type IntranetPerson = {
   /** person id of whoever holds the position they report to. */
   manager_person_id: string | null;
   open_offboarding: boolean;
+  /** 0033: other addresses (matched too), employment type and payroll entity. */
+  alt_emails?: string[];
+  employment_type?: string | null;
+  legal_entity?: string;
 };
 
-export type FieldChange = { field: "title" | "department" | "manager" | "start_date" | "office" | "company"; from: string | null; to: string | null };
+export type FieldChange = { field: "title" | "department" | "manager" | "start_date" | "office" | "company" | "employment_type" | "legal_entity"; from: string | null; to: string | null };
 
 export type SyncPlan = {
   /** In Rippling, not in the intranet: new people (isNewHire → the onboarding / IT flow). */
   creates: { worker: RipplingWorker; departmentId: string | null; companyId: string | null; office: string | null; managerPersonId: string | null; isNewHire: boolean }[];
   /** Matched people whose Rippling fields differ, or who aren't linked yet. */
-  updates: { personId: string; name: string; workerId: string; link: boolean; changes: FieldChange[]; values: { title: string; departmentId: string | null; managerPersonId: string | null; startDate: string | null; office: string | null; companyId: string | null } }[];
+  updates: { personId: string; name: string; workerId: string; link: boolean; changes: FieldChange[]; values: { title: string; departmentId: string | null; managerPersonId: string | null; startDate: string | null; office: string | null; companyId: string | null; employmentType: string | null; legalEntity: string } }[];
   /** Terminated in Rippling, still active here with no offboarding open. */
   leavers: { personId: string; name: string; lastDay: string }[];
   /** Approved Rippling time off to upsert, and time off to cancel. */
@@ -112,7 +118,8 @@ export function diffRippling(
 ): SyncPlan {
   const newHireDays = opts.newHireDays ?? 30;
   const byRippling = new Map(people.filter(p => p.rippling_id).map(p => [p.rippling_id!, p]));
-  const byEmail = new Map(people.filter(p => p.email).map(p => [norm(p.email), p]));
+  const byEmail = new Map<string, IntranetPerson>();
+  for (const p of people) for (const e of [p.email, ...(p.alt_emails ?? [])]) if (e && !byEmail.has(norm(e))) byEmail.set(norm(e), p);
   const used = new Set<string>();
   const matchOf = new Map<string, IntranetPerson>();
   for (const w of workers) {
@@ -166,6 +173,9 @@ export function diffRippling(
       startDate: w.startDate ?? p.start_date,
       office: office ?? p.office,
       companyId: companyId ?? p.company_id,
+      // Contractors stay out of the intranet (W2-only access): Rippling's word wins over HR's list.
+      employmentType: w.employmentType ?? p.employment_type ?? null,
+      legalEntity: (w.entity ?? p.legal_entity ?? "").slice(0, 120),
     };
     const changes: FieldChange[] = [];
     const push = (field: FieldChange["field"], from: string | null | undefined, to: string | null) => {
@@ -177,6 +187,8 @@ export function diffRippling(
     push("start_date", p.start_date, values.startDate);
     push("office", p.office, values.office);
     push("company", p.company_id, values.companyId);
+    push("employment_type", p.employment_type, values.employmentType);
+    if (p.legal_entity !== undefined) push("legal_entity", p.legal_entity || null, values.legalEntity || null);
     const link = p.rippling_id !== w.id;
     if (changes.length || link) plan.updates.push({ personId: p.id, name: p.full_name, workerId: w.id, link, changes, values });
     else plan.unchanged++;
