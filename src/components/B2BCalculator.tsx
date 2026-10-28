@@ -48,6 +48,7 @@ import SavedQuoteBanner from "@/components/SavedQuoteBanner";
 import { useSavedQuote } from "@/hooks/useSavedQuote";
 import type { QuoteLineItem } from "@/lib/generateQuotePDF";
 import { usePricing } from "@/lib/api";
+import ThermoPriceNotice from "@/components/ThermoPriceNotice";
 // PricingRow type inline (matches server/pricingRouter.ts)
 type PricingRow = {
   category: string;
@@ -670,6 +671,8 @@ export default function B2BCalculator({ quoteId = null }: { quoteId?: string | n
         {/* Active tier indicator bar */}
         <div className="h-1" style={{ background: tierColor }} />
       </div>
+
+      <ThermoPriceNotice />
 
       {/* ── Main grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

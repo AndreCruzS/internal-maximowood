@@ -1,4 +1,6 @@
 
+import { THERMO_2027_SHEET_ID, thermo2027InEffect } from "@/lib/thermoPriceList";
+
 // Source of truth for prices (Maximo price sheet, shared 2026-10-07).
 const SHEET_ID = "137QK53YSQtQ0-AjqM19a46n8xq3sQ-loOcDCEnN8IeQ";
 
@@ -52,10 +54,12 @@ function parsePrice(val: string | undefined): number | null {
   return isNaN(num) || num === 0 ? null : num;
 }
 
-async function fetchTab(tabName: string, gid: string): Promise<PricingRow[]> {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+async function fetchTab(tabName: string, gid: string, sheetId = SHEET_ID): Promise<PricingRow[]> {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch ${tabName} tab: ${res.status}`);
+  // A sheet that isn't shared by link answers with Google's sign-in page, not CSV.
+  if (!res.headers.get("content-type")?.includes("text/csv")) throw new Error(`${tabName} tab is not shared by link`);
   const text = await res.text();
 
   // Simple CSV parser that handles quoted fields with embedded newlines
@@ -218,6 +222,12 @@ async function fetchTab(tabName: string, gid: string): Promise<PricingRow[]> {
 }
 
 export async function fetchAllPricing(): Promise<PricingRow[]> {
-  const results = await Promise.all(TABS.map((tab) => fetchTab(tab.name, tab.gid)));
+  const results = await Promise.all(TABS.map((tab) => tab.name === "THERMO" && thermo2027InEffect()
+    // From Dec 21, 2026 Thermo prices come from the 2027 sheet; the current sheet stays the fallback.
+    ? fetchTab(tab.name, tab.gid, THERMO_2027_SHEET_ID).catch((e) => {
+        console.warn("[pricing] 2027 Thermo sheet unreadable, using the current sheet:", e);
+        return fetchTab(tab.name, tab.gid);
+      })
+    : fetchTab(tab.name, tab.gid)));
   return results.flat();
 }
