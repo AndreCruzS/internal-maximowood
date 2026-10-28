@@ -10,7 +10,7 @@ import HireList from "@/components/onboarding/HireList";
 import NewHireHome from "@/components/onboarding/NewHireHome";
 import OffboardingList, { type OffboardingRow } from "@/components/onboarding/OffboardingList";
 import type { OnboardingItem } from "@/server/intranet";
-import { loadHireContacts, loadHires, loadMyTraining, onboardingPermissions } from "@/server/onboarding";
+import { loadHireContacts, loadHires, loadMyTraining, loadRequiredTrainings, onboardingPermissions } from "@/server/onboarding";
 
 export const dynamic = "force-dynamic";
 
@@ -51,11 +51,11 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
     );
     // New hires get their full onboarding page; everyone else their training and the first-steps checklist.
     if (training.hire) {
-      const contacts = await loadHireContacts(supabase, training.hire);
+      const [contacts, required] = await Promise.all([loadHireContacts(supabase, training.hire), loadRequiredTrainings(supabase, training.hire.person_id)]);
       return (
         <div className="mx-auto max-w-5xl space-y-8">
           <NewHireHome hire={training.hire} firstName={training.hire.full_name.split(" ")[0]} contacts={contacts}
-            path={training.path} attempts={training.attempts} welcomeDone={training.welcomeDone} />
+            path={training.path} attempts={training.attempts} welcomeDone={training.welcomeDone} required={required} />
           {checklist}
         </div>
       );

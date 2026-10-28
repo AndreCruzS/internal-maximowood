@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight, Building2, CheckCircle2, ChevronDown, ClipboardList, Eye, GraduationCap, KeyRound, LifeBuoy, Mail, MessageSquare,
-  Network, Palette, Sparkles, UserRound,
+  Network, Palette, ShieldCheck, Sparkles, UserRound,
 } from "lucide-react";
 import { useI18n } from "@/components/I18nProvider";
 import { useMounted } from "@/components/CalendarView";
@@ -14,6 +14,8 @@ import { fmt } from "@/lib/i18n/locale";
 import { PLAN_PHASES, type AttemptSummary, type NewHire, type TrainingModule, type TrainingScope } from "@/lib/onboarding";
 import { Photo, colorOf, gmailLink, slackLink } from "@/components/people/shared";
 import TrainingPath from "@/components/onboarding/TrainingPath";
+import RequiredTrainings from "@/components/onboarding/RequiredTrainings";
+import { allTrainingsDone, type RequiredTraining, type TrainingCompletion } from "@/lib/requiredTrainings";
 
 export type HireContact = { id: string; full_name: string; title: string; photo_url: string | null; email: string | null; slack_id: string | null; department_id: string | null };
 
@@ -23,7 +25,7 @@ const DAY = 86_400_000;
  * The new hire's onboarding page: welcome, the roadmap (accounts → welcome form → GMX → brand → department),
  * the leader's first day / week / month / quarter plan, who to ask, their accounts and the training path.
  */
-export default function NewHireHome({ hire: h, firstName, contacts, path, attempts, welcomeDone, preview, trainingLinks = true }: {
+export default function NewHireHome({ hire: h, firstName, contacts, path, attempts, welcomeDone, preview, trainingLinks = true, required }: {
   hire: NewHire;
   firstName: string;
   contacts: { manager: HireContact | null; buddy: HireContact | null; addedBy: HireContact | null };
@@ -34,6 +36,8 @@ export default function NewHireHome({ hire: h, firstName, contacts, path, attemp
   preview?: boolean;
   /** Off when previewing someone else's path (their modules aren't the viewer's). */
   trainingLinks?: boolean;
+  /** Mandatory trainings taken in Rippling (US team). */
+  required?: { required: RequiredTraining[]; done: TrainingCompletion[] };
 }) {
   const { t, tag } = useI18n();
   const mounted = useMounted();
@@ -50,6 +54,7 @@ export default function NewHireHome({ hire: h, firstName, contacts, path, attemp
     { key: "gmx", icon: Sparkles, done: scopeDone("gmx"), href: "#training" },
     { key: "brand", icon: Palette, done: scopeDone("brand"), href: "#training" },
     { key: "department", icon: GraduationCap, done: scopeDone("department"), href: "#training" },
+    { key: "rippling", icon: ShieldCheck, done: required ? allTrainingsDone(required.required, required.done) : null, href: "#required" },
   ].filter(s => s.done !== null) as { key: keyof typeof t.roadmap.steps; icon: typeof KeyRound; done: boolean; href: string }[];
   const current = steps.findIndex(s => !s.done);
 
@@ -223,6 +228,8 @@ export default function NewHireHome({ hire: h, firstName, contacts, path, attemp
           </section>
         </aside>
       </div>
+
+      {required && <RequiredTrainings required={required.required} done={required.done} personId={h.person_id} />}
 
       <div id="training" className="scroll-mt-24">
         <TrainingPath path={path} attempts={attempts} links={trainingLinks} />

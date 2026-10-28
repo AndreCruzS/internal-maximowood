@@ -2,6 +2,7 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { HIRE_COLUMNS, MODULE_COLUMNS, hireProgress, trainingPath, type AttemptSummary, type HireProgress, type NewHire, type TrainingModule } from "@/lib/onboarding";
 export type { AttemptSummary } from "@/lib/onboarding";
 import type { HireContact } from "@/components/onboarding/NewHireHome";
+import { REQUIRED_TRAINING_COLUMNS, trainingsFor, type RequiredTraining, type TrainingCompletion } from "@/lib/requiredTrainings";
 
 /** Best score and pass per module from raw attempts. */
 export function summarizeAttempts(rows: { module_id: string; score: number; passed: boolean }[]): Record<string, AttemptSummary> {
@@ -65,6 +66,23 @@ export async function loadMyTraining(supabase: SupabaseClient, user: User) {
 }
 
 type AttemptRow = { module_id: string; score: number; passed: boolean };
+
+/**
+ * The Rippling trainings a person must take (0035) and the ones on record as done.
+ * Empty until the migration is applied, so the onboarding step simply doesn't show.
+ */
+export async function loadRequiredTrainings(supabase: SupabaseClient, personId: string) {
+  const [trainings, done, person] = await Promise.all([
+    supabase.from("required_trainings").select(REQUIRED_TRAINING_COLUMNS).eq("active", true).order("sort"),
+    supabase.from("training_completions").select("training_id, completed_on, source").eq("person_id", personId),
+    supabase.from("people").select("work_country").eq("id", personId).maybeSingle(),
+  ]);
+  if (trainings.error) return { required: [], done: [] };
+  return {
+    required: trainingsFor((person.data as { work_country?: string | null } | null)?.work_country, trainings.data as RequiredTraining[]),
+    done: (done.data as TrainingCompletion[] | null) ?? [],
+  };
+}
 
 /** A new hire's own path (their brand and departments, no samples) and their attempts. */
 export function hirePath(modules: TrainingModule[], h: NewHire) {

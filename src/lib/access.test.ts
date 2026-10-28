@@ -94,3 +94,21 @@ describe("wouldBeRefused", () => {
     ]);
   });
 });
+
+import { allTrainingsDone, trainingsFor, type RequiredTraining } from "./requiredTrainings";
+
+describe("required trainings", () => {
+  const tr = (id: string, applies_to: RequiredTraining["applies_to"], active = true, sort = 0): RequiredTraining => ({ id, title: id, description: "", link: null, applies_to, sort, active });
+  const all = [tr("harassment", "US", true, 1), tr("ethics", "US", true, 2), tr("lgpd", "BR"), tr("old", "US", false), tr("safety", "all", true, 3)];
+  it("asks the US team (and anyone not on the Brazil team) for the US ones", () => {
+    expect(trainingsFor("US", all).map(t => t.id)).toEqual(["harassment", "ethics", "safety"]);
+    expect(trainingsFor(null, all).map(t => t.id)).toEqual(["harassment", "ethics", "safety"]);
+    expect(trainingsFor("BR", all).map(t => t.id)).toEqual(["lgpd", "safety"]);
+  });
+  it("is done only when every required one is on record", () => {
+    const req = trainingsFor("US", all);
+    expect(allTrainingsDone([], [])).toBeNull();
+    expect(allTrainingsDone(req, [{ training_id: "harassment", completed_on: "2026-11-02", source: "hr" }])).toBe(false);
+    expect(allTrainingsDone(req, ["harassment", "ethics", "safety"].map(id => ({ training_id: id, completed_on: "2026-11-02", source: "rippling" as const })))).toBe(true);
+  });
+});

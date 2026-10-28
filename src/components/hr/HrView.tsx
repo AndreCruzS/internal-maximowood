@@ -120,6 +120,7 @@ export default function HrView({ data }: { data: TimeOffData }) {
         {data.canEditHrPay && (
           <div className="flex flex-wrap gap-2">
             <Link href="/hr/access" className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-bold text-gray-700 hover:border-[#009f67] hover:text-[#00704a]">{t.access.link} →</Link>
+            <Link href="/hr/trainings" className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-bold text-gray-700 hover:border-[#009f67] hover:text-[#00704a]">{t.requiredTrainings.manage} →</Link>
             <Link href="/hr/rippling" className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-bold text-gray-700 hover:border-[#009f67] hover:text-[#00704a]">{t.rippling.link} →</Link>
           </div>
         )}

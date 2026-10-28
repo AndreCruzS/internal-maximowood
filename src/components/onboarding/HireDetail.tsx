@@ -7,6 +7,8 @@ import { CheckCircle2, Circle, Eye, KeyRound, Loader2, Plus, ShieldAlert, Trash2
 import { toast } from "sonner";
 import { getSupabase } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
+import RequiredTrainings from "@/components/onboarding/RequiredTrainings";
+import type { RequiredTraining, TrainingCompletion } from "@/lib/requiredTrainings";
 import { useMe } from "@/components/MeProvider";
 import { companyInk, companyName, type CompanyId } from "@/lib/intranet";
 import { deptName } from "@/lib/i18n/text";
@@ -29,7 +31,7 @@ function Row({ k, children }: { k: string; children: React.ReactNode }) {
 }
 
 /** One new hire: what the leader asked for, IT's setup (company email, phone, accounts), and training progress. */
-export default function HireDetail({ hire: h, people, names, creator, canEditIt, canEditPlan, canCancel, path, attempts, welcomeDone }: {
+export default function HireDetail({ hire: h, people, names, creator, canEditIt, canEditPlan, canCancel, path, attempts, welcomeDone, required, canMarkTrainings = false }: {
   hire: NewHire;
   people: { id: string; full_name: string }[];
   names: Record<string, string>;
@@ -40,6 +42,9 @@ export default function HireDetail({ hire: h, people, names, creator, canEditIt,
   path: TrainingModule[];
   attempts: Record<string, AttemptSummary>;
   welcomeDone: boolean;
+  /** Mandatory trainings taken in Rippling (US team); HR ticks them off. */
+  required?: { required: RequiredTraining[]; done: TrainingCompletion[] };
+  canMarkTrainings?: boolean;
 }) {
   const { t, tag } = useI18n();
   const me = useMe();
@@ -211,6 +216,8 @@ export default function HireDetail({ hire: h, people, names, creator, canEditIt,
           </ul>
         )}
       </section>
+
+      {required && <RequiredTrainings required={required.required} done={required.done} personId={h.person_id} canMark={canMarkTrainings} />}
 
       {canCancel && h.status !== "done" && (
         <div className="flex justify-end">
