@@ -45,6 +45,7 @@ import SavedQuoteBanner from "@/components/SavedQuoteBanner";
 import { useSavedQuote } from "@/hooks/useSavedQuote";
 import { usePricing } from "@/lib/api";
 import type { QuoteLineItem } from "@/lib/generateQuotePDF";
+import ThermoPriceNotice from "@/components/ThermoPriceNotice";
 
 type InputMode = "lf" | "sqft" | "boards";
 
@@ -529,6 +530,8 @@ export default function Calculator({ quoteId = null }: { quoteId?: string | null
             Accoya
           </button>
         </div>
+
+        {category === "thermo" && <ThermoPriceNotice />}
 
         {/* Step 1 – Product Selection */}
         <StepCard step={1} title="Select Product">

@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { usePricing } from "@/lib/api";
 import { Search, RefreshCw, Tag, DollarSign, Tag as TagIcon } from "lucide-react";
 import { PROMO_PRODUCTS, type PromoScenario } from "@/lib/products";
+import ThermoPriceNotice from "@/components/ThermoPriceNotice";
 
 type PriceTier = "distributor" | "distributor_fixed" | "dealer" | "dealer_fixed" | "end_customer" | "end_customer_fixed";
 
@@ -95,6 +96,8 @@ export default function Pricing() {
           Refresh
         </button>
       </div>
+
+      {(selectedCategory === "ALL" || selectedCategory === "THERMO") && <ThermoPriceNotice />}
 
       {/* Price Tier Selector */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
