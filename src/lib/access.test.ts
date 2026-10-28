@@ -16,6 +16,12 @@ describe("accessDecision", () => {
     expect(accessDecision({ enforce: true, isAdmin: false, person: { active: true, employment_type: "contractor" } })).toEqual({ ok: false, reason: "not_enabled" });
     expect(accessDecision({ enforce: true, isAdmin: false, person: { active: true, employment_type: null } })).toEqual({ ok: false, reason: "not_enabled" });
   });
+  it("lets the whole Brazil team in, whatever their contract", () => {
+    expect(accessDecision({ enforce: true, isAdmin: false, person: { active: true, employment_type: null, work_country: "BR" } }).ok).toBe(true);
+    expect(accessDecision({ enforce: true, isAdmin: false, person: { active: true, employment_type: "contractor", work_country: "BR" } }).ok).toBe(true);
+    expect(accessDecision({ enforce: true, isAdmin: false, person: { active: false, employment_type: null, work_country: "BR" } })).toEqual({ ok: false, reason: "inactive" });
+    expect(accessDecision({ enforce: true, isAdmin: false, person: { active: true, employment_type: "contractor", work_country: "US" } })).toEqual({ ok: false, reason: "not_enabled" });
+  });
   it("refuses people not in the directory and leavers", () => {
     expect(accessDecision({ enforce: true, isAdmin: false, person: null })).toEqual({ ok: false, reason: "no_person" });
     expect(accessDecision({ enforce: true, isAdmin: false, person: { ...w2, active: false } })).toEqual({ ok: false, reason: "inactive" });
@@ -72,14 +78,16 @@ describe("planAccessImport", () => {
 describe("wouldBeRefused", () => {
   it("lists accounts without a W2 / Brazil-team entry, never admins", () => {
     const people = [
-      { email: "a@gmxgroup.com", alt_emails: [], employment_type: "w2" as const, active: true, user_id: null },
-      { email: "c@gmxgroup.com", alt_emails: [], employment_type: "contractor" as const, active: true, user_id: "u3" },
+      { email: "a@gmxgroup.com", alt_emails: [], employment_type: "w2" as const, active: true, user_id: null, work_country: null },
+      { email: "c@gmxgroup.com", alt_emails: [], employment_type: "contractor" as const, active: true, user_id: "u3", work_country: "US" as const },
+      { email: "b@gmxgroup.com", alt_emails: [], employment_type: null, active: true, user_id: "u5", work_country: "BR" as const },
     ];
     expect(wouldBeRefused([
       { user_id: "u1", email: "A@gmxgroup.com", role: "member" },
       { user_id: "u2", email: "boss@gmxgroup.com", role: "admin" },
       { user_id: "u3", email: "c@gmxgroup.com", role: "member" },
       { user_id: "u4", email: "x@gmxgroup.com", role: "member" },
+      { user_id: "u5", email: "b@gmxgroup.com", role: "member" },
     ], people)).toEqual([
       { email: "c@gmxgroup.com", reason: "not_enabled" },
       { email: "x@gmxgroup.com", reason: "no_person" },

@@ -6,13 +6,16 @@
 export const EMPLOYMENT_TYPES = ["w2", "contractor", "clt", "pj"] as const;
 export type EmploymentType = (typeof EMPLOYMENT_TYPES)[number];
 
-/** Who may sign in once the check is on: US W2 employees and the Brazil team (CLT and PJ). */
+/**
+ * Who may sign in once the check is on. W2-only is a US rule: everyone on the Brazil team
+ * (work_country BR, 0034) gets in whatever their contract; CLT / PJ also count.
+ */
 export const ACCESS_TYPES: readonly EmploymentType[] = ["w2", "clt", "pj"];
 
 export type AccessSettings = { enforce: boolean };
 export const parseAccessSettings = (value: unknown): AccessSettings => ({ enforce: (value as { enforce?: unknown } | null)?.enforce === true });
 
-export type AccessPerson = { active: boolean; employment_type: string | null };
+export type AccessPerson = { active: boolean; employment_type: string | null; work_country?: string | null };
 
 export type AccessDecision = { ok: true } | { ok: false; reason: "no_person" | "inactive" | "not_enabled" };
 
@@ -21,9 +24,14 @@ export function accessDecision(opts: { enforce: boolean; isAdmin: boolean; perso
   const p = opts.person;
   if (!p) return { ok: false, reason: "no_person" };
   if (!p.active) return { ok: false, reason: "inactive" };
+  if (p.work_country === "BR") return { ok: true };
   if (!(ACCESS_TYPES as readonly string[]).includes(p.employment_type ?? "")) return { ok: false, reason: "not_enabled" };
   return { ok: true };
 }
+
+export const WORK_COUNTRIES = ["US", "BR"] as const;
+export type WorkCountry = (typeof WORK_COUNTRIES)[number];
+export const isWorkCountry = (v: unknown): v is WorkCountry => typeof v === "string" && (WORK_COUNTRIES as readonly string[]).includes(v);
 
 export const isEmploymentType = (v: unknown): v is EmploymentType => typeof v === "string" && (EMPLOYMENT_TYPES as readonly string[]).includes(v);
 
@@ -79,7 +87,7 @@ export const emailsOf = (p: { email: string | null; alt_emails?: string[] | null
 /** A directory entry as HR's Access page shows and edits it. */
 export type AccessRow = {
   id: string; full_name: string; email: string | null; alt_emails: string[]; employment_type: EmploymentType | null;
-  legal_entity: string; holiday_calendar: string | null; office: string | null; company_id: string | null; active: boolean; user_id: string | null;
+  legal_entity: string; holiday_calendar: string | null; work_country: WorkCountry | null; office: string | null; company_id: string | null; active: boolean; user_id: string | null;
 };
 
 export type ImportPlan = {
@@ -115,7 +123,7 @@ export function planAccessImport(rows: ImportRow[], people: Pick<AccessRow, "id"
 /** Signed-in accounts the check would refuse if it were switched on now. */
 export function wouldBeRefused(
   accounts: { user_id: string; email: string; role: string }[],
-  people: Pick<AccessRow, "email" | "alt_emails" | "employment_type" | "active" | "user_id">[],
+  people: Pick<AccessRow, "email" | "alt_emails" | "employment_type" | "active" | "user_id" | "work_country">[],
 ): { email: string; reason: "no_person" | "inactive" | "not_enabled" }[] {
   const byUser = new Map(people.filter(p => p.user_id).map(p => [p.user_id!, p]));
   const byEmail = new Map<string, (typeof people)[number]>();

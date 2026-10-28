@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { HOLIDAY_CALENDARS } from "@/lib/holidays";
-import { accessDecision, emailsOf, isEmploymentType, parseAccessImport, planAccessImport, type AccessRow } from "@/lib/access";
+import { accessDecision, emailsOf, isEmploymentType, isWorkCountry, parseAccessImport, planAccessImport, type AccessRow } from "@/lib/access";
 import { ACCESS_ROW_COLUMNS, loadAccessPage } from "@/server/access";
 
 export const dynamic = "force-dynamic";
@@ -43,9 +43,9 @@ export async function POST(request: NextRequest) {
       // Never let HR lock themselves out by switching it on.
       const [{ data: role }, { data: me }] = await Promise.all([
         admin.from("profiles").select("role").eq("user_id", user.id).maybeSingle(),
-        admin.from("people").select("active, employment_type").eq("user_id", user.id).maybeSingle(),
+        admin.from("people").select("active, employment_type, work_country").eq("user_id", user.id).maybeSingle(),
       ]);
-      const mine = accessDecision({ enforce: true, isAdmin: (role as { role?: string } | null)?.role === "admin", person: me as { active: boolean; employment_type: string | null } | null });
+      const mine = accessDecision({ enforce: true, isAdmin: (role as { role?: string } | null)?.role === "admin", person: me as { active: boolean; employment_type: string | null; work_country: string | null } | null });
       if (!mine.ok) return NextResponse.json({ error: "self_locked" }, { status: 400 });
     }
     const { error } = await admin.from("app_settings").upsert({ key: "access", value: { enforce: body.enforce }, updated_at: new Date().toISOString() });
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ error: "Nothing to do" }, { status: 400 });
 }
 
-/** One person's HR fields: { id, employment_type?, legal_entity?, alt_emails?, holiday_calendar? }. */
+/** One person's HR fields: { id, employment_type?, work_country?, legal_entity?, alt_emails?, holiday_calendar? }. */
 export async function PATCH(request: NextRequest) {
   const g = await hrOnly();
   if ("error" in g) return g.error;
@@ -96,6 +96,10 @@ export async function PATCH(request: NextRequest) {
   if ("employment_type" in body) {
     if (body.employment_type !== null && !isEmploymentType(body.employment_type)) return NextResponse.json({ error: "Unknown employment type" }, { status: 400 });
     patch.employment_type = body.employment_type;
+  }
+  if ("work_country" in body) {
+    if (body.work_country !== null && !isWorkCountry(body.work_country)) return NextResponse.json({ error: "Unknown team" }, { status: 400 });
+    patch.work_country = body.work_country;
   }
   if ("legal_entity" in body) patch.legal_entity = String(body.legal_entity ?? "").trim().slice(0, 120);
   if ("holiday_calendar" in body) {

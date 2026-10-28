@@ -12,14 +12,22 @@ export const CALENDAR_TZ: Record<HolidayCalendar, string> = {
 };
 export const CALENDAR_COUNTRY: Record<HolidayCalendar, "US" | "BR"> = { "gmx-us": "US", "lumberplus-us": "US", br: "BR", curitiba: "BR" };
 
-/** The calendar someone sees first: HR's choice for them (0033), else from their office (remote: their country). */
-export function calendarFor(office: string | null | undefined, liveCountry?: string | null, override?: string | null): HolidayCalendar {
+/**
+ * The calendar someone sees first: HR's choice for them (0033), else the Brazil calendar for the
+ * Brazil team (0034), else from their office (remote: their country).
+ */
+export function calendarFor(office: string | null | undefined, liveCountry?: string | null, override?: string | null, workCountry?: string | null): HolidayCalendar {
   if (override && (HOLIDAY_CALENDARS as readonly string[]).includes(override)) return override as HolidayCalendar;
+  if (workCountry === "BR") return "br";
   if (office === "curitiba") return "curitiba";
   if (office?.startsWith("lumberplus")) return "lumberplus-us";
   if (office === "aventura") return "gmx-us";
   return liveCountry === "BR" ? "br" : "gmx-us";
 }
+
+/** Which calendars someone can open: the Brazil team and HR see them all, the US team only its own. */
+export const visibleCalendars = (own: HolidayCalendar, opts: { brazilTeam: boolean; hrEditor: boolean }): HolidayCalendar[] =>
+  opts.brazilTeam || opts.hrEditor ? [...HOLIDAY_CALENDARS] : [own];
 
 /** Rows that apply to a calendar: Curitiba also closes on Brazil's national holidays (the city row wins on the same day). */
 export function holidaysFor(cal: HolidayCalendar, rows: OfficeHoliday[]): OfficeHoliday[] {

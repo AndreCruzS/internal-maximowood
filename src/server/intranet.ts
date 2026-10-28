@@ -62,8 +62,8 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
     supabase.from("people").select("id, full_name, birth_month, birth_day, start_date").eq("active", true).or("birth_month.not.is.null,start_date.not.is.null"),
     selectCompat(
       cols => supabase.from("people").select(cols).eq("user_id", userId).maybeSingle(),
+      "id, start_date, start_year, office, live_country, holiday_calendar, work_country",
       "id, start_date, start_year, office, live_country, holiday_calendar",
-      "id, start_date, start_year, office, live_country",
     ),
     supabase.rpc("is_it"),
     supabase.from("new_hires").select("id", { count: "exact", head: true }).eq("status", "it_setup"),
@@ -77,7 +77,7 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
     supabase.from("celebration_wishes").select(WISH_COLUMNS).gte("occasion_year", today.getFullYear() - 1).order("created_at").limit(2000),
   ]);
   // New employee = started in the last 90 days (or, with only a year, this year).
-  const me = mine.data as { id: string; start_date: string | null; start_year: number | null; office: string | null; live_country: string | null; holiday_calendar?: string | null } | null;
+  const me = mine.data as { id: string; start_date: string | null; start_year: number | null; office: string | null; live_country: string | null; holiday_calendar?: string | null; work_country?: string | null } | null;
   const isNewEmployee = me?.start_date
     ? Date.now() - new Date(`${me.start_date}T12:00:00`).getTime() <= 90 * 86_400_000
     : me?.start_year === today.getFullYear();
@@ -105,7 +105,7 @@ export async function loadHome(supabase: SupabaseClient, userId: string) {
     playbookTodos: (todos.data as PlaybookTodo[] | null) ?? [],
     /** Upcoming company holidays (all calendars) and the viewer's own calendar. */
     holidays: (holidays.data as OfficeHoliday[] | null) ?? [],
-    holidayCalendar: calendarFor(me?.office, me?.live_country, me?.holiday_calendar),
+    holidayCalendar: calendarFor(me?.office, me?.live_country, me?.holiday_calendar, me?.work_country),
     wishes: (wishes.data as Wish[] | null) ?? [],
     celebrations: (celebrations.data as { id: string; full_name: string; birth_month: number | null; birth_day: number | null; start_date: string | null }[] | null) ?? [],
   };

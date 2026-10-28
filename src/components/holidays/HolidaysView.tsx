@@ -10,7 +10,7 @@ import { COMPANIES, DEPARTMENTS } from "@/lib/intranet";
 import { deptName } from "@/lib/i18n/text";
 import { fmt } from "@/lib/i18n/locale";
 import { plural } from "@/lib/i18n/dictionaries";
-import { HOLIDAY_CALENDARS, clock, holidaysFor, todayIn, type HolidayCalendar, type OfficeHoliday } from "@/lib/holidays";
+import { clock, holidaysFor, todayIn, type HolidayCalendar, type OfficeHoliday } from "@/lib/holidays";
 import { ABSENCE_KINDS } from "@/components/home/WhosOut";
 import NextHoliday from "@/components/holidays/NextHoliday";
 import type { HolidaysData } from "@/server/holidays";
@@ -30,7 +30,7 @@ export default function HolidaysView({ data, initialCalendar }: { data: Holidays
   const h = t.holidays;
   const router = useRouter();
   const [calendar, setCalendar] = useState<HolidayCalendar>(
-    HOLIDAY_CALENDARS.includes(initialCalendar as HolidayCalendar) ? (initialCalendar as HolidayCalendar) : data.defaultCalendar,
+    data.calendars.includes(initialCalendar as HolidayCalendar) ? (initialCalendar as HolidayCalendar) : data.defaultCalendar,
   );
   const [country, setCountry] = useState("");
   const [company, setCompany] = useState("");
@@ -59,11 +59,15 @@ export default function HolidaysView({ data, initialCalendar }: { data: Holidays
       </div>
 
       <div className="flex flex-wrap items-end gap-4">
-        <label className="text-xs font-bold text-gray-500">{h.calendar}
-          <select value={calendar} onChange={e => setCalendar(e.target.value as HolidayCalendar)} className={`${select} mt-1 block`}>
-            {HOLIDAY_CALENDARS.map(c => <option key={c} value={c}>{h.calendars[c]}</option>)}
-          </select>
-        </label>
+        {data.calendars.length > 1 ? (
+          <label className="text-xs font-bold text-gray-500">{h.calendar}
+            <select value={calendar} onChange={e => setCalendar(e.target.value as HolidayCalendar)} className={`${select} mt-1 block`}>
+              {data.calendars.map(c => <option key={c} value={c}>{h.calendars[c]}</option>)}
+            </select>
+          </label>
+        ) : (
+          <p className="text-xs font-bold text-gray-500">{h.calendar}<span className="mt-1 block text-sm font-bold text-gray-900">{h.calendars[calendar]}</span></p>
+        )}
       </div>
       <NextHoliday calendar={calendar} holidays={data.holidays} link={false} />
 

@@ -9,16 +9,17 @@ const quoted = (v: string) => `"${v.replace(/["\\]/g, "")}"`;
 export async function personByEmail(db: SupabaseClient, email: string): Promise<(AccessPerson & { id: string }) | null> {
   const e = email.trim().toLowerCase();
   if (!e) return null;
-  const { data } = await db
+  const { data, error } = await db
     .from("people")
-    .select("id, active, employment_type, email, alt_emails")
+    .select("id, active, employment_type, work_country, email, alt_emails")
     .or(`email.ilike.${quoted(e)},alt_emails.cs.{${quoted(e)}}`)
     .order("active", { ascending: false })
     .limit(5);
+  if (error) throw new Error(error.message); // checkAccess fails open
   // ilike treats _ as a wildcard: keep exact matches only.
   type Row = AccessPerson & { id: string; email: string | null; alt_emails: string[] | null };
   const hit = ((data as Row[] | null) ?? []).find(p => emailsOf(p).includes(e));
-  return hit ? { id: hit.id, active: hit.active, employment_type: hit.employment_type } : null;
+  return hit ? { id: hit.id, active: hit.active, employment_type: hit.employment_type, work_country: hit.work_country ?? null } : null;
 }
 
 export async function accessEnforced(db: SupabaseClient) {
@@ -38,7 +39,7 @@ export async function checkAccess(user: Pick<User, "id" | "email">): Promise<Acc
     const [role, person] = await Promise.all([
       admin.from("profiles").select("role").eq("user_id", user.id).maybeSingle(),
       // The entry linked to this login wins over an email match.
-      admin.from("people").select("id, active, employment_type").eq("user_id", user.id).maybeSingle(),
+      admin.from("people").select("id, active, employment_type, work_country").eq("user_id", user.id).maybeSingle(),
     ]);
     const linked = (person.data as (AccessPerson & { id: string }) | null) ?? null;
     if (person.error) return { ok: true };
@@ -52,7 +53,7 @@ export async function checkAccess(user: Pick<User, "id" | "email">): Promise<Acc
   }
 }
 
-export const ACCESS_ROW_COLUMNS = "id, full_name, email, alt_emails, employment_type, legal_entity, holiday_calendar, office, company_id, active, user_id";
+export const ACCESS_ROW_COLUMNS = "id, full_name, email, alt_emails, employment_type, legal_entity, holiday_calendar, work_country, office, company_id, active, user_id";
 
 /** HR's Access page: every directory entry, the switch, and who the check would refuse right now. */
 export async function loadAccessPage(admin: SupabaseClient) {

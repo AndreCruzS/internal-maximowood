@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { daysUntil, firstDate, isUrgent, newCar, newHotel, newLeg, travelProblem, travelSubject } from "@/lib/travel";
 import { resumeProblem, roleLabel } from "@/lib/referrals";
-import { calendarFor, holidaysFor, nextHoliday, type OfficeHoliday } from "@/lib/holidays";
+import { calendarFor, holidaysFor, nextHoliday, visibleCalendars, type OfficeHoliday } from "@/lib/holidays";
 
 const base = { traveler_type: "self" as const, traveler_person_id: null, guest_name: "", guest_email: "", purpose: "Expo", legs: [], hotels: [], cars: [] };
 
@@ -55,6 +55,17 @@ describe("holidays", () => {
     expect(calendarFor("curitiba")).toBe("curitiba");
     expect(calendarFor("remote", "BR")).toBe("br");
     expect(calendarFor(null)).toBe("gmx-us");
+  });
+  it("puts the Brazil team on the Brazil calendar unless HR chose another", () => {
+    expect(calendarFor("curitiba", null, null, "BR")).toBe("br");
+    expect(calendarFor("aventura", "US", null, "BR")).toBe("br");
+    expect(calendarFor("curitiba", null, "curitiba", "BR")).toBe("curitiba");
+    expect(calendarFor("aventura", null, null, "US")).toBe("gmx-us");
+  });
+  it("shows the Brazil team and HR every calendar, the US team only its own", () => {
+    expect(visibleCalendars("br", { brazilTeam: true, hrEditor: false })).toEqual(["gmx-us", "lumberplus-us", "br", "curitiba"]);
+    expect(visibleCalendars("gmx-us", { brazilTeam: false, hrEditor: true })).toHaveLength(4);
+    expect(visibleCalendars("lumberplus-us", { brazilTeam: false, hrEditor: false })).toEqual(["lumberplus-us"]);
   });
   it("adds national days to Curitiba, letting the city row win", () => {
     expect(holidaysFor("curitiba", rows).map(r => r.name)).toEqual(["Nossa Senhora da Luz", "Finados"]);

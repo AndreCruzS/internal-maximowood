@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Eye, Loader2, ShieldCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/components/I18nProvider";
-import { EMPLOYMENT_TYPES, type AccessRow, type EmploymentType, type ImportPlan } from "@/lib/access";
+import { EMPLOYMENT_TYPES, WORK_COUNTRIES, type AccessRow, type EmploymentType, type ImportPlan, type WorkCountry } from "@/lib/access";
 import { HOLIDAY_CALENDARS } from "@/lib/holidays";
 
 type Data =
@@ -23,7 +23,7 @@ export default function AccessView({ initial }: { initial: Data }) {
   const [paste, setPaste] = useState("");
   const [plan, setPlan] = useState<{ plan: ImportPlan; errors: { line: number }[] } | null>(null);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<EmploymentType | "unset" | "all">("all");
+  const [filter, setFilter] = useState<EmploymentType | "unset" | "all" | "br">("all");
 
   const reload = async () => {
     const res = await fetch("/api/hr/access").catch(() => null);
@@ -38,13 +38,15 @@ export default function AccessView({ initial }: { initial: Data }) {
   const people = useMemo(() => (data.ready ? data.people : []), [data]);
   const counts = useMemo(() => {
     const active = people.filter(p => p.active);
-    const n = (ts: (EmploymentType | null)[]) => active.filter(p => ts.includes(p.employment_type)).length;
-    return { w2: n(["w2"]), br: n(["clt", "pj"]), contractor: n(["contractor"]), unset: n([null]) };
+    const us = active.filter(p => p.work_country !== "BR");
+    const n = (ts: (EmploymentType | null)[]) => us.filter(p => ts.includes(p.employment_type)).length;
+    return { w2: n(["w2"]), br: active.length - us.length, contractor: n(["contractor"]), unset: n([null]) };
   }, [people]);
   const shown = useMemo(() => {
     const q = search.trim().toLowerCase();
     return people.filter(p =>
-      (filter === "all" || (filter === "unset" ? !p.employment_type : p.employment_type === filter)) &&
+      (filter === "all" ||
+        (filter === "br" ? p.work_country === "BR" : p.work_country !== "BR" && (filter === "unset" ? !p.employment_type : p.employment_type === filter))) &&
       (!q || [p.full_name, p.email, ...p.alt_emails].some(x => (x ?? "").toLowerCase().includes(q))));
   }, [people, search, filter]);
 
@@ -73,7 +75,7 @@ export default function AccessView({ initial }: { initial: Data }) {
     await reload();
   };
 
-  const patch = async (id: string, change: Partial<Pick<AccessRow, "employment_type" | "legal_entity" | "alt_emails" | "holiday_calendar">>) => {
+  const patch = async (id: string, change: Partial<Pick<AccessRow, "employment_type" | "work_country" | "legal_entity" | "alt_emails" | "holiday_calendar">>) => {
     const res = await fetch("/api/hr/access", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...change }) }).catch(() => null);
     const json = res ? await res.json().catch(() => ({})) : {};
     if (!res?.ok) {
@@ -81,7 +83,7 @@ export default function AccessView({ initial }: { initial: Data }) {
       return reload();
     }
     setData(d => (d.ready ? { ...d, people: d.people.map(p => (p.id === id ? (json.person as AccessRow) : p)) } : d));
-    if ("employment_type" in change) void reload(); // the "refused" list depends on it
+    if ("employment_type" in change || "work_country" in change) void reload(); // the "refused" list depends on them
   };
 
   const fill = (s: string, v: Record<string, string | number>) => Object.entries(v).reduce((acc, [k, x]) => acc.replace(`{${k}}`, String(x)), s);
@@ -171,6 +173,7 @@ export default function AccessView({ initial }: { initial: Data }) {
           <div className="flex flex-wrap gap-2">
             <select value={filter} onChange={e => setFilter(e.target.value as typeof filter)} className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-sm">
               <option value="all">{a.all}</option>
+              <option value="br">{a.teams.BR}</option>
               <option value="unset">{a.unset}</option>
               {EMPLOYMENT_TYPES.map(x => <option key={x} value={x}>{a.types[x]}</option>)}
             </select>
@@ -178,10 +181,11 @@ export default function AccessView({ initial }: { initial: Data }) {
           </div>
         </div>
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm">
+          <table className="w-full min-w-[1020px] text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
                 <th className="py-2 pr-3">{a.name}</th>
+                <th className="w-32 px-2 py-2">{a.team}</th>
                 <th className="w-36 px-2 py-2">{a.type}</th>
                 <th className="w-48 px-2 py-2">{a.entity}</th>
                 <th className="w-64 px-2 py-2">{a.otherEmails}</th>
@@ -197,11 +201,19 @@ export default function AccessView({ initial }: { initial: Data }) {
                     <div className="text-xs text-gray-500">{p.email ?? "—"}</div>
                   </td>
                   <td className="px-2 py-2">
+                    <select value={p.work_country ?? ""} onChange={e => void patch(p.id, { work_country: (e.target.value || null) as WorkCountry | null })} className={field}>
+                      <option value="">{a.unset}</option>
+                      {WORK_COUNTRIES.map(x => <option key={x} value={x}>{a.teams[x]}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-2 py-2">
+                    {p.work_country === "BR" ? <p className="px-2 py-1.5 text-xs text-gray-500">{a.brAlways}</p> : (
                     <select value={p.employment_type ?? ""} onChange={e => void patch(p.id, { employment_type: (e.target.value || null) as EmploymentType | null })}
                       className={`${field} ${p.employment_type ? "" : "border-amber-300 bg-amber-50"}`}>
                       <option value="">{a.unset}</option>
                       {EMPLOYMENT_TYPES.map(x => <option key={x} value={x}>{a.types[x]}</option>)}
                     </select>
+                    )}
                   </td>
                   <td className="px-2 py-2">
                     <input key={`e-${p.id}-${p.legal_entity}`} defaultValue={p.legal_entity} maxLength={120} className={field}
