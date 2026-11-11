@@ -5,6 +5,7 @@ import {
   Briefcase,
   Calculator,
   Factory,
+  Handshake,
   Landmark,
   Megaphone,
   Monitor,
@@ -123,6 +124,8 @@ export type Tool = {
   /** In-app path, or a full URL when `external`. */
   href: string;
   department: DepartmentId;
+  /** Other departments that also list this tool. */
+  alsoIn?: DepartmentId[];
   company: CompanyId;
   /** Opens in a new tab with an ↗ marker. */
   external?: boolean;
@@ -135,6 +138,7 @@ export const TOOLS: Tool[] = [
   { name: "Tally Calculator", description: "Split an order into packs per length, from live stock", icon: Ruler, href: "/tally", department: "commercial", company: "maximo", pinned: true },
   { name: "Checklists", description: "Approved quote → client approval checklist for logistics", icon: ClipboardCheck, href: "/checklists", department: "commercial", company: "maximo", pinned: true },
   { name: "Sample Requester", description: "Request product samples for customers", icon: PackageOpen, href: "https://samples.maximowood.com/samples", department: "commercial", company: "maximo", external: true },
+  { name: "Dealer Hub", description: "Maximo Dealer Hub: the portal for our dealers", icon: Handshake, href: "https://dealerhub.maximowood.com/", department: "commercial", alsoIn: ["marketing"], company: "maximo", external: true },
   { name: "Pricing", description: "Maximo price list", icon: Tag, href: "/pricing", department: "commercial", company: "maximo" },
   { name: "Inventory", description: "Live stock by branch", icon: Package, href: "/inventory", department: "commercial", company: "maximo", pinned: true },
   { name: "Orders", description: "GMX logistics order platform", icon: ClipboardList, href: "https://orders.gmxgroup.com/", department: "logistics", company: "gmx", external: true, pinned: true },
@@ -149,4 +153,4 @@ export const TOOLS: Tool[] = [
   { name: "Online Gallery", description: "Maximo photos and media library", icon: Images, href: "https://media.maximowood.com/", department: "marketing", company: "maximo", external: true },
 ];
 
-export const toolsFor = (department: DepartmentId) => TOOLS.filter(t => t.department === department);
+export const toolsFor = (department: DepartmentId) => TOOLS.filter(t => t.department === department || t.alsoIn?.includes(department));

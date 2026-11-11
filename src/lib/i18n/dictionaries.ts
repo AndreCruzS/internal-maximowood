@@ -56,6 +56,7 @@ const en = {
     "https://orders.gmxgroup.com/": { name: "Orders", description: "GMX logistics order platform" },
     "https://maximo-ads-dashboard.vercel.app/login": { name: "Data Center", description: "Ads & campaign dashboard" },
     "https://media.maximowood.com/": { name: "Online Gallery", description: "Maximo photos and media library" },
+    "https://dealerhub.maximowood.com/": { name: "Dealer Hub", description: "Maximo Dealer Hub: the portal for our dealers" },
     "https://samples.maximowood.com/samples": { name: "Sample Requester", description: "Request product samples for customers" },
   } as Record<string, { name: string; description: string }>,
   department: {
@@ -1099,6 +1100,7 @@ const es: Dict = {
     "https://orders.gmxgroup.com/": { name: "Pedidos", description: "Plataforma de pedidos de logística de GMX" },
     "https://maximo-ads-dashboard.vercel.app/login": { name: "Data Center", description: "Panel de anuncios y campañas" },
     "https://media.maximowood.com/": { name: "Galería online", description: "Fotos y biblioteca de medios de Maximo" },
+    "https://dealerhub.maximowood.com/": { name: "Dealer Hub", description: "Maximo Dealer Hub: el portal para nuestros distribuidores" },
     "https://samples.maximowood.com/samples": { name: "Solicitud de muestras", description: "Pide muestras de producto para clientes" },
   },
   department: {
@@ -2140,6 +2142,7 @@ const pt: Dict = {
     "https://orders.gmxgroup.com/": { name: "Pedidos", description: "Plataforma de pedidos da logística GMX" },
     "https://maximo-ads-dashboard.vercel.app/login": { name: "Data Center", description: "Painel de anúncios e campanhas" },
     "https://media.maximowood.com/": { name: "Galeria online", description: "Fotos e biblioteca de mídia da Maximo" },
+    "https://dealerhub.maximowood.com/": { name: "Dealer Hub", description: "Maximo Dealer Hub: o portal para nossos revendedores" },
     "https://samples.maximowood.com/samples": { name: "Pedido de amostras", description: "Solicite amostras de produto para clientes" },
   },
   department: {
